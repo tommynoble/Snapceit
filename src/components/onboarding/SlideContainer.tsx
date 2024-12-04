@@ -30,8 +30,9 @@ export function SlideContainer({ children, currentSlide, onNext, onPrev }: Slide
           exit={{ opacity: 0, x: -300 }}
           transition={{
             type: "spring",
-            stiffness: 300,
-            damping: 30,
+            stiffness: 200,
+            damping: 25,
+            duration: 0.5
           }}
           drag="x"
           dragConstraints={{ left: 0, right: 0 }}

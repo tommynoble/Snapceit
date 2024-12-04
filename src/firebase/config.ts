@@ -4,13 +4,13 @@ import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDVJNRsLxUpsD6DfrVev9Av3-trfDygeLE",
-  authDomain: "reciepts-scanner.firebaseapp.com",
-  projectId: "reciepts-scanner",
-  storageBucket: "reciepts-scanner.firebasestorage.app",
-  messagingSenderId: "584208815336",
-  appId: "1:584208815336:web:50e4b2d30f06e39a3de55d",
-  measurementId: "G-CX79YGZ2P7"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
 // Initialize Firebase
@@ -27,7 +27,7 @@ auth.settings = {
 
 // Export providers and IDs
 export const phoneAuthProvider = new PhoneAuthProvider(auth);
-export const webClientId = "584208815336-8ghqkkpj7hqicjkq480hlrbasf97jjlf.apps.googleusercontent.com";
+export const webClientId = import.meta.env.VITE_FIREBASE_WEB_CLIENT_ID;
 export const db = getFirestore(app);
 export const storage = getStorage(app);
 

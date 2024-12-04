@@ -11,6 +11,7 @@ import {
   signInWithCredential,
   RecaptchaVerifier,
   signInWithPhoneNumber,
+  sendPasswordResetEmail,
 } from 'firebase/auth';
 import { auth, webClientId } from './config';
 
@@ -23,6 +24,7 @@ interface AuthContextType {
   sendPhoneVerification: (phoneNumber: string) => Promise<string>;
   verifyPhoneCode: (verificationId: string, code: string) => Promise<void>;
   logout: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -213,6 +215,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const resetPassword = async (email: string) => {
+    return await sendPasswordResetEmail(auth, email);
+  };
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
@@ -234,6 +240,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     sendPhoneVerification,
     verifyPhoneCode,
     logout,
+    resetPassword,
   };
 
   return (
