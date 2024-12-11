@@ -1,29 +1,37 @@
 import React, { useState } from 'react';
-import { Settings, User, Menu, Receipt, TrendingUp, PieChart, LineChart } from 'lucide-react';
+import { Settings, User, Menu, LineChart } from 'lucide-react';
 import { DashboardHeader } from './DashboardHeader';
-import { StatCard } from './stats/StatCard';
-import { ReceiptsList } from './receipts/ReceiptsList';
-import { ReminderCard } from './ReminderCard';
-import { ReceiptUploader } from './receipts/ReceiptUploader';
-import { ReceiptFilters } from './receipts/ReceiptFilters';
+import { TotalReceiptsCard } from './stats/TotalReceiptsCard';
+import { MonthlySpendingCard } from './stats/MonthlySpendingCard';
+import { CategoriesCard } from './stats/CategoriesCard';
+import { UploadReceiptCard } from './upload/UploadReceiptCard';
+import { SpendingOverviewCard } from './spending/SpendingOverviewCard';
+import { RecentReceiptsCard } from './receipts/RecentReceiptsCard';
+import { ReminderCard } from './reminders/ReminderCard';
 import { SettingsModal } from './settings/SettingsModal';
 import { UserProfileModal } from './user/UserProfileModal';
-import { useStats } from './stats/useStats';
-import { SpendingPieChart } from './stats/SpendingPieChart';
 import { SpendingHabitsPage } from './spending/SpendingHabitsPage';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 
 export function DashboardLayout() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [showSpendingHabits, setShowSpendingHabits] = useState(false);
-  const stats = useStats();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    // Add your logout logic here
+    navigate('/');
+  };
 
   if (showSpendingHabits) {
     return <SpendingHabitsPage />;
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-fuchsia-500 via-purple-600 to-purple-800">
+    <div className="min-h-screen bg-gradient-to-br from-[#D444EF]/5 via-[#AF3AEB]/5 to-purple-900/5">
       <nav className="flex items-center justify-between px-6 py-4">
         <div className="text-2xl font-bold text-white">S</div>
         <div className="flex items-center gap-4">
@@ -46,63 +54,79 @@ export function DashboardLayout() {
           >
             <User size={24} />
           </button>
-          <button className="rounded-full p-2 text-white/80 hover:bg-white/10 lg:hidden">
+          <button 
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="rounded-full p-2 text-white/80 hover:bg-white/10 lg:hidden"
+          >
             <Menu size={24} />
           </button>
         </div>
       </nav>
 
+      {/* Mobile menu */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, x: '100%' }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: '100%' }}
+            className="fixed inset-y-0 right-0 w-64 bg-white/10 backdrop-blur-lg shadow-lg z-30 lg:hidden"
+          >
+            <div className="p-6 space-y-2">
+              <button 
+                onClick={() => {
+                  setShowSpendingHabits(true);
+                  setIsMobileMenuOpen(false);
+                }}
+                className="w-full flex items-center gap-3 px-4 py-3 text-white/80 hover:bg-white/10 rounded-lg"
+              >
+                <LineChart size={20} />
+                Spending Habits
+              </button>
+              <button 
+                onClick={() => {
+                  setIsSettingsOpen(true);
+                  setIsMobileMenuOpen(false);
+                }}
+                className="w-full flex items-center gap-3 px-4 py-3 text-white/80 hover:bg-white/10 rounded-lg"
+              >
+                <Settings size={20} />
+                Settings
+              </button>
+              <button 
+                onClick={() => {
+                  setIsProfileOpen(true);
+                  setIsMobileMenuOpen(false);
+                }}
+                className="w-full flex items-center gap-3 px-4 py-3 text-white/80 hover:bg-white/10 rounded-lg"
+              >
+                <User size={20} />
+                Profile
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <main className="px-6 py-8">
-        <DashboardHeader userName="Thomas" />
-        
-        <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          <StatCard
-            title="Total Receipts"
-            value={stats.totalReceipts.value}
-            icon={Receipt}
-            trend={stats.totalReceipts.trend}
-          />
-          <StatCard
-            title="Monthly Spending"
-            value={new Intl.NumberFormat('en-US', {
-              style: 'currency',
-              currency: 'USD'
-            }).format(stats.monthlySpending.value)}
-            icon={TrendingUp}
-            trend={stats.monthlySpending.trend}
-          />
-          <StatCard
-            title="Categories"
-            value={stats.categories.total}
-            icon={PieChart}
-            details={stats.categories.breakdown.map(cat => ({
-              label: cat.category,
-              value: Math.round(cat.percentage)
-            }))}
-          />
-        </div>
-
-        <div className="mt-8 grid gap-8 lg:grid-cols-3">
-          <div className="lg:col-span-2 space-y-6">
-            <div className="rounded-2xl bg-white p-6 shadow-lg">
-              <h2 className="text-xl font-semibold text-gray-800 mb-6">Upload Receipt</h2>
-              <ReceiptUploader />
-            </div>
-
-            <div className="rounded-2xl bg-white p-6 shadow-lg">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold text-gray-800">Recent Receipts</h2>
-                <ReceiptFilters />
-              </div>
-              <ReceiptsList />
-            </div>
+        <div className="max-w-7xl mx-auto">
+          <DashboardHeader userName="Thomas" />
+          
+          <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <TotalReceiptsCard />
+            <MonthlySpendingCard />
+            <CategoriesCard />
           </div>
 
-          <div className="space-y-6">
-            <ReminderCard dueDate="July 3 2024" />
-            <div className="rounded-2xl bg-white p-6 shadow-lg">
-              <h2 className="text-xl font-semibold text-gray-800 mb-6">Spending Overview</h2>
-              <SpendingPieChart />
+          <div className="mt-8 grid gap-8 lg:grid-cols-3">
+            <div className="lg:col-span-2 space-y-6">
+              <UploadReceiptCard />
+              <RecentReceiptsCard />
+            </div>
+
+            <div className="space-y-6">
+              <SpendingOverviewCard />
+              <ReminderCard />
             </div>
           </div>
         </div>

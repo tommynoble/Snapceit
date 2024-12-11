@@ -8,6 +8,7 @@ interface UploadedReceipt {
   date: string;
   amount: number;
   merchant: string;
+  items: any[];
 }
 
 export function ReceiptUploader() {
@@ -16,33 +17,51 @@ export function ReceiptUploader() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadedReceipt, setUploadedReceipt] = useState<UploadedReceipt | null>(null);
 
-  const processReceipt = useCallback((file: File) => {
+  const processReceipt = useCallback(async (file: File) => {
     setIsProcessing(true);
-    const reader = new FileReader();
     
-    reader.onload = () => {
-      // Simulate receipt processing delay
-      setTimeout(() => {
-        const newReceipt = {
-          preview: reader.result as string,
-          date: new Date().toLocaleDateString(),
-          amount: Math.floor(Math.random() * 1000),
-          merchant: "Chicken Republic",
-        };
+    try {
+      // Create form data for the file
+      const formData = new FormData();
+      formData.append('receipt', file);
 
-        setUploadedReceipt(newReceipt);
-        setIsProcessing(false);
+      // Send to backend for Textract processing
+      const response = await fetch('http://localhost:3000/api/scan-receipt', {
+        method: 'POST',
+        body: formData,
+      });
 
-        // Add to receipts list
-        addReceipt({
-          ...newReceipt,
-          category: 'Food & Dining',
-          status: 'completed',
-        });
-      }, 1500);
-    };
-    
-    reader.readAsDataURL(file);
+      if (!response.ok) {
+        throw new Error('Failed to process receipt');
+      }
+
+      const receiptData = await response.json();
+
+      // Create preview URL for the image
+      const previewUrl = URL.createObjectURL(file);
+
+      const newReceipt = {
+        preview: previewUrl,
+        date: receiptData.date || new Date().toLocaleDateString(),
+        amount: receiptData.total || 0,
+        merchant: receiptData.merchant || 'Unknown Merchant',
+        items: receiptData.items || [],
+      };
+
+      setUploadedReceipt(newReceipt);
+
+      // Add to receipts list
+      addReceipt({
+        ...newReceipt,
+        category: 'Food & Dining', // You might want to detect this from the merchant name
+        status: 'completed',
+      });
+    } catch (error) {
+      console.error('Error processing receipt:', error);
+      // You might want to show an error message to the user here
+    } finally {
+      setIsProcessing(false);
+    }
   }, [addReceipt]);
 
   const handleDragOver = (e: React.DragEvent) => {

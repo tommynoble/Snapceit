@@ -1,99 +1,81 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
+import { db } from '../../../firebase/config';
+import { useAuth } from '../../../firebase/AuthContext';
 
 interface Receipt {
-  id: number;
+  id: string;
   date: string;
-  amount: number;
+  total: number;
   merchant: string;
   category: string;
-  status: 'processing' | 'completed' | 'failed';
-  preview?: string;
+  imageUrl: string;
+  items: Array<{
+    name: string;
+    price: number;
+    quantity: number;
+  }>;
 }
 
 interface ReceiptContextType {
   receipts: Receipt[];
-  addReceipt: (receipt: Omit<Receipt, 'id'>) => void;
-  deleteReceipt: (id: number) => void;
-  updateReceipt: (id: number, data: Partial<Receipt>) => void;
-  downloadReceipt: (id: number) => void;
+  loading: boolean;
+  error: string | null;
+  selectedReceipt: Receipt | null;
+  setSelectedReceipt: (receipt: Receipt | null) => void;
 }
 
 const ReceiptContext = createContext<ReceiptContextType | undefined>(undefined);
 
 export function ReceiptProvider({ children }: { children: React.ReactNode }) {
-  const [receipts, setReceipts] = useState<Receipt[]>([
-    { 
-      id: 1, 
-      date: 'July 23', 
-      amount: 221, 
-      merchant: 'Chicken Republic',
-      category: 'Food & Dining',
-      status: 'completed'
-    },
-    { 
-      id: 2, 
-      date: 'July 23', 
-      amount: 332, 
-      merchant: 'Chicken Republic',
-      category: 'Food & Dining',
-      status: 'completed'
-    },
-  ]);
+  const [receipts, setReceipts] = useState<Receipt[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedReceipt, setSelectedReceipt] = useState<Receipt | null>(null);
+  const { user } = useAuth();
 
-  const addReceipt = useCallback((receipt: Omit<Receipt, 'id'>) => {
-    setReceipts(prev => [
-      {
-        ...receipt,
-        id: Math.max(0, ...prev.map(r => r.id)) + 1,
+  useEffect(() => {
+    if (!user) {
+      setReceipts([]);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    const receiptsRef = collection(db, 'users', user.uid, 'receipts');
+    const q = query(receiptsRef, orderBy('date', 'desc'));
+
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const receiptData: Receipt[] = [];
+        snapshot.forEach((doc) => {
+          receiptData.push({ id: doc.id, ...doc.data() } as Receipt);
+        });
+        setReceipts(receiptData);
+        setLoading(false);
+        setError(null);
       },
-      ...prev,
-    ]);
-  }, []);
+      (err) => {
+        console.error('Error fetching receipts:', err);
+        setError('Failed to load receipts');
+        setLoading(false);
+      }
+    );
 
-  const updateReceipt = useCallback((id: number, data: Partial<Receipt>) => {
-    setReceipts(prev => prev.map(receipt => 
-      receipt.id === id ? { ...receipt, ...data } : receipt
-    ));
-  }, []);
-
-  const deleteReceipt = useCallback((id: number) => {
-    setReceipts(prev => prev.filter(receipt => receipt.id !== id));
-  }, []);
-
-  const downloadReceipt = useCallback((id: number) => {
-    const receipt = receipts.find(r => r.id === id);
-    if (!receipt) return;
-
-    // Create receipt content
-    const content = `
-Receipt Details
---------------
-Date: ${receipt.date}
-Merchant: ${receipt.merchant}
-Amount: $${receipt.amount.toFixed(2)}
-Category: ${receipt.category}
-    `.trim();
-
-    // Create blob and download
-    const blob = new Blob([content], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `receipt-${receipt.id}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }, [receipts]);
+    return () => unsubscribe();
+  }, [user]);
 
   return (
-    <ReceiptContext.Provider value={{ 
-      receipts, 
-      addReceipt, 
-      deleteReceipt, 
-      updateReceipt,
-      downloadReceipt 
-    }}>
+    <ReceiptContext.Provider
+      value={{
+        receipts,
+        loading,
+        error,
+        selectedReceipt,
+        setSelectedReceipt,
+      }}
+    >
       {children}
     </ReceiptContext.Provider>
   );

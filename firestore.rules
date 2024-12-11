@@ -1,0 +1,40 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper function to check if user is authenticated
+    function isAuth() {
+      return request.auth != null;
+    }
+    
+    // Helper function to check if user owns the document
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    // Receipts collection rules
+    match /receipts/{userId}/{document=**} {
+      allow read: if isAuth() && isOwner(userId);
+      allow create: if isAuth() && isOwner(userId)
+        && request.resource.data.keys().hasAll(['date', 'amount', 'category'])
+        && request.resource.data.size() < 10000000; // 10MB limit
+      allow update: if isAuth() && isOwner(userId)
+        && request.resource.data.size() < 10000000;
+      allow delete: if isAuth() && isOwner(userId);
+    }
+
+    // User profiles collection rules
+    match /users/{userId} {
+      allow read: if isAuth() && isOwner(userId);
+      allow create: if isAuth() && isOwner(userId)
+        && request.resource.data.keys().hasAll(['email', 'createdAt']);
+      allow update: if isAuth() && isOwner(userId);
+      allow delete: if isAuth() && isOwner(userId);
+    }
+
+    // Categories collection rules (if you have predefined categories)
+    match /categories/{categoryId} {
+      allow read: if isAuth(); // All authenticated users can read categories
+      allow write: if false;   // Only admin can modify (through Firebase Console)
+    }
+  }
+}

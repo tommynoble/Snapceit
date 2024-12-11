@@ -1,0 +1,44 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Helper functions
+    function isAuth() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+    
+    function isImage() {
+      return request.resource.contentType.matches('image/.*');
+    }
+    
+    function isValidSize() {
+      return request.resource.size < 5 * 1024 * 1024; // 5MB limit
+    }
+
+    // Receipt images rules
+    match /receipts/{userId}/{imageId} {
+      allow read: if isAuth() && isOwner(userId);
+      allow create: if isAuth() 
+        && isOwner(userId)
+        && isImage()
+        && isValidSize();
+      allow update: if isAuth() 
+        && isOwner(userId)
+        && isImage()
+        && isValidSize();
+      allow delete: if isAuth() && isOwner(userId);
+    }
+
+    // Profile pictures rules
+    match /profiles/{userId} {
+      allow read: if isAuth();  // Any authenticated user can view profile pictures
+      allow write: if isAuth() 
+        && isOwner(userId)
+        && isImage()
+        && isValidSize();
+    }
+  }
+}

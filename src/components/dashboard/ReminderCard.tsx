@@ -33,7 +33,7 @@ export function ReminderCard({ dueDate }: ReminderCardProps) {
   };
 
   return (
-    <div className="rounded-2xl bg-white p-6 shadow-lg">
+    <div className="rounded-2xl bg-white p-6 shadow-lg min-h-[400px]">
       <h2 className="text-xl font-semibold text-gray-800">Reminder</h2>
       
       <div className="mt-6 space-y-4">

@@ -7,6 +7,7 @@ import { FirebaseError } from 'firebase/app';
 
 interface RegisterFormProps {
   onBack: () => void;
+  heading?: string;
 }
 
 const getErrorMessage = (error: FirebaseError) => {
@@ -37,7 +38,7 @@ const getErrorMessage = (error: FirebaseError) => {
   }
 };
 
-export function RegisterForm({ onBack }: RegisterFormProps) {
+export function RegisterForm({ onBack, heading = "Get started with Snapceit" }: RegisterFormProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
@@ -93,20 +94,20 @@ export function RegisterForm({ onBack }: RegisterFormProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-fuchsia-500 via-purple-600 to-purple-800 flex items-center justify-center p-4 sm:p-6 lg:p-8">
+    <div className="w-full">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md mx-auto"
+        className="w-full max-w-xl mx-auto"
       >
-        <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 sm:p-8 shadow-xl">
+        <div className="backdrop-blur-sm rounded-2xl p-6 sm:p-8">
+          <h2 className="text-2xl sm:text-3xl font-bold text-white/90 text-center mb-6">{heading}</h2>
           <div className="flex flex-col items-center mb-2 sm:mb-4">
             {/* <img 
               src="/images/logo.svg" 
               alt="Snapceit Logo" 
               className="w-32 h-32 sm:w-40 sm:h-40 mb-1"
             /> */}
-            <h2 className="text-lg sm:text-xl font-medium text-white/90 text-center">Get started with Snapceit</h2>
           </div>
 
           {error && (
@@ -120,7 +121,7 @@ export function RegisterForm({ onBack }: RegisterFormProps) {
             disabled={loading}
             className="w-full mb-4 flex items-center justify-center gap-2 sm:gap-3 rounded-lg bg-white px-4 py-2 sm:py-2.5 text-sm sm:text-base font-semibold text-purple-600 shadow-lg transition-all hover:bg-white/90 active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
           >
-            <svg className="h-5 w-5" viewBox="0 0 24 24">
+            <svg className="h-4 w-4" viewBox="0 0 24 24">
               <path
                 d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
                 fill="#4285F4"
@@ -196,7 +197,7 @@ export function RegisterForm({ onBack }: RegisterFormProps) {
               <motion.button
                 type="submit"
                 disabled={loading}
-                className="w-full rounded-lg bg-white px-4 py-2 sm:py-2.5 text-sm sm:text-base font-semibold text-purple-600 shadow-lg transition-all hover:bg-white/90 active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
+                className="w-full bg-purple-700 text-white px-6 py-2 rounded-md hover:bg-purple-600 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
                 whileHover={{ scale: loading ? 1 : 1.02 }}
                 whileTap={{ scale: loading ? 1 : 0.98 }}
               >

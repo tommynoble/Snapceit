@@ -42,7 +42,7 @@ export const OnboardingSlide: React.FC = () => {
         <div className="pointer-events-none absolute inset-0 flex items-center justify-between px-4 sm:px-8">
           <motion.button
             onClick={handlePrev}
-            className="pointer-events-auto group rounded-full bg-white/10 p-2 sm:p-3 text-white/80 backdrop-blur-sm transition-all hover:bg-white/20"
+            className="hidden sm:pointer-events-auto group rounded-full bg-white/10 p-2 sm:p-3 text-white/80 backdrop-blur-sm transition-all hover:bg-white/20 sm:block"
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
           >
@@ -50,7 +50,7 @@ export const OnboardingSlide: React.FC = () => {
           </motion.button>
           <motion.button
             onClick={handleNext}
-            className="pointer-events-auto group rounded-full bg-white/10 p-2 sm:p-3 text-white/80 backdrop-blur-sm transition-all hover:bg-white/20"
+            className="hidden sm:pointer-events-auto group rounded-full bg-white/10 p-2 sm:p-3 text-white/80 backdrop-blur-sm transition-all hover:bg-white/20 sm:block"
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
           >

@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { OnboardingSlide } from './components/onboarding/OnboardingSlide';
 import { LoginForm } from './components/auth/LoginForm';
 import { RegisterForm } from './components/auth/RegisterForm';
@@ -7,6 +7,11 @@ import { DashboardLayout } from './components/dashboard/DashboardLayout';
 import { ReceiptProvider } from './components/dashboard/receipts/ReceiptContext';
 import { AuthProvider, useAuth } from './firebase/AuthContext';
 import { Onboarding } from './components/onboarding/OnboardingQuestionnaire';
+import Navbar from './components/Navbar';
+import { AnimatePresence } from 'framer-motion';
+import { PageTransition } from './components/transitions/PageTransition';
+import Home from './pages/Home';
+import AuthLayout from './components/auth/AuthLayout';
 
 // Protected Route Component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -53,52 +58,80 @@ const OnboardingWrapper: React.FC = () => {
 };
 
 function AppContent() {
+  const location = useLocation();
+
   return (
-    <Router>
-      <Routes>
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
         <Route path="/" element={
           <PublicRoute>
-            <OnboardingSlide />
+            <PageTransition>
+              <Home />
+            </PageTransition>
+          </PublicRoute>
+        } />
+        
+        <Route path="/get-started" element={
+          <PublicRoute>
+            <PageTransition>
+              <OnboardingSlide />
+            </PageTransition>
           </PublicRoute>
         } />
         
         <Route path="/onboarding" element={
           <PublicRoute>
-            <OnboardingWrapper />
+            <PageTransition>
+              <OnboardingWrapper />
+            </PageTransition>
           </PublicRoute>
         } />
         
         <Route path="/login" element={
           <PublicRoute>
-            <LoginForm />
+            <PageTransition>
+              <AuthLayout>
+                <LoginForm />
+              </AuthLayout>
+            </PageTransition>
           </PublicRoute>
         } />
         
         <Route path="/register" element={
           <PublicRoute>
-            <RegisterFormWrapper />
+            <PageTransition>
+              <AuthLayout>
+                <RegisterFormWrapper />
+              </AuthLayout>
+            </PageTransition>
           </PublicRoute>
         } />
         
         <Route path="/dashboard/*" element={
           <ProtectedRoute>
-            <ReceiptProvider>
-              <DashboardLayout />
-            </ReceiptProvider>
+            <PageTransition>
+              <ReceiptProvider>
+                <DashboardLayout />
+              </ReceiptProvider>
+            </PageTransition>
           </ProtectedRoute>
         } />
         
         {/* Catch all route */}
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
-    </Router>
+    </AnimatePresence>
   );
 }
 
 function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <Router>
+        <div className="min-h-screen bg-gradient-to-br from-fuchsia-500 via-purple-600 to-purple-800">
+          <AppContent />
+        </div>
+      </Router>
     </AuthProvider>
   );
 }

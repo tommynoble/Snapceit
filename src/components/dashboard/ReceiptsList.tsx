@@ -21,7 +21,7 @@ export function ReceiptsList() {
   ];
 
   return (
-    <div className="space-y-4">
+    <div className="h-[400px] overflow-y-auto pr-2 space-y-4 scrollbar-thin scrollbar-thumb-purple-200 scrollbar-track-transparent">
       {receipts.map((receipt, index) => (
         <motion.div
           key={receipt.id}
