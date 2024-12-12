@@ -17,7 +17,7 @@ export function RecentReceiptsCard() {
       <div className="h-[400px] overflow-y-auto pr-2 space-y-4 scrollbar-thin scrollbar-thumb-purple-200 scrollbar-track-transparent">
         {receipts.map((receipt, index) => (
           <motion.div
-            key={receipt.id}
+            key={receipt.id || index}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
@@ -29,13 +29,13 @@ export function RecentReceiptsCard() {
               </div>
               <div>
                 <div className="font-medium text-gray-900">
-                  ${receipt.amount.toFixed(2)}
+                  ${(receipt.total || 0).toFixed(2)}
                 </div>
                 <div className="text-sm text-gray-500">
-                  {receipt.merchant}
+                  {receipt.merchant || 'Unknown Merchant'}
                 </div>
                 <div className="mt-1 text-xs text-gray-400">
-                  {receipt.category} • {receipt.date}
+                  {receipt.category || 'Uncategorized'} • {new Date(receipt.date).toLocaleDateString()}
                 </div>
               </div>
             </div>
@@ -45,6 +45,12 @@ export function RecentReceiptsCard() {
             </button>
           </motion.div>
         ))}
+        {receipts.length === 0 && (
+          <div className="flex flex-col items-center justify-center h-full text-gray-500">
+            <Receipt className="h-12 w-12 text-gray-300 mb-2" />
+            <p>No receipts yet</p>
+          </div>
+        )}
       </div>
     </motion.div>
   );
