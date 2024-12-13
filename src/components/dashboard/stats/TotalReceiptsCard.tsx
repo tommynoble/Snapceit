@@ -19,19 +19,27 @@ export function TotalReceiptsCard() {
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm font-medium text-white/80">Total Receipts</p>
-          <h3 className="mt-2 text-3xl font-bold text-white">{stats.totalReceipts.value}</h3>
+          <h3 className="mt-2 text-3xl font-bold text-white">
+            {stats.loading ? '-' : stats.totalReceipts.value}
+          </h3>
         </div>
         <div className="rounded-full bg-gradient-to-r from-purple-500/20 to-purple-600/20 p-3">
           <Receipt className="h-6 w-6 text-white" />
         </div>
       </div>
       
-      {stats.totalReceipts.trend && (
+      {!stats.loading && stats.totalReceipts.trend && (
         <div className="mt-4 flex items-center">
           <span className={`text-sm font-medium ${stats.totalReceipts.trend.isPositive ? 'text-green-400' : 'text-red-400'}`}>
             {stats.totalReceipts.trend.isPositive ? '↑' : '↓'} {Math.abs(stats.totalReceipts.trend.value)}%
           </span>
           <span className="ml-2 text-sm text-white/60">vs last month</span>
+        </div>
+      )}
+
+      {stats.loading && (
+        <div className="mt-4 animate-pulse">
+          <div className="w-32 h-4 bg-white/10 rounded"></div>
         </div>
       )}
 

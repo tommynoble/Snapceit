@@ -5,6 +5,16 @@ import { useStats } from './useStats';
 
 export function CategoriesCard() {
   const stats = useStats();
+  
+  // Calculate total spending and category percentages
+  const totalSpending = Object.values(stats.categoryBreakdown).reduce((sum, amount) => sum + amount, 0);
+  const categories = Object.entries(stats.categoryBreakdown)
+    .map(([category, amount]) => ({
+      category,
+      amount,
+      percentage: totalSpending > 0 ? (amount / totalSpending) * 100 : 0
+    }))
+    .sort((a, b) => b.amount - a.amount);
 
   return (
     <motion.div
@@ -19,7 +29,9 @@ export function CategoriesCard() {
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm font-medium text-white/80">Categories</p>
-          <h3 className="mt-2 text-3xl font-bold text-white">{stats.categories.total}</h3>
+          <h3 className="mt-2 text-3xl font-bold text-white">
+            {stats.loading ? '-' : categories.length}
+          </h3>
         </div>
         <div className="rounded-full bg-gradient-to-r from-purple-500/20 to-purple-600/20 p-3">
           <PieChart className="h-6 w-6 text-white" />
@@ -27,7 +39,7 @@ export function CategoriesCard() {
       </div>
 
       <div className="mt-6 space-y-3">
-        {stats.categories.breakdown.map((category, index) => (
+        {!stats.loading && categories.map((category, index) => (
           <div key={category.category} className="flex items-center justify-between">
             <span className="text-sm text-white/80">{category.category}</span>
             <div className="flex items-center gap-2">
@@ -43,6 +55,19 @@ export function CategoriesCard() {
             </div>
           </div>
         ))}
+        {stats.loading && (
+          <div className="animate-pulse space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex items-center justify-between">
+                <div className="w-20 h-4 bg-white/10 rounded"></div>
+                <div className="flex items-center gap-2">
+                  <div className="w-24 h-2 bg-white/10 rounded-full"></div>
+                  <div className="w-8 h-4 bg-white/10 rounded"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div 

@@ -12,14 +12,14 @@ service cloud.firestore {
     }
 
     // Receipts collection rules
-    match /receipts/{userId}/{document=**} {
-      allow read: if isAuth() && isOwner(userId);
-      allow create: if isAuth() && isOwner(userId)
-        && request.resource.data.keys().hasAll(['date', 'amount', 'category'])
-        && request.resource.data.size() < 10000000; // 10MB limit
-      allow update: if isAuth() && isOwner(userId)
-        && request.resource.data.size() < 10000000;
-      allow delete: if isAuth() && isOwner(userId);
+    match /receipts/{receiptId} {
+      allow read: if isAuth();
+      allow create: if isAuth() 
+        && request.resource.data.userId == request.auth.uid;
+      allow update: if isAuth() 
+        && request.resource.data.userId == request.auth.uid;
+      allow delete: if isAuth() 
+        && resource.data.userId == request.auth.uid;
     }
 
     // User profiles collection rules

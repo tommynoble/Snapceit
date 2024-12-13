@@ -4,7 +4,46 @@ import { AlertTriangle, TrendingUp, Bell } from 'lucide-react';
 import { useStats } from '../stats/useStats';
 
 export function ReminderCard() {
-  const { alerts } = useStats();
+  const stats = useStats();
+
+  // Calculate spending alerts based on stats
+  const getSpendingStatus = () => {
+    if (stats.loading) {
+      return {
+        severity: 'normal',
+        message: 'Loading spending data...',
+      };
+    }
+
+    const spendingTrend = stats.monthlySpending.trend?.value || 0;
+    const totalSpending = stats.monthlySpending.value;
+
+    if (spendingTrend > 20) {
+      return {
+        severity: 'alert',
+        message: `Monthly spending increased by ${Math.round(spendingTrend)}%`,
+      };
+    }
+
+    const categories = Object.entries(stats.categoryBreakdown);
+    const highestCategory = categories.length > 0 
+      ? categories.reduce((a, b) => (b[1] > a[1] ? b : a))
+      : null;
+
+    if (highestCategory && (highestCategory[1] / totalSpending) > 0.5) {
+      return {
+        severity: 'warning',
+        message: `${highestCategory[0]} represents over 50% of spending`,
+      };
+    }
+
+    return {
+      severity: 'normal',
+      message: 'Spending patterns are normal',
+    };
+  };
+
+  const spendingStatus = getSpendingStatus();
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
@@ -55,16 +94,16 @@ export function ReminderCard() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className={`flex items-center justify-between rounded-lg border p-4 ${getSeverityColor(alerts.severity)}`}
+          className={`flex items-center justify-between rounded-lg border p-4 ${getSeverityColor(spendingStatus.severity)}`}
         >
           <div className="flex items-center gap-3">
-            {getSeverityIcon(alerts.severity)}
+            {getSeverityIcon(spendingStatus.severity)}
             <div>
               <div className="font-medium">
-                {alerts.message}
+                {spendingStatus.message}
               </div>
               <div className="text-sm opacity-80">
-                {alerts.severity === 'normal' 
+                {spendingStatus.severity === 'normal' 
                   ? 'Your spending is within normal range'
                   : 'Consider reviewing your spending habits'}
               </div>

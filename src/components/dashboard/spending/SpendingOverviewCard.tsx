@@ -4,59 +4,100 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { useReceipts } from '../receipts/ReceiptContext';
 
 export function SpendingOverviewCard() {
-  const { receipts } = useReceipts();
+  const { receipts, loading } = useReceipts();
 
   // Process data for the chart
   const merchantData = receipts.reduce((acc, receipt) => {
-    if (!acc[receipt.merchant]) {
-      acc[receipt.merchant] = 0;
+    const merchant = receipt.merchant || 'Unknown';
+    if (!acc[merchant]) {
+      acc[merchant] = 0;
     }
-    acc[receipt.merchant] += receipt.amount;
+    acc[merchant] += Number(receipt.total) || 0;
     return acc;
   }, {} as Record<string, number>);
 
   const data = Object.entries(merchantData)
-    .map(([merchant, amount]) => ({
-      merchant,
-      amount,
+    .map(([merchant, total]) => ({
+      merchant: merchant.length > 15 ? `${merchant.slice(0, 15)}...` : merchant,
+      total,
     }))
-    .sort((a, b) => b.amount - a.amount)
+    .sort((a, b) => b.total - a.total)
     .slice(0, 5);
+
+  if (loading) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="rounded-2xl bg-white/10 backdrop-blur-lg p-6 shadow-lg h-[400px]"
+      >
+        <div className="animate-pulse">
+          <div className="h-6 w-48 bg-white/20 rounded mb-8" />
+          <div className="h-[300px] bg-white/10 rounded" />
+        </div>
+      </motion.div>
+    );
+  }
+
+  if (data.length === 0) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="rounded-2xl bg-white/10 backdrop-blur-lg p-6 shadow-lg h-[400px] flex flex-col items-center justify-center"
+      >
+        <h3 className="text-lg font-semibold text-white mb-2">No Spending Data</h3>
+        <p className="text-white/60 text-center">
+          Add some receipts to see your spending overview
+        </p>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="rounded-2xl bg-white p-6 shadow-lg h-[400px]"
+      className="rounded-2xl bg-white/10 backdrop-blur-lg p-6 shadow-lg h-[400px]"
     >
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">Spending Overview</h3>
+      <h3 className="text-lg font-semibold text-white mb-4">Top Merchants by Spending</h3>
       
       <div className="h-[300px] w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+          <BarChart 
+            data={data} 
+            margin={{ top: 20, right: 30, left: 20, bottom: 30 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
             <XAxis 
               dataKey="merchant" 
-              stroke="#6B7280"
+              stroke="rgba(255,255,255,0.6)"
               fontSize={12}
+              angle={-45}
+              textAnchor="end"
+              height={60}
+              tickMargin={5}
             />
             <YAxis 
-              stroke="#6B7280"
+              stroke="rgba(255,255,255,0.6)"
               fontSize={12}
-              tickFormatter={(value) => `$${value}`}
+              tickFormatter={(value) => `$${value.toFixed(0)}`}
             />
             <Tooltip
               contentStyle={{
-                backgroundColor: 'white',
+                backgroundColor: 'rgba(255,255,255,0.1)',
+                backdropFilter: 'blur(10px)',
                 border: 'none',
                 borderRadius: '8px',
                 boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                color: 'white',
               }}
               formatter={(value: number) => [`$${value.toFixed(2)}`, 'Total Spent']}
+              cursor={{ fill: 'rgba(255,255,255,0.05)' }}
             />
             <Bar 
-              dataKey="amount" 
-              fill="#8B5CF6"
+              dataKey="total" 
+              fill="rgba(255, 255, 255, 0.4)"  // White with lower opacity
               radius={[4, 4, 0, 0]}
             />
           </BarChart>

@@ -1,126 +1,159 @@
 import { useReceipts } from '../receipts/ReceiptContext';
 
 export function useStats() {
-  const { receipts } = useReceipts();
+  const { receipts, loading } = useReceipts();
+
+  if (loading) {
+    return {
+      totalReceipts: {
+        value: 0,
+        trend: { value: 0, isPositive: true }
+      },
+      monthlySpending: {
+        value: 0,
+        trend: { value: 0, isPositive: true }
+      },
+      averageTransaction: {
+        value: 0,
+        trend: { value: 0, isPositive: true }
+      },
+      categoryBreakdown: {},
+      loading: true
+    };
+  }
 
   // Calculate total receipts
   const totalReceipts = receipts.length;
-  const lastMonthReceipts = receipts.filter(receipt => {
-    const date = new Date(receipt.date);
-    const lastMonth = new Date();
-    lastMonth.setMonth(lastMonth.getMonth() - 1);
-    return date >= lastMonth;
-  }).length;
-  const receiptsTrend = lastMonthReceipts ? 
-    ((totalReceipts - lastMonthReceipts) / lastMonthReceipts) * 100 : 0;
 
-  // Calculate monthly spending
-  const currentMonthSpending = receipts.reduce((total, receipt) => {
-    const date = new Date(receipt.date);
-    const currentMonth = new Date();
-    if (date.getMonth() === currentMonth.getMonth()) {
-      return total + receipt.amount;
-    }
-    return total;
-  }, 0);
+  // Get current month's receipts
+  const currentDate = new Date();
+  const currentMonth = currentDate.getMonth();
+  const currentYear = currentDate.getFullYear();
 
-  const lastMonthSpending = receipts.reduce((total, receipt) => {
-    const date = new Date(receipt.date);
-    const lastMonth = new Date();
-    lastMonth.setMonth(lastMonth.getMonth() - 1);
-    if (date.getMonth() === lastMonth.getMonth()) {
-      return total + receipt.amount;
-    }
-    return total;
-  }, 0);
-
-  const spendingTrend = lastMonthSpending ? 
-    ((currentMonthSpending - lastMonthSpending) / lastMonthSpending) * 100 : 0;
-
-  // Calculate average transaction
-  const currentMonthTransactions = receipts.filter(receipt => {
-    const date = new Date(receipt.date);
-    const currentMonth = new Date();
-    return date.getMonth() === currentMonth.getMonth();
+  console.log('Calculating stats for:', { 
+    currentMonth: currentMonth + 1, 
+    currentYear,
+    totalReceipts: receipts.length,
+    receipts 
   });
 
-  const averageTransaction = currentMonthTransactions.length > 0 
-    ? currentMonthSpending / currentMonthTransactions.length 
+  const currentMonthReceipts = receipts.filter(receipt => {
+    // Ensure we have a valid date
+    const receiptDate = new Date(receipt.date);
+    if (isNaN(receiptDate.getTime())) {
+      console.warn('Invalid date found:', receipt.date);
+      return false;
+    }
+
+    const isCurrentMonth = receiptDate.getMonth() === currentMonth;
+    const isCurrentYear = receiptDate.getFullYear() === currentYear;
+    
+    console.log('Checking receipt:', {
+      id: receipt.id,
+      date: receipt.date,
+      parsedDate: receiptDate,
+      total: receipt.total,
+      isCurrentMonth,
+      isCurrentYear,
+      included: isCurrentMonth && isCurrentYear
+    });
+    
+    return isCurrentMonth && isCurrentYear;
+  });
+
+  console.log('Current month receipts:', currentMonthReceipts);
+
+  // Get last month's receipts
+  const lastMonthDate = new Date(currentDate);
+  lastMonthDate.setMonth(lastMonthDate.getMonth() - 1);
+  const lastMonth = lastMonthDate.getMonth();
+  const lastMonthYear = lastMonthDate.getFullYear();
+
+  const lastMonthReceipts = receipts.filter(receipt => {
+    const receiptDate = new Date(receipt.date);
+    return receiptDate.getMonth() === lastMonth && 
+           receiptDate.getFullYear() === lastMonthYear;
+  });
+
+  // Calculate monthly spending with validation
+  const currentMonthSpending = currentMonthReceipts.reduce((total, receipt) => {
+    const amount = Number(receipt.total) || 0;
+    console.log('Adding to monthly total:', {
+      receiptId: receipt.id,
+      currentTotal: total,
+      receiptTotal: amount,
+      newTotal: total + amount
+    });
+    return total + amount;
+  }, 0);
+
+  console.log('Monthly spending calculation:', {
+    totalReceipts: receipts.length,
+    currentMonthReceipts: currentMonthReceipts.length,
+    currentMonthSpending,
+    receiptsWithTotals: currentMonthReceipts.map(r => ({ id: r.id, total: r.total }))
+  });
+
+  const lastMonthSpending = lastMonthReceipts.reduce((total, receipt) => {
+    return total + (receipt.total || 0);
+  }, 0);
+
+  // Calculate spending trend
+  const spendingTrend = lastMonthSpending > 0 
+    ? ((currentMonthSpending - lastMonthSpending) / lastMonthSpending) * 100 
     : 0;
 
-  const lastMonthAverageTransaction = lastMonthReceipts > 0 
-    ? lastMonthSpending / lastMonthReceipts 
+  // Calculate average transaction
+  const averageTransaction = currentMonthReceipts.length > 0 
+    ? currentMonthSpending / currentMonthReceipts.length 
     : 0;
 
-  const averageTransactionTrend = lastMonthAverageTransaction 
+  const lastMonthAverageTransaction = lastMonthReceipts.length > 0
+    ? lastMonthSpending / lastMonthReceipts.length
+    : 0;
+
+  const averageTransactionTrend = lastMonthAverageTransaction > 0
     ? ((averageTransaction - lastMonthAverageTransaction) / lastMonthAverageTransaction) * 100 
     : 0;
 
-  // Calculate categories
-  const categories = receipts.reduce((acc, receipt) => {
-    acc[receipt.category] = (acc[receipt.category] || 0) + receipt.amount;
+  // Calculate receipts trend
+  const receiptsTrend = lastMonthReceipts.length > 0
+    ? ((currentMonthReceipts.length - lastMonthReceipts.length) / lastMonthReceipts.length) * 100
+    : 0;
+
+  // Calculate category breakdown
+  const categoryBreakdown = receipts.reduce((acc, receipt) => {
+    const category = receipt.category || 'Uncategorized';
+    if (!acc[category]) {
+      acc[category] = 0;
+    }
+    acc[category] += receipt.total || 0;
     return acc;
   }, {} as Record<string, number>);
-
-  const totalCategories = Object.keys(categories).length;
-  const categoryBreakdown = Object.entries(categories)
-    .map(([category, amount]) => ({
-      category,
-      amount,
-      percentage: (amount / currentMonthSpending) * 100
-    }))
-    .sort((a, b) => b.amount - a.amount);
-
-  // Calculate spending alerts
-  const spendingAlerts = {
-    highSpending: spendingTrend > 20,
-    unusualTransaction: averageTransactionTrend > 30,
-    categorySpike: categoryBreakdown.some(cat => cat.percentage > 50),
-    message: '',
-    severity: 'normal' as 'normal' | 'warning' | 'alert'
-  };
-
-  if (spendingAlerts.highSpending) {
-    spendingAlerts.message = `Monthly spending increased by ${Math.round(spendingTrend)}%`;
-    spendingAlerts.severity = 'alert';
-  } else if (spendingAlerts.unusualTransaction) {
-    spendingAlerts.message = `Average transaction amount increased by ${Math.round(averageTransactionTrend)}%`;
-    spendingAlerts.severity = 'warning';
-  } else if (spendingAlerts.categorySpike) {
-    const highestCategory = categoryBreakdown[0];
-    spendingAlerts.message = `${highestCategory.category} represents ${Math.round(highestCategory.percentage)}% of spending`;
-    spendingAlerts.severity = 'warning';
-  } else {
-    spendingAlerts.message = 'Spending patterns are normal';
-    spendingAlerts.severity = 'normal';
-  }
 
   return {
     totalReceipts: {
       value: totalReceipts,
       trend: {
-        value: Math.round(receiptsTrend),
+        value: receiptsTrend,
         isPositive: receiptsTrend >= 0
       }
     },
     monthlySpending: {
       value: currentMonthSpending,
       trend: {
-        value: Math.round(spendingTrend),
+        value: spendingTrend,
         isPositive: spendingTrend >= 0
       }
     },
     averageTransaction: {
       value: averageTransaction,
       trend: {
-        value: Math.round(averageTransactionTrend),
+        value: averageTransactionTrend,
         isPositive: averageTransactionTrend >= 0
       }
     },
-    categories: {
-      total: totalCategories,
-      breakdown: categoryBreakdown
-    },
-    alerts: spendingAlerts
+    categoryBreakdown,
+    loading: false
   };
 }

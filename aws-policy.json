@@ -1,0 +1,41 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "s3:CreateBucket",
+                "s3:PutObject",
+                "s3:GetObject",
+                "s3:ListBucket",
+                "s3:PutBucketPolicy",
+                "s3:PutBucketAcl",
+                "s3:PutBucketCors"
+            ],
+            "Resource": [
+                "arn:aws:s3:::snapceit/*",
+                "arn:aws:s3:::snapceit"
+            ]
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "s3:PutObject",
+                "s3:GetObject",
+                "s3:ListBucket"
+            ],
+            "Resource": [
+                "arn:aws:s3:::snapceit/*",
+                "arn:aws:s3:::snapceit"
+            ]
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "textract:AnalyzeExpense",
+                "textract:GetExpenseAnalysis"
+            ],
+            "Resource": "*"
+        }
+    ]
+}

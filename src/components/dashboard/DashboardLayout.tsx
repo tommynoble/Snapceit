@@ -13,6 +13,8 @@ import { UserProfileModal } from './user/UserProfileModal';
 import { SpendingHabitsPage } from './spending/SpendingHabitsPage';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../firebase/AuthContext';
+import logo from '../../../images/logo.svg';
 
 export function DashboardLayout() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -20,10 +22,15 @@ export function DashboardLayout() {
   const [showSpendingHabits, setShowSpendingHabits] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
+  const { logout } = useAuth();
 
-  const handleLogout = () => {
-    // Add your logout logic here
-    navigate('/');
+  const handleLogout = async () => {
+    try {
+      await logout();
+      window.location.href = 'http://localhost:5184/';  // Redirect to main site
+    } catch (error) {
+      console.error('Error logging out:', error);
+    }
   };
 
   if (showSpendingHabits) {
@@ -33,7 +40,7 @@ export function DashboardLayout() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#D444EF]/5 via-[#AF3AEB]/5 to-purple-900/5">
       <nav className="flex items-center justify-between px-6 py-4">
-        <div className="text-2xl font-bold text-white">S</div>
+        <img src={logo} alt="Snapceit" className="h-16 md:h-16 h-12 w-auto" />
         <div className="flex items-center gap-4">
           <button 
             onClick={() => setShowSpendingHabits(true)}

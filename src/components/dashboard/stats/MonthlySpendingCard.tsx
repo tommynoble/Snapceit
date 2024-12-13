@@ -5,6 +5,7 @@ import { useStats } from './useStats';
 
 export function MonthlySpendingCard() {
   const stats = useStats();
+  console.log('Monthly spending stats:', stats);
   const formattedValue = new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD'
@@ -23,19 +24,27 @@ export function MonthlySpendingCard() {
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm font-medium text-white/80">Monthly Spending</p>
-          <h3 className="mt-2 text-3xl font-bold text-white">{formattedValue}</h3>
+          <h3 className="mt-2 text-3xl font-bold text-white">
+            {stats.loading ? '-' : formattedValue}
+          </h3>
         </div>
         <div className="rounded-full bg-gradient-to-r from-purple-500/20 to-purple-600/20 p-3">
           <TrendingUp className="h-6 w-6 text-white" />
         </div>
       </div>
       
-      {stats.monthlySpending.trend && (
+      {!stats.loading && stats.monthlySpending.trend && (
         <div className="mt-4 flex items-center">
           <span className={`text-sm font-medium ${stats.monthlySpending.trend.isPositive ? 'text-green-400' : 'text-red-400'}`}>
             {stats.monthlySpending.trend.isPositive ? '↑' : '↓'} {Math.abs(stats.monthlySpending.trend.value)}%
           </span>
           <span className="ml-2 text-sm text-white/60">vs last month</span>
+        </div>
+      )}
+
+      {stats.loading && (
+        <div className="mt-4 animate-pulse">
+          <div className="w-32 h-4 bg-white/10 rounded"></div>
         </div>
       )}
 

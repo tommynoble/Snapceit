@@ -1,4 +1,11 @@
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { 
+  S3Client, 
+  PutObjectCommand, 
+  CreateBucketCommand, 
+  HeadBucketCommand, 
+  PutBucketPolicyCommand,
+  PutBucketCorsCommand 
+} from '@aws-sdk/client-s3';
 
 const s3Client = new S3Client({
   region: import.meta.env.VITE_AWS_REGION || 'us-east-1',
@@ -10,67 +17,107 @@ const s3Client = new S3Client({
 
 const BUCKET_NAME = 'snapceit';
 
-export const uploadToS3 = async (
-  file: File, 
-  userId: string,
-  onProgress?: (progress: number) => void
-): Promise<string> => {
+// Function to ensure bucket exists with correct permissions
+const ensureBucketExists = async () => {
   try {
+    // Check if bucket exists
+    try {
+      await s3Client.send(new HeadBucketCommand({ Bucket: BUCKET_NAME }));
+      return; // Bucket exists
+    } catch (error) {
+      // Bucket doesn't exist, create it
+      await s3Client.send(new CreateBucketCommand({ 
+        Bucket: BUCKET_NAME
+      }));
+
+      // Set bucket policy to allow public read
+      const bucketPolicy = {
+        Version: '2012-10-17',
+        Statement: [
+          {
+            Sid: 'PublicRead',
+            Effect: 'Allow',
+            Principal: '*',
+            Action: ['s3:GetObject'],
+            Resource: [`arn:aws:s3:::${BUCKET_NAME}/*`]
+          }
+        ]
+      };
+
+      // Set bucket policy
+      await s3Client.send(new PutBucketPolicyCommand({
+        Bucket: BUCKET_NAME,
+        Policy: JSON.stringify(bucketPolicy)
+      }));
+
+      // Set CORS configuration
+      const corsConfig = {
+        CORSRules: [
+          {
+            AllowedHeaders: ["*"],
+            AllowedMethods: ["PUT", "POST", "GET", "HEAD"],
+            AllowedOrigins: [
+              "http://localhost:5184",
+              "https://your-production-domain.com" // Add your production domain when ready
+            ],
+            ExposeHeaders: ["ETag"]
+          }
+        ]
+      };
+
+      await s3Client.send(new PutBucketCorsCommand({
+        Bucket: BUCKET_NAME,
+        CORSConfiguration: corsConfig
+      }));
+      
+      console.log('Created bucket with CORS configuration:', BUCKET_NAME);
+    }
+  } catch (error) {
+    console.error('Error ensuring bucket exists:', error);
+    throw error;
+  }
+};
+
+export const uploadToS3 = async (
+  file: File | Blob, 
+  key: string,
+  onProgress?: (progress: number) => void
+): Promise<{ url: string; key: string }> => {
+  try {
+    await ensureBucketExists();
+
     // Validate file
     if (!file) {
       throw new Error('No file provided');
     }
 
-    // Clean the filename and ensure safe extension
-    const originalName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-    const fileExtension = originalName.split('.').pop()?.toLowerCase() || 'jpg';
-    const timestamp = Date.now();
-    const key = `receipts/${userId}/${timestamp}_${Math.random().toString(36).substring(7)}.${fileExtension}`;
+    // Convert File/Blob to Uint8Array
+    const arrayBuffer = await file.arrayBuffer();
+    const uint8Array = new Uint8Array(arrayBuffer);
 
     // Prepare the upload command
     const command = new PutObjectCommand({
       Bucket: BUCKET_NAME,
       Key: key,
-      Body: file,
-      ContentType: file.type || 'application/octet-stream',
-      Metadata: {
-        'original-name': originalName,
-        'upload-date': new Date().toISOString(),
-        'user-id': userId,
-      },
+      Body: uint8Array,
+      ContentType: file instanceof File ? file.type : 'application/json'
     });
 
     // Attempt the upload
-    try {
-      await s3Client.send(command);
-      
-      // Call progress callback if provided
-      if (onProgress) {
-        onProgress(100);
-      }
-      
-      // Return the S3 URL
-      return `https://${BUCKET_NAME}.s3.${import.meta.env.VITE_AWS_REGION || 'us-east-1'}.amazonaws.com/${key}`;
-    } catch (uploadError) {
-      console.error('S3 Upload Error:', uploadError);
-      if (uploadError instanceof Error) {
-        // Check for specific AWS errors
-        if (uploadError.message.includes('InvalidAccessKeyId')) {
-          throw new Error('Invalid AWS credentials. Please check your access key.');
-        } else if (uploadError.message.includes('SignatureDoesNotMatch')) {
-          throw new Error('Invalid AWS credentials. Please check your secret key.');
-        } else if (uploadError.message.includes('NoSuchBucket')) {
-          throw new Error('S3 bucket not found. Please check your bucket configuration.');
-        }
-        throw new Error(`Upload failed: ${uploadError.message}`);
-      }
-      throw new Error('Upload failed. Please try again.');
+    await s3Client.send(command);
+    
+    // Call progress callback if provided
+    if (onProgress) {
+      onProgress(100);
     }
+    
+    // Return both the URL and key
+    return {
+      url: `https://${BUCKET_NAME}.s3.${import.meta.env.VITE_AWS_REGION || 'us-east-1'}.amazonaws.com/${key}`,
+      key: key
+    };
   } catch (error) {
-    console.error('Error in uploadToS3:', error);
-    if (error instanceof Error) {
-      throw new Error(`Upload failed: ${error.message}`);
-    }
-    throw new Error('Upload failed due to an unknown error.');
+    console.error('Error uploading to S3:', error);
+    throw new Error('Upload failed: ' + (error as Error).message);
   }
 };

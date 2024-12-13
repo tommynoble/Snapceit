@@ -1,19 +1,22 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Camera, Upload, Loader, AlertCircle } from 'lucide-react';
+import { Camera, Upload, Loader, AlertCircle, Check, X } from 'lucide-react';
 import { useReceipts } from '../receipts/ReceiptContext';
 import { useAuth } from '../../../firebase/AuthContext';
-import { uploadToS3 } from '../../../utils/s3';
+import { processReceipt } from '../../../utils/receipt-processor';
 import { toast } from 'react-hot-toast';
 import { useDropzone } from 'react-dropzone';
 
-interface ProcessedReceipt {
-  date: string;
-  total: number;
-  merchant: string;
-  items: Array<{ name: string; price: number }>;
-  category: string;
-  status: 'processing' | 'completed' | 'error';
+interface ExtractedData {
+  merchantName?: string;
+  total?: number;
+  date?: string;
+  items?: Array<{
+    description: string;
+    price: number;
+  }>;
+  imageUrl: string;
+  dataUrl: string;  // URL to the JSON data in S3
 }
 
 const MAX_FILE_SIZE = 10000000; // 10MB
@@ -29,36 +32,51 @@ export function UploadReceiptCard() {
   const [isLoading, setIsLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [extractedData, setExtractedData] = useState<ExtractedData | null>(null);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState('Uncategorized');
   const abortControllerRef = useRef<AbortController | null>(null);
+
+  const categories = [
+    'Food & Dining',
+    'Shopping',
+    'Transportation',
+    'Entertainment',
+    'Healthcare',
+    'Utilities',
+    'Travel',
+    'Other'
+  ];
 
   // Debug log for auth state
   useEffect(() => {
     console.log('Auth State:', { currentUser });
   }, [currentUser]);
 
-  const validateReceiptData = (data: Partial<ProcessedReceipt>): data is ProcessedReceipt => {
-    return !!(
-      data.date &&
-      typeof data.total === 'number' &&
-      data.merchant &&
-      Array.isArray(data.items) &&
-      data.category &&
-      data.status
-    );
-  };
-
   const cancelUpload = () => {
+    // Cancel any ongoing upload
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
-      setIsLoading(false);
-      setUploadProgress(0);
-      setError(null);
-      toast.error('Upload cancelled');
+    }
+    
+    // Reset all states
+    setIsLoading(false);
+    setUploadProgress(0);
+    setError(null);
+    setIsVerifying(false);
+    setSelectedCategory('Uncategorized');
+    setExtractedData(null);
+    
+    // Clean up preview URL
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+      setPreviewUrl(null);
     }
   };
 
-  const processReceipt = async (file: File) => {
+  const handleReceipt = async (file: File) => {
     if (!currentUser) {
       toast.error('Please log in to upload receipts');
       return;
@@ -78,240 +96,264 @@ export function UploadReceiptCard() {
     setUploadProgress(0);
     setError(null);
 
-    // Create new AbortController for this upload
-    abortControllerRef.current = new AbortController();
+    // Create preview URL
+    const preview = URL.createObjectURL(file);
+    setPreviewUrl(preview);
 
     try {
-      // Compress image if it's an image file
-      let processedFile = file;
-      if (file.type.startsWith('image/')) {
-        processedFile = await compressImage(file);
-      }
-
-      // Upload to S3 with progress tracking
-      const s3Url = await uploadToS3(processedFile, currentUser.uid, (progress) => {
-        setUploadProgress(progress);
+      // Process the receipt with our updated utility
+      const result = await processReceipt(file, currentUser.uid, setUploadProgress);
+      
+      // Update state with extracted data
+      setExtractedData({
+        merchantName: result.merchantName,
+        total: result.total,
+        date: result.date,
+        items: result.items,
+        imageUrl: result.imageUrl,
+        dataUrl: result.dataUrl
       });
-
-      let receiptData;
       
-      try {
-        // Send S3 URL to backend for Textract processing
-        const response = await fetch('http://localhost:3000/api/scan-receipt', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${await currentUser.getIdToken()}`,
-          },
-          body: JSON.stringify({ 
-            imageUrl: s3Url,
-            userId: currentUser.uid 
-          }),
-          signal: abortControllerRef.current.signal
-        });
-
-        if (!response.ok) {
-          throw new Error(`Failed to process receipt: ${response.statusText}`);
-        }
-
-        receiptData = await response.json();
-      } catch (error) {
-        console.warn('Backend processing failed, storing receipt without extracted data:', error);
-        // If backend fails, store basic receipt info
-        receiptData = {
-          date: new Date().toISOString(),
-          total: 0,
-          merchant: 'Receipt Uploaded',
-          items: [],
-          status: 'processing' as const
-        };
+      // Set the detected category if available
+      if (result.category) {
+        setSelectedCategory(result.category);
       }
       
-      // Validate and format receipt data
-      const formattedReceipt = {
-        date: receiptData.date || new Date().toISOString(),
-        total: Number(receiptData.total) || 0,
-        merchant: receiptData.merchant || 'Receipt Uploaded',
-        items: Array.isArray(receiptData.items) ? receiptData.items : [],
-        category: 'Uncategorized',
-        status: 'completed' as const,
-        imageUrl: s3Url,
-        uploadedAt: new Date().toISOString(),
-        userId: currentUser.uid,
-      };
-
-      // Add to Firestore through context
-      await addReceipt(formattedReceipt);
-
-      toast.success('Receipt uploaded successfully');
-      
-    } catch (error) {
-      if (error instanceof Error) {
-        if (error.name === 'AbortError') {
-          return; // Upload was cancelled, don't show error
-        }
-        setError(error.message);
-        console.error('Error processing receipt:', error);
-        toast.error(error.message);
-      }
-      
-      // Attempt to add failed receipt to Firestore for retry
-      try {
-        await addReceipt({
-          userId: currentUser.uid,
-          imageUrl: '',
-          date: new Date().toISOString(),
-          total: 0,
-          merchant: 'Processing Failed',
-          items: [],
-          category: 'Uncategorized',
-          status: 'error' as const,
-          error: error instanceof Error ? error.message : 'Unknown error',
-          uploadedAt: new Date().toISOString(),
-        });
-      } catch (firebaseError) {
-        console.error('Failed to save error state:', firebaseError);
-      }
-    } finally {
+      setIsVerifying(true);
       setIsLoading(false);
-      setUploadProgress(0);
-      abortControllerRef.current = null;
+    } catch (error) {
+      console.error('Receipt processing error:', error);
+      setError(error instanceof Error ? error.message : 'Failed to process receipt');
+      toast.error('Failed to process receipt');
+      setIsLoading(false);
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+        setPreviewUrl(null);
+      }
     }
   };
 
-  const compressImage = async (file: File): Promise<File> => {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.src = URL.createObjectURL(file);
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        if (!ctx) {
-          resolve(file);
-          return;
-        }
+  const confirmAndUpload = async () => {
+    if (!extractedData) return;
 
-        // Calculate new dimensions while maintaining aspect ratio
-        let width = img.width;
-        let height = img.height;
-        const maxDimension = 1920;
+    try {
+      // Add to Firestore through ReceiptContext
+      await addReceipt({
+        merchant: extractedData.merchantName || '',
+        total: extractedData.total || 0,
+        date: extractedData.date || new Date().toISOString(),
+        items: extractedData.items?.map(item => ({
+          name: item.description,
+          price: item.price
+        })) || [],
+        imageUrl: extractedData.imageUrl,
+        status: 'completed',
+        category: selectedCategory // Use the selected category
+      });
 
-        if (width > height && width > maxDimension) {
-          height = (height * maxDimension) / width;
-          width = maxDimension;
-        } else if (height > maxDimension) {
-          width = (width * maxDimension) / height;
-          height = maxDimension;
-        }
-
-        canvas.width = width;
-        canvas.height = height;
-        ctx.drawImage(img, 0, 0, width, height);
-
-        canvas.toBlob(
-          (blob) => {
-            if (blob) {
-              resolve(new File([blob], file.name, { type: 'image/jpeg' }));
-            } else {
-              resolve(file);
-            }
-          },
-          'image/jpeg',
-          0.8
-        );
-      };
-      img.onerror = () => resolve(file);
-    });
+      toast.success('Receipt uploaded successfully!');
+      
+    } catch (error) {
+      console.error('Upload error:', error);
+      setError(error instanceof Error ? error.message : 'Failed to upload receipt');
+      toast.error('Failed to upload receipt');
+    } finally {
+      setIsLoading(false);
+      setIsVerifying(false);
+      setExtractedData(null);
+      setSelectedCategory('Uncategorized'); // Reset category
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+        setPreviewUrl(null);
+      }
+    }
   };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop: useCallback((acceptedFiles) => {
-      if (acceptedFiles?.[0]) {
-        processReceipt(acceptedFiles[0]);
+    onDrop: useCallback((acceptedFiles: File[]) => {
+      if (acceptedFiles.length > 0) {
+        handleReceipt(acceptedFiles[0]);
       }
     }, []),
     accept: ACCEPTED_FILE_TYPES,
     maxSize: MAX_FILE_SIZE,
-    multiple: false,
-    disabled: isLoading
+    multiple: false
   });
 
-  const handleCameraCapture = () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = Object.keys(ACCEPTED_FILE_TYPES).join(',');
-    input.capture = 'environment';
-    input.onchange = (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (file) {
-        processReceipt(file);
-      }
-    };
-    input.click();
-  };
-
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="rounded-2xl bg-white p-6 shadow-lg"
-    >
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">Upload Receipt</h3>
+    <div className="bg-white rounded-lg shadow-md p-6">
+      <h2 className="text-2xl font-semibold mb-4">Upload Receipt</h2>
       
-      <div className="space-y-4">
-        <button
-          onClick={handleCameraCapture}
-          disabled={isLoading}
-          className="w-full flex items-center justify-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-white hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isLoading ? <Loader className="animate-spin" size={20} /> : <Camera size={20} />}
-          {isLoading ? `Processing (${uploadProgress}%)` : 'Capture Receipt'}
-        </button>
-
+      {!isVerifying ? (
         <div
           {...getRootProps()}
-          className={`relative border-2 border-dashed ${
-            isDragActive ? 'border-purple-500 bg-purple-50' : 'border-gray-300'
-          } p-6 rounded-lg text-center cursor-pointer transition-colors duration-200`}
+          className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors
+            ${isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-blue-500'}`}
         >
           <input {...getInputProps()} />
-          <div className="flex flex-col items-center space-y-2">
-            <div className="rounded-full bg-purple-100 p-3">
-              {isLoading ? (
-                <Loader className="h-6 w-6 text-purple-600 animate-spin" />
-              ) : error ? (
-                <AlertCircle className="h-6 w-6 text-red-600" />
-              ) : (
-                <Upload className="h-6 w-6 text-purple-600" />
-              )}
-            </div>
-            <p className="text-sm text-gray-600">
-              {isLoading ? (
-                <span>Processing receipt... {uploadProgress}%
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      cancelUpload();
-                    }}
-                    className="ml-2 text-red-600 hover:text-red-700"
-                  >
-                    Cancel
-                  </button>
-                </span>
-              ) : error ? (
-                <span className="text-red-600">{error}</span>
-              ) : (
-                'Drag and drop your receipt here, or click to browse'
-              )}
+          <div className="flex flex-col items-center space-y-4">
+            <Upload className="w-12 h-12 text-gray-400" />
+            <p className="text-gray-600">
+              {isDragActive ? 'Drop the receipt here' : 'Drag & drop a receipt, or click to select'}
             </p>
-            {!isLoading && !error && (
-              <p className="text-xs text-gray-500">
-                Supported formats: JPG, PNG, PDF (max 10MB)
-              </p>
-            )}
+            <p className="text-sm text-gray-500">
+              Supported formats: JPG, PNG, PDF (max 10MB)
+            </p>
           </div>
         </div>
-      </div>
-    </motion.div>
+      ) : (
+        <div className="space-y-6">
+          {/* Preview Section */}
+          {previewUrl && (
+            <div className="relative w-full max-w-md mx-auto">
+              <img 
+                src={previewUrl} 
+                alt="Receipt preview" 
+                className="w-full h-auto rounded-lg shadow-md"
+              />
+            </div>
+          )}
+
+          {/* Verification Form */}
+          <div className="space-y-4">
+            <div className="grid gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Merchant
+                </label>
+                <input
+                  type="text"
+                  value={extractedData?.merchantName || ''}
+                  onChange={(e) => setExtractedData(prev => prev ? {
+                    ...prev,
+                    merchantName: e.target.value
+                  } : null)}
+                  className="w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Total Amount
+                </label>
+                <input
+                  type="number"
+                  value={extractedData?.total || 0}
+                  onChange={(e) => setExtractedData(prev => prev ? {
+                    ...prev,
+                    total: parseFloat(e.target.value)
+                  } : null)}
+                  className="w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Date
+                </label>
+                <input
+                  type="date"
+                  value={extractedData?.date ? new Date(extractedData.date).toISOString().split('T')[0] : ''}
+                  onChange={(e) => setExtractedData(prev => prev ? {
+                    ...prev,
+                    date: e.target.value
+                  } : null)}
+                  className="w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Category
+                </label>
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500"
+                >
+                  {categories.map(category => (
+                    <option key={category} value={category}>
+                      {category}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {extractedData.items && extractedData.items.length > 0 && (
+                <div>
+                  <h4 className="font-medium mb-2">Items</h4>
+                  <div className="space-y-2">
+                    {extractedData.items.map((item, index) => (
+                      <div key={index} className="flex items-center space-x-2">
+                        <input 
+                          type="text" 
+                          value={item.description} 
+                          onChange={(e) => {
+                            const newItems = [...extractedData.items!];
+                            newItems[index].description = e.target.value;
+                            setExtractedData(prev => prev ? {...prev, items: newItems} : null);
+                          }}
+                          className="flex-1 p-2 border rounded"
+                        />
+                        <input 
+                          type="number" 
+                          value={item.price} 
+                          onChange={(e) => {
+                            const newItems = [...extractedData.items!];
+                            newItems[index].price = parseFloat(e.target.value);
+                            setExtractedData(prev => prev ? {...prev, items: newItems} : null);
+                          }}
+                          className="w-24 p-2 border rounded"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end space-x-4 mt-6">
+              <button
+                onClick={cancelUpload}
+                className="px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg flex items-center space-x-2"
+              >
+                <X className="w-4 h-4" />
+                <span>Cancel</span>
+              </button>
+              
+              <button
+                onClick={confirmAndUpload}
+                className="px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg flex items-center space-x-2"
+              >
+                <Check className="w-4 h-4" />
+                <span>Confirm & Upload</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isLoading && !isVerifying && (
+        <div className="mt-4">
+          <div className="flex items-center space-x-2">
+            <Loader className="w-5 h-5 animate-spin" />
+            <span>Processing receipt...</span>
+          </div>
+          <div className="mt-2 h-2 bg-gray-200 rounded-full">
+            <div
+              className="h-full bg-blue-500 rounded-full transition-all duration-300"
+              style={{ width: `${uploadProgress}%` }}
+            />
+          </div>
+        </div>
+      )}
+
+      {error && (
+        <div className="mt-4 p-4 bg-red-50 text-red-600 rounded-lg flex items-center space-x-2">
+          <AlertCircle className="w-5 h-5" />
+          <span>{error}</span>
+        </div>
+      )}
+    </div>
   );
 }

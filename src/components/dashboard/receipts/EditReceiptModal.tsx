@@ -1,24 +1,12 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { X, Calendar, Building2, Tag } from 'lucide-react';
+import { Calendar, Building2, Tag, X } from 'lucide-react';
 
 interface EditReceiptModalProps {
   isOpen: boolean;
   onClose: () => void;
-  receipt: {
-    id: number;
-    date: string;
-    amount: number;
-    merchant: string;
-    category: string;
-    preview?: string;
-  };
-  onSave: (id: number, data: {
-    date: string;
-    amount: number;
-    merchant: string;
-    category: string;
-  }) => void;
+  receipt: any;
+  onSave: (id: string, data: any) => void;
 }
 
 export function EditReceiptModal({ isOpen, onClose, receipt, onSave }: EditReceiptModalProps) {
@@ -57,15 +45,19 @@ export function EditReceiptModal({ isOpen, onClose, receipt, onSave }: EditRecei
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Format the date back to the desired display format
-    const displayDate = new Date(formData.date).toLocaleDateString('en-US', {
+    // Format the date to ISO string first to ensure proper date handling
+    const isoDate = new Date(formData.date).toISOString();
+    
+    // Then format for display
+    const displayDate = new Date(isoDate).toLocaleDateString('en-US', {
+      year: 'numeric',
       month: 'long',
       day: 'numeric'
     });
 
     onSave(receipt.id, {
       ...formData,
-      date: displayDate
+      date: isoDate // Store the ISO date string
     });
     onClose();
   };
