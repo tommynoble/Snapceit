@@ -29,7 +29,9 @@ export function SpendingOverviewCard() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="rounded-2xl bg-white/10 backdrop-blur-lg p-6 shadow-lg h-[400px]"
+        whileHover={{ scale: 1.01 }}
+        transition={{ duration: 0.2 }}
+        className="rounded-2xl bg-white/10 backdrop-blur-lg p-6 shadow-lg hover:shadow-xl transition-shadow duration-200 h-[400px]"
       >
         <div className="animate-pulse">
           <div className="h-6 w-48 bg-white/20 rounded mb-8" />
@@ -44,7 +46,9 @@ export function SpendingOverviewCard() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="rounded-2xl bg-white/10 backdrop-blur-lg p-6 shadow-lg h-[400px] flex flex-col items-center justify-center"
+        whileHover={{ scale: 1.01 }}
+        transition={{ duration: 0.2 }}
+        className="rounded-2xl bg-white/10 backdrop-blur-lg p-6 shadow-lg hover:shadow-xl transition-shadow duration-200 h-[400px] flex flex-col items-center justify-center"
       >
         <h3 className="text-lg font-semibold text-white mb-2">No Spending Data</h3>
         <p className="text-white/60 text-center">
@@ -58,7 +62,9 @@ export function SpendingOverviewCard() {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="rounded-2xl bg-white/10 backdrop-blur-lg p-6 shadow-lg h-[400px]"
+      whileHover={{ scale: 1.01 }}
+      transition={{ duration: 0.2 }}
+      className="rounded-2xl bg-white/10 backdrop-blur-lg p-6 shadow-lg hover:shadow-xl transition-shadow duration-200 h-[400px]"
     >
       <h3 className="text-lg font-semibold text-white mb-4">Top Merchants by Spending</h3>
       

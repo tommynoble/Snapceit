@@ -15,7 +15,9 @@ export function MonthlySpendingCard() {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="relative p-6 rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-lg"
+      whileHover={{ scale: 1.01 }}
+      transition={{ duration: 0.2 }}
+      className="relative p-6 rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-lg shadow-md"
       style={{
         background: 'rgba(255, 255, 255, 0.1)',
         backdropFilter: 'blur(10px)',

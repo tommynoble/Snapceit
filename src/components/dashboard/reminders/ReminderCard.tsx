@@ -71,7 +71,9 @@ export function ReminderCard() {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="rounded-2xl bg-white p-6 shadow-lg h-[400px]"
+      whileHover={{ scale: 1.01 }}
+      transition={{ duration: 0.2 }}
+      className="rounded-2xl bg-white p-6 shadow-md hover:shadow-xl transition-shadow duration-200"
     >
       <h3 className="text-lg font-semibold text-gray-900 mb-4">Reminders</h3>
       

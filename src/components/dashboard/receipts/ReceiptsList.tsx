@@ -50,7 +50,8 @@ export function ReceiptsList() {
                 <img 
                   src={receipt.preview} 
                   alt="Receipt thumbnail" 
-                  className="h-12 w-12 rounded-lg object-cover"
+                  className="h-[525px] w-[350px] rounded-lg object-contain flex-shrink-0 shadow-xl bg-gray-50"
+                  style={{ imageRendering: 'crisp-edges' }}
                 />
               ) : (
                 <div className="rounded-full bg-purple-100 p-2">

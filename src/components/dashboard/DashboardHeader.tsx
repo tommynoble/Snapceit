@@ -7,7 +7,7 @@ interface DashboardHeaderProps {
 export function DashboardHeader({ userName }: DashboardHeaderProps) {
   return (
     <header>
-      <h1 className="text-4xl font-bold text-white">
+      <h1 className="text-4xl font-bold text-white pt-4 sm:pt-0">
         Welcome back, {userName}!
       </h1>
     </header>

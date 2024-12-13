@@ -139,16 +139,21 @@ export function UploadReceiptCard() {
     try {
       // Add to Firestore through ReceiptContext
       await addReceipt({
-        merchant: extractedData.merchantName || '',
+        merchant: extractedData.merchantName || 'Unknown Merchant',
         total: extractedData.total || 0,
         date: extractedData.date || new Date().toISOString(),
         items: extractedData.items?.map(item => ({
-          name: item.description,
-          price: item.price
+          name: item.description || '',
+          price: item.price || 0
         })) || [],
-        imageUrl: extractedData.imageUrl,
+        imageUrl: extractedData.imageUrl || '',
         status: 'completed',
-        category: selectedCategory // Use the selected category
+        category: selectedCategory || 'Uncategorized',
+        vendor: {
+          name: extractedData.merchantName || 'Unknown Merchant'
+        },
+        taxDeductible: false,
+        rawTextractData: {}
       });
 
       toast.success('Receipt uploaded successfully!');
@@ -181,7 +186,7 @@ export function UploadReceiptCard() {
   });
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
+    <div className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-all duration-200 transform hover:scale-[1.01]">
       <h2 className="text-2xl font-semibold mb-4">Upload Receipt</h2>
       
       {!isVerifying ? (
@@ -203,131 +208,140 @@ export function UploadReceiptCard() {
         </div>
       ) : (
         <div className="space-y-6">
-          {/* Preview Section */}
-          {previewUrl && (
-            <div className="relative w-full max-w-md mx-auto">
-              <img 
-                src={previewUrl} 
-                alt="Receipt preview" 
-                className="w-full h-auto rounded-lg shadow-md"
-              />
-            </div>
-          )}
-
-          {/* Verification Form */}
-          <div className="space-y-4">
-            <div className="grid gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Merchant
-                </label>
-                <input
-                  type="text"
-                  value={extractedData?.merchantName || ''}
-                  onChange={(e) => setExtractedData(prev => prev ? {
-                    ...prev,
-                    merchantName: e.target.value
-                  } : null)}
-                  className="w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500"
+          {/* Main Content Grid */}
+          <div className="grid lg:grid-cols-2 gap-10 items-start">
+            {/* Receipt Preview Section */}
+            {previewUrl && (
+              <div className="relative mx-auto">
+                <img 
+                  src={previewUrl} 
+                  alt="Receipt preview" 
+                  className="w-[350px] h-[525px] object-contain rounded-lg shadow-xl flex-shrink-0 mx-auto bg-gray-50"
+                  style={{ imageRendering: 'crisp-edges' }}
                 />
               </div>
+            )}
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Total Amount
-                </label>
-                <input
-                  type="number"
-                  value={extractedData?.total || 0}
-                  onChange={(e) => setExtractedData(prev => prev ? {
-                    ...prev,
-                    total: parseFloat(e.target.value)
-                  } : null)}
-                  className="w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500"
-                />
-              </div>
+            {/* Form Section */}
+            <div className="space-y-4 max-w-xl mx-auto w-full">
+              <div className="space-y-2">
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700">
+                      Merchant
+                    </label>
+                    <input
+                      type="text"
+                      value={extractedData?.merchantName || ''}
+                      onChange={(e) => setExtractedData(prev => prev ? {
+                        ...prev,
+                        merchantName: e.target.value
+                      } : null)}
+                      className="w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 text-sm h-8"
+                    />
+                  </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Date
-                </label>
-                <input
-                  type="date"
-                  value={extractedData?.date ? new Date(extractedData.date).toISOString().split('T')[0] : ''}
-                  onChange={(e) => setExtractedData(prev => prev ? {
-                    ...prev,
-                    date: e.target.value
-                  } : null)}
-                  className="w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500"
-                />
-              </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700">
+                      Total Amount
+                    </label>
+                    <input
+                      type="number"
+                      value={extractedData?.total || 0}
+                      onChange={(e) => setExtractedData(prev => prev ? {
+                        ...prev,
+                        total: parseFloat(e.target.value)
+                      } : null)}
+                      className="w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 text-sm h-8"
+                    />
+                  </div>
+                </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Category
-                </label>
-                <select
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500"
-                >
-                  {categories.map(category => (
-                    <option key={category} value={category}>
-                      {category}
-                    </option>
-                  ))}
-                </select>
-              </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700">
+                      Date
+                    </label>
+                    <input
+                      type="date"
+                      value={extractedData?.date || ''}
+                      onChange={(e) => setExtractedData(prev => prev ? {
+                        ...prev,
+                        date: e.target.value
+                      } : null)}
+                      className="w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 text-sm h-8"
+                    />
+                  </div>
 
-              {extractedData.items && extractedData.items.length > 0 && (
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700">
+                      Category
+                    </label>
+                    <select
+                      value={selectedCategory}
+                      onChange={(e) => setSelectedCategory(e.target.value)}
+                      className="w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 text-sm h-8"
+                    >
+                      {categories.map(category => (
+                        <option key={category} value={category}>
+                          {category}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
                 <div>
-                  <h4 className="font-medium mb-2">Items</h4>
-                  <div className="space-y-2">
-                    {extractedData.items.map((item, index) => (
+                  <h4 className="text-xs font-medium text-gray-700 mb-1">Items</h4>
+                  <div className="space-y-1">
+                    {extractedData?.items?.map((item, index) => (
                       <div key={index} className="flex items-center space-x-2">
-                        <input 
-                          type="text" 
-                          value={item.description} 
+                        <input
+                          type="text"
+                          value={item.description}
                           onChange={(e) => {
-                            const newItems = [...extractedData.items!];
-                            newItems[index].description = e.target.value;
-                            setExtractedData(prev => prev ? {...prev, items: newItems} : null);
+                            const newItems = [...(extractedData?.items || [])];
+                            newItems[index] = { ...item, description: e.target.value };
+                            setExtractedData(prev => prev ? { ...prev, items: newItems } : null);
                           }}
-                          className="flex-1 p-2 border rounded"
+                          className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 text-sm h-8"
+                          placeholder="Item description"
                         />
-                        <input 
-                          type="number" 
-                          value={item.price} 
+                        <input
+                          type="number"
+                          value={item.price}
                           onChange={(e) => {
-                            const newItems = [...extractedData.items!];
-                            newItems[index].price = parseFloat(e.target.value);
-                            setExtractedData(prev => prev ? {...prev, items: newItems} : null);
+                            const newItems = [...(extractedData?.items || [])];
+                            newItems[index] = { ...item, price: parseFloat(e.target.value) };
+                            setExtractedData(prev => prev ? { ...prev, items: newItems } : null);
                           }}
-                          className="w-24 p-2 border rounded"
+                          className="w-20 rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 text-sm h-8"
+                          placeholder="Price"
                         />
                       </div>
                     ))}
                   </div>
                 </div>
-              )}
-            </div>
+              </div>
 
-            <div className="flex justify-end space-x-4 mt-6">
-              <button
-                onClick={cancelUpload}
-                className="px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg flex items-center space-x-2"
-              >
-                <X className="w-4 h-4" />
-                <span>Cancel</span>
-              </button>
-              
-              <button
-                onClick={confirmAndUpload}
-                className="px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg flex items-center space-x-2"
-              >
-                <Check className="w-4 h-4" />
-                <span>Confirm & Upload</span>
-              </button>
+              {/* Buttons */}
+              <div className="flex justify-end space-x-4 mt-6">
+                <button
+                  onClick={cancelUpload}
+                  className="px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg flex items-center space-x-2"
+                >
+                  <X className="w-4 h-4" />
+                  <span>Cancel</span>
+                </button>
+                
+                <button
+                  onClick={confirmAndUpload}
+                  className="px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg flex items-center space-x-2"
+                >
+                  <Check className="w-4 h-4" />
+                  <span>Confirm & Upload</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>

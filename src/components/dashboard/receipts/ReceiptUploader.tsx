@@ -2,13 +2,33 @@ import React, { useState, useCallback } from 'react';
 import { Camera, Upload, X, Scan } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useReceipts } from './ReceiptContext';
+import { Calendar } from 'lucide-react';
 
 interface UploadedReceipt {
   preview: string;
-  date: string;
   amount: number;
   merchant: string;
-  items: any[];
+  date: string;
+  items: Array<{
+    name: string;
+    price: number;
+    quantity?: number;
+  }>;
+  tax?: {
+    total: number;
+    type?: string;
+  };
+  subtotal?: number;
+  category: string;
+  paymentMethod?: string;
+  address?: {
+    street?: string;
+    city?: string;
+    state?: string;
+    zip?: string;
+  };
+  phone?: string;
+  invoiceNumber?: string;
 }
 
 export function ReceiptUploader() {
@@ -36,24 +56,32 @@ export function ReceiptUploader() {
       }
 
       const receiptData = await response.json();
+      console.log('Receipt data:', receiptData);
 
       // Create preview URL for the image
       const previewUrl = URL.createObjectURL(file);
 
       const newReceipt = {
         preview: previewUrl,
-        date: receiptData.date || new Date().toLocaleDateString(),
         amount: receiptData.total || 0,
         merchant: receiptData.merchant || 'Unknown Merchant',
+        date: receiptData.date || new Date().toLocaleDateString(),
         items: receiptData.items || [],
+        tax: receiptData.tax || undefined,
+        subtotal: receiptData.subtotal || undefined,
+        category: 'Food & Dining', // Default value
+        paymentMethod: receiptData.paymentMethod || undefined,
+        address: receiptData.address || undefined,
+        phone: receiptData.phone || undefined,
+        invoiceNumber: receiptData.invoiceNumber || undefined,
       };
 
+      console.log('New receipt:', newReceipt);
       setUploadedReceipt(newReceipt);
 
       // Add to receipts list
       addReceipt({
         ...newReceipt,
-        category: 'Food & Dining', // You might want to detect this from the merchant name
         status: 'completed',
       });
     } catch (error) {
@@ -104,6 +132,59 @@ export function ReceiptUploader() {
     input.click();
   };
 
+  const handleConfirmUpload = () => {
+    // Add uploaded receipt to receipts list
+    if (uploadedReceipt) {
+      addReceipt({
+        ...uploadedReceipt,
+        status: 'completed',
+      });
+      setUploadedReceipt(null);
+    }
+  };
+
+  function ReceiptPreview({ receipt }: { receipt: UploadedReceipt }) {
+    return (
+      <div className="space-y-4">
+        <img 
+          src={receipt.preview} 
+          alt="Receipt preview" 
+          className="w-[350px] h-[525px] object-contain mx-auto rounded-lg shadow-xl flex-shrink-0 bg-gray-50" 
+          style={{ imageRendering: 'crisp-edges' }}
+        />
+        
+        <div className="space-y-2">
+          <div className="font-medium">Merchant</div>
+          <div>{receipt.merchant}</div>
+          {receipt.tax && receipt.tax.total > 0 && (
+            <div className="text-gray-600">Tax: ${receipt.tax.total.toFixed(2)}</div>
+          )}
+          <div className="font-medium mt-4">Total Amount</div>
+          <div>${receipt.amount.toFixed(2)}</div>
+
+          <div className="font-medium mt-4">Date</div>
+          <div>{receipt.date}</div>
+
+          <div className="font-medium mt-4">Category</div>
+          <select
+            value={receipt.category}
+            onChange={(e) => {
+              // Handle category change
+            }}
+            className="w-full p-2 border rounded"
+          >
+            <option value="Food & Dining">Food & Dining</option>
+            <option value="Shopping">Shopping</option>
+            <option value="Transportation">Transportation</option>
+            <option value="Entertainment">Entertainment</option>
+            <option value="Healthcare">Healthcare</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap gap-4">
@@ -144,29 +225,7 @@ export function ReceiptUploader() {
               exit={{ opacity: 0 }}
               className="relative"
             >
-              <img 
-                src={uploadedReceipt.preview} 
-                alt="Receipt preview" 
-                className="w-full rounded-lg"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent rounded-lg" />
-              <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
-                <div className="text-lg font-semibold">
-                  ${uploadedReceipt.amount.toFixed(2)}
-                </div>
-                <div className="text-sm opacity-90">
-                  {uploadedReceipt.merchant}
-                </div>
-                <div className="text-xs opacity-75">
-                  {uploadedReceipt.date}
-                </div>
-              </div>
-              <button
-                onClick={() => setUploadedReceipt(null)}
-                className="absolute -right-2 -top-2 rounded-full bg-red-500 p-1 text-white shadow-lg hover:bg-red-600"
-              >
-                <X size={16} />
-              </button>
+              <ReceiptPreview receipt={uploadedReceipt} />
             </motion.div>
           ) : (
             <motion.div

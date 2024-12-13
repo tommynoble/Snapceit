@@ -15,6 +15,34 @@ export interface Receipt {
   imageUrl?: string;
   status: 'processing' | 'completed';
   category: string;
+  tax?: {
+    total: number;
+    breakdown?: {
+      salesTax?: number;
+      stateTax?: number;
+      localTax?: number;
+      otherTaxes?: Array<{
+        name: string;
+        amount: number;
+      }>;
+    };
+  };
+  taxDeductible?: boolean;
+  taxCategory?: 'business' | 'personal' | 'medical' | 'charity' | 'education';
+  
+  // New normalized fields from Textract AnalyzeExpense
+  vendor?: {
+    name: string;
+    address?: string;
+    phone?: string;
+    addressBlock?: string;
+    city?: string;
+    state?: string;
+  };
+  receiptDate?: string; // Normalized date from INVOICE_RECEIPT_DATE
+  rawTextractData?: {
+    [key: string]: string; // Store all raw normalized fields for reference
+  };
 }
 
 interface ReceiptContextType {
@@ -72,7 +100,13 @@ export function ReceiptProvider({ children }: { children: React.ReactNode }) {
             })) : [],
             imageUrl: data.imageUrl,
             status: data.status || 'completed',
-            category: data.category || 'Uncategorized'
+            category: data.category || 'Uncategorized',
+            tax: data.tax,
+            taxDeductible: data.taxDeductible,
+            taxCategory: data.taxCategory,
+            vendor: data.vendor,
+            receiptDate: data.receiptDate,
+            rawTextractData: data.rawTextractData
           };
           console.log('Loading receipt:', receipt);
           receiptData.push(receipt);

@@ -11,12 +11,8 @@ const textractClient = new TextractClient({
 interface ExtractedReceiptData {
   merchantName?: string;
   total?: number;
-  date?: string;
-  items?: Array<{
-    description: string;
-    price: number;
-  }>;
-  category?: string;
+  tax?: number;
+  rawData?: any;
 }
 
 // Category detection keywords
@@ -99,10 +95,100 @@ function detectCategory(merchantName: string, items: Array<{ description: string
   return 'Other';
 }
 
+function extractTaxInformation(blocks: any[]): {
+  total?: number;
+  breakdown?: {
+    salesTax?: number;
+    stateTax?: number;
+    localTax?: number;
+    otherTaxes?: Array<{ name: string; amount: number }>;
+  };
+} {
+  const taxKeywords = [
+    { key: 'sales tax', type: 'salesTax' },
+    { key: 'state tax', type: 'stateTax' },
+    { key: 'local tax', type: 'localTax' },
+    { key: 'tax', type: 'salesTax' }, // fallback
+    { key: 'vat', type: 'salesTax' },
+    { key: 'gst', type: 'salesTax' },
+  ];
+
+  const result: any = {
+    breakdown: {}
+  };
+
+  let totalTax = 0;
+
+  blocks.forEach((block) => {
+    if (block.BlockType === 'LINE') {
+      const text = block.Text?.toLowerCase() || '';
+      
+      // Look for tax-related lines
+      taxKeywords.forEach(({ key, type }) => {
+        if (text.includes(key)) {
+          // Try to extract the amount using regex
+          const amountMatch = text.match(/\$?\s*(\d+\.?\d*)/);
+          if (amountMatch) {
+            const amount = parseFloat(amountMatch[1]);
+            if (!isNaN(amount)) {
+              result.breakdown[type] = (result.breakdown[type] || 0) + amount;
+              totalTax += amount;
+            }
+          }
+        }
+      });
+
+      // Look for other potential tax items
+      if (text.includes('tax') && !taxKeywords.some(k => text.includes(k.key))) {
+        const amountMatch = text.match(/\$?\s*(\d+\.?\d*)/);
+        if (amountMatch) {
+          const amount = parseFloat(amountMatch[1]);
+          if (!isNaN(amount)) {
+            if (!result.breakdown.otherTaxes) {
+              result.breakdown.otherTaxes = [];
+            }
+            result.breakdown.otherTaxes.push({
+              name: text.replace(/\$?\s*\d+\.?\d*/, '').trim(),
+              amount
+            });
+            totalTax += amount;
+          }
+        }
+      }
+    }
+  });
+
+  result.total = totalTax;
+  return result;
+}
+
 export const analyzeReceiptFromS3 = async (
   bucketName: string,
   objectKey: string
-): Promise<ExtractedReceiptData> => {
+): Promise<{
+  merchantName: string;
+  total: number;
+  subtotal?: number;
+  tax?: {
+    total: number;
+    type?: string;
+  };
+  items?: Array<{
+    name: string;
+    price: number;
+    quantity?: number;
+  }>;
+  date?: string;
+  paymentMethod?: string;
+  address?: {
+    street?: string;
+    city?: string;
+    state?: string;
+    zip?: string;
+  };
+  phone?: string;
+  invoiceNumber?: string;
+}> => {
   try {
     const command = new AnalyzeExpenseCommand({
       Document: {
@@ -110,122 +196,92 @@ export const analyzeReceiptFromS3 = async (
           Bucket: bucketName,
           Name: objectKey,
         },
-      }
+      },
     });
 
     const response = await textractClient.send(command);
-    console.log('Textract response:', response);
+    const document = response.ExpenseDocuments?.[0];
     
-    // Initialize the receipt data
-    const receiptData: ExtractedReceiptData = {};
-
-    if (response.ExpenseDocuments && response.ExpenseDocuments.length > 0) {
-      const document = response.ExpenseDocuments[0];
-      console.log('Processing document:', document);
-
-      // Extract merchant name - first try VENDOR field
-      const merchantField = document.SummaryFields?.find(
-        field => field.Type?.Text === 'VENDOR'
-      );
-
-      if (merchantField?.ValueDetection?.Text) {
-        receiptData.merchantName = merchantField.ValueDetection.Text;
-      } else {
-        // Look for logo-like text (usually at the top with large font)
-        const allFields = document.SummaryFields || [];
-        const potentialMerchants = allFields
-          .filter(field => 
-            field.ValueDetection?.Text && 
-            field.ValueDetection.Confidence && 
-            field.ValueDetection.Confidence > 85 && // High confidence
-            field.ValueDetection.Text.length > 2 && // More than 2 characters
-            field.ValueDetection.Text.length < 30 && // Not too long (to avoid addresses)
-            !/^\d/.test(field.ValueDetection.Text) && // Doesn't start with a number
-            !/^[A-Z0-9\s]{10,}$/.test(field.ValueDetection.Text) && // Not all caps long text (likely address)
-            !/street|road|ave|avenue|suite|st\.|rd\./i.test(field.ValueDetection.Text) && // Not address-like
-            field.ValueDetection.Geometry?.BoundingBox?.Top < 0.3 // In the top 30% of receipt
-          )
-          .sort((a, b) => {
-            // Prioritize by position (top to bottom) and text size
-            const aBox = a.ValueDetection?.Geometry?.BoundingBox;
-            const bBox = b.ValueDetection?.Geometry?.BoundingBox;
-            if (!aBox || !bBox) return 0;
-            
-            // Calculate text size (height * width)
-            const aSize = aBox.Height * aBox.Width;
-            const bSize = bBox.Height * bBox.Width;
-            
-            // Combine position and size for scoring
-            const aScore = (1 - aBox.Top) * 0.7 + aSize * 0.3;
-            const bScore = (1 - bBox.Top) * 0.7 + bSize * 0.3;
-            
-            return bScore - aScore;
-          });
-
-        console.log('Potential merchant names:', potentialMerchants.map(m => m.ValueDetection?.Text));
-        
-        if (potentialMerchants.length > 0) {
-          receiptData.merchantName = potentialMerchants[0].ValueDetection?.Text || '';
-        }
-      }
-
-      console.log('Found merchant name:', receiptData.merchantName);
-
-      // Extract total amount
-      const totalField = document.SummaryFields?.find(
-        field => field.Type?.Text === 'TOTAL'
-      );
-      console.log('Found total field:', totalField);
-      if (totalField?.ValueDetection?.Text) {
-        receiptData.total = parseFloat(totalField.ValueDetection.Text.replace(/[^0-9.]/g, ''));
-        console.log('Extracted total:', receiptData.total);
-      }
-
-      // Extract date
-      const dateField = document.SummaryFields?.find(
-        field => field.Type?.Text === 'INVOICE_RECEIPT_DATE'
-      );
-      console.log('Found date field:', dateField);
-      if (dateField?.ValueDetection?.Text) {
-        receiptData.date = dateField.ValueDetection.Text;
-        console.log('Extracted date:', receiptData.date);
-      }
-
-      // Extract line items
-      if (document.LineItemGroups && document.LineItemGroups.length > 0) {
-        receiptData.items = document.LineItemGroups[0].LineItems?.map(item => {
-          const description = item.LineItemExpenseFields?.find(
-            field => field.Type?.Text === 'ITEM'
-          )?.ValueDetection?.Text || '';
-          console.log('Found item description:', description);
-          
-          const priceStr = item.LineItemExpenseFields?.find(
-            field => field.Type?.Text === 'PRICE'
-          )?.ValueDetection?.Text || '0';
-          console.log('Found item price:', priceStr);
-
-          return {
-            description,
-            price: parseFloat(priceStr.replace(/[^0-9.]/g, '')) || 0
-          };
-        }) || [];
-        console.log('Extracted items:', receiptData.items);
-      }
-
-      // After extracting items and merchant name, detect category
-      const detectedCategory = detectCategory(
-        receiptData.merchantName || '',
-        receiptData.items || []
-      );
-      console.log('Detected category:', detectedCategory);
-      
-      // Add category to receipt data
-      receiptData.category = detectedCategory;
+    if (!document) {
+      throw new Error('No document found in Textract response');
     }
 
-    return receiptData;
+    const result: any = {
+      merchantName: '',
+      total: 0,
+    };
+
+    // Extract fields from SummaryFields
+    document.SummaryFields?.forEach((field) => {
+      const type = field.Type?.Text;
+      const value = field.ValueDetection?.Text;
+
+      switch (type) {
+        case 'VENDOR_NAME':
+          result.merchantName = value || '';
+          break;
+        case 'TOTAL':
+          result.total = parseFloat(value?.replace(/[^0-9.]/g, '') || '0') || 0;
+          break;
+        case 'SUBTOTAL':
+          result.subtotal = parseFloat(value?.replace(/[^0-9.]/g, '') || '0') || 0;
+          break;
+        case 'TAX':
+          result.tax = {
+            total: parseFloat(value?.replace(/[^0-9.]/g, '') || '0') || 0,
+            type: field.LabelDetection?.Text || undefined,
+          };
+          break;
+        case 'INVOICE_RECEIPT_DATE':
+          result.date = value;
+          break;
+        case 'PAYMENT_TERMS':
+          result.paymentMethod = value;
+          break;
+        case 'INVOICE_RECEIPT_ID':
+          result.invoiceNumber = value;
+          break;
+        case 'VENDOR_ADDRESS':
+          result.address = parseAddress(value || '');
+          break;
+        case 'VENDOR_PHONE':
+          result.phone = value;
+          break;
+      }
+    });
+
+    // Extract line items
+    if (document.LineItemGroups && document.LineItemGroups.length > 0) {
+      result.items = document.LineItemGroups[0].LineItems?.map(item => {
+        const itemFields = item.LineItemExpenseFields || [];
+        return {
+          name: itemFields.find(f => f.Type?.Text === 'ITEM')?.ValueDetection?.Text || '',
+          price: parseFloat(itemFields.find(f => f.Type?.Text === 'PRICE')?.ValueDetection?.Text?.replace(/[^0-9.]/g, '') || '0') || 0,
+          quantity: parseFloat(itemFields.find(f => f.Type?.Text === 'QUANTITY')?.ValueDetection?.Text || '0') || undefined,
+        };
+      }) || [];
+    }
+
+    return result;
   } catch (error) {
-    console.error('Error analyzing receipt with Textract:', error);
+    console.error('Error analyzing receipt:', error);
     throw error;
   }
 };
+
+function parseAddress(address: string) {
+  // Basic address parsing - could be made more sophisticated
+  const parts = address.split(',').map(part => part.trim());
+  if (parts.length >= 2) {
+    const stateZip = parts[parts.length - 1].split(' ');
+    return {
+      street: parts[0],
+      city: parts[parts.length - 2],
+      state: stateZip[0],
+      zip: stateZip[1],
+    };
+  }
+  return {
+    street: address,
+  };
+}
