@@ -7,7 +7,6 @@ import { DashboardLayout } from './components/dashboard/DashboardLayout';
 import { ReceiptProvider } from './components/dashboard/receipts/ReceiptContext';
 import { AuthProvider, useAuth } from './firebase/AuthContext';
 import { Onboarding } from './components/onboarding/OnboardingQuestionnaire';
-import Navbar from './components/Navbar';
 import { AnimatePresence } from 'framer-motion';
 import { PageTransition } from './components/transitions/PageTransition';
 import Home from './pages/Home';
@@ -40,8 +39,8 @@ const RegisterFormWrapper: React.FC = () => {
   const navigate = useNavigate();
   return (
     <RegisterForm 
-      onLoginClick={() => navigate('/login')} 
-      onBackClick={() => navigate('/')} 
+      onBack={() => navigate('/')}
+      heading="Get started with Snapceit"
     />
   );
 };

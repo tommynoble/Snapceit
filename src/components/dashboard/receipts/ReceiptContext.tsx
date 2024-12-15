@@ -1,10 +1,9 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { collection, query, orderBy, onSnapshot, addDoc, updateDoc, doc, deleteDoc, getDocs } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, doc } from 'firebase/firestore';
 import { db } from '../../../firebase/config';
 import { useAuth } from '../../../firebase/AuthContext';
-import { dynamoDb, type ReceiptItem } from '../../../utils/dynamodb';
+import { dynamoDb } from '../../../utils/dynamodb';
 import { v4 as uuidv4 } from 'uuid';
-import { testDynamoDBConnection } from '../../../utils/test-dynamo';
 
 export interface Receipt {
   id: string;
@@ -90,7 +89,7 @@ export function ReceiptProvider({ children }: { children: React.ReactNode }) {
       if (!mounted) return;
       
       try {
-        const dynamoReceipts = await dynamoDb.queryReceipts(currentUser.uid);
+        const dynamoReceipts = await dynamoDb.queryReceipts(currentUser!.uid);
         
         if (!mounted) return;
 
@@ -166,7 +165,7 @@ export function ReceiptProvider({ children }: { children: React.ReactNode }) {
       console.log('Generated receipt ID:', receiptId);
       
       // Add to Firestore
-      const receiptsRef = collection(db, 'receipts', currentUser.uid, 'userReceipts');
+      const receiptsRef = collection(db, 'receipts', currentUser!.uid, 'userReceipts');
       await addDoc(receiptsRef, {
         ...receipt,
         id: receiptId,
@@ -176,7 +175,7 @@ export function ReceiptProvider({ children }: { children: React.ReactNode }) {
 
       // Add to DynamoDB
       const dynamoReceipt = {
-        userId: currentUser.uid,
+        userId: currentUser!.uid,
         receiptId,
         merchantName: receipt.merchant,
         date: receipt.date,
@@ -224,14 +223,14 @@ export function ReceiptProvider({ children }: { children: React.ReactNode }) {
 
     try {
       // Update in Firestore
-      const receiptRef = doc(db, 'receipts', currentUser.uid, 'userReceipts', id);
+      const receiptRef = doc(db, 'receipts', currentUser!.uid, 'userReceipts', id);
       await updateDoc(receiptRef, {
         ...updates,
         updatedAt: new Date().toISOString(),
       });
 
       // Update in DynamoDB
-      await dynamoDb.updateReceipt(currentUser.uid, id, {
+      await dynamoDb.updateReceipt(currentUser!.uid, id, {
         merchantName: updates.merchant,
         date: updates.date,
         total: updates.total,
@@ -258,7 +257,7 @@ export function ReceiptProvider({ children }: { children: React.ReactNode }) {
 
     try {
       console.log('Deleting receipt from DynamoDB:', receiptId);
-      await dynamoDb.deleteReceipt(currentUser.uid, receiptId);
+      await dynamoDb.deleteReceipt(currentUser!.uid, receiptId);
       console.log('Successfully deleted receipt from DynamoDB');
 
       // Update local state to remove the deleted receipt
@@ -278,7 +277,7 @@ export function ReceiptProvider({ children }: { children: React.ReactNode }) {
     async function refresh() {
       try {
         setLoading(true);
-        const dynamoReceipts = await dynamoDb.queryReceipts(currentUser.uid);
+        const dynamoReceipts = await dynamoDb.queryReceipts(currentUser!.uid);
         
         if (!mounted) return;
         

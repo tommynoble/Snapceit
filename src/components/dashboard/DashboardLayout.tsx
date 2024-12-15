@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Settings, User, Menu, LineChart, Calculator, CircleDollarSign } from 'lucide-react';
+import { useState } from 'react';
+import { Settings, User, Menu, LineChart, Calculator, CircleDollarSign, LogOut } from 'lucide-react';
 import { DashboardHeader } from './DashboardHeader';
 import { TotalReceiptsCard } from './stats/TotalReceiptsCard';
 import { MonthlySpendingCard } from './stats/MonthlySpendingCard';
@@ -15,7 +15,6 @@ import { TaxDetailsCard } from './tax/TaxDetailsCard';
 import { TaxPage } from './tax/TaxPage';
 import { PriceMatchModal } from './pricematch/PriceMatchModal';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../firebase/AuthContext';
 import logo from '../../../images/logo.svg';
 
@@ -26,7 +25,6 @@ export function DashboardLayout() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showTaxPage, setShowTaxPage] = useState(false);
   const [showPriceMatch, setShowPriceMatch] = useState(false);
-  const navigate = useNavigate();
   const { logout } = useAuth();
 
   const handleLogout = async () => {
@@ -151,6 +149,13 @@ export function DashboardLayout() {
                 <User size={20} />
                 Profile
               </button>
+              <button 
+                onClick={handleLogout}
+                className="w-full flex items-center gap-3 px-4 py-3 text-white/80 hover:bg-white/10 rounded-lg text-red-400"
+              >
+                <LogOut size={20} />
+                Logout
+              </button>
             </div>
           </motion.div>
         )}
@@ -184,7 +189,11 @@ export function DashboardLayout() {
 
       {/* Modals */}
       <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
-      <UserProfileModal isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} />
+      <UserProfileModal 
+        isOpen={isProfileOpen} 
+        onClose={() => setIsProfileOpen(false)} 
+        onLogout={handleLogout}
+      />
       <TaxPage isOpen={showTaxPage} onClose={() => setShowTaxPage(false)} />
       <PriceMatchModal isOpen={showPriceMatch} onClose={() => setShowPriceMatch(false)} />
 

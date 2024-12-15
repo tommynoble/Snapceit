@@ -1,4 +1,3 @@
-import React from 'react';
 import { User, LogOut, Mail, Calendar, X, Shield, CreditCard, Settings } from 'lucide-react';
 import { useAuth } from '../../../firebase/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -7,14 +6,15 @@ import { Link } from 'react-router-dom';
 interface UserProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onLogout: () => Promise<void>;
 }
 
-export function UserProfileModal({ isOpen, onClose }: UserProfileModalProps) {
-  const { currentUser, logout } = useAuth();
+export function UserProfileModal({ isOpen, onClose, onLogout }: UserProfileModalProps) {
+  const { currentUser } = useAuth();
 
   const handleSignOut = async () => {
     try {
-      await logout();
+      await onLogout();
       onClose();
     } catch (error) {
       console.error('Failed to sign out:', error);
