@@ -9,10 +9,23 @@ interface ProcessedReceipt {
   merchantName?: string;
   total?: number;
   date?: string;
+  category?: string;  
   items?: Array<{
     description: string;
     price: number;
   }>;
+  tax?: {
+    total: number;
+    breakdown?: {
+      salesTax?: number;
+      stateTax?: number;
+      localTax?: number;
+      otherTaxes?: Array<{
+        name: string;
+        amount: number;
+      }>;
+    };
+  };
   userId: string;
   createdAt: Date;
 }
@@ -36,11 +49,16 @@ export const processReceipt = async (
     const dataBlob = new Blob([JSON.stringify(extractedData)], { type: 'application/json' });
     const { url: dataUrl } = await uploadToS3(dataBlob as File, dataKey, onProgress);
 
-    // Step 4: Return combined data
+    // Step 4: Return combined data with category
     const receiptData: ProcessedReceipt = {
       imageUrl,
       dataUrl,
-      ...extractedData,
+      merchantName: extractedData.merchantName,
+      total: extractedData.total,
+      date: extractedData.date,
+      category: extractedData.category, 
+      items: extractedData.items,
+      tax: extractedData.tax,
       userId,
       createdAt: new Date()
     };

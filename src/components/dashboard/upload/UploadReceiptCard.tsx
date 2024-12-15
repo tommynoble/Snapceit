@@ -6,6 +6,7 @@ import { useAuth } from '../../../firebase/AuthContext';
 import { processReceipt } from '../../../utils/receipt-processor';
 import { toast } from 'react-hot-toast';
 import { useDropzone } from 'react-dropzone';
+import { detectCategory } from '../../../utils/categoryDetection';
 
 interface ExtractedData {
   merchantName?: string;
@@ -15,6 +16,18 @@ interface ExtractedData {
     description: string;
     price: number;
   }>;
+  tax?: {
+    total: number;
+    breakdown: {
+      salesTax: number;
+      stateTax: number;
+      localTax: number;
+      otherTaxes?: Array<{
+        name: string;
+        amount: number;
+      }>;
+    };
+  };
   imageUrl: string;
   dataUrl: string;  // URL to the JSON data in S3
 }
@@ -27,7 +40,7 @@ const ACCEPTED_FILE_TYPES = {
 };
 
 export function UploadReceiptCard() {
-  const { addReceipt } = useReceipts();
+  const { addReceipt, refreshReceipts } = useReceipts();
   const { currentUser } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -39,14 +52,14 @@ export function UploadReceiptCard() {
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const categories = [
-    'Food & Dining',
-    'Shopping',
-    'Transportation',
-    'Entertainment',
-    'Healthcare',
-    'Utilities',
+    'Advertising',
+    'Car and Truck Expenses',
+    'Office Expenses',
     'Travel',
-    'Other'
+    'Meals',
+    'Utilities',
+    'Taxes and Licenses',
+    'Supplies'
   ];
 
   // Debug log for auth state
@@ -93,43 +106,48 @@ export function UploadReceiptCard() {
     }
 
     setIsLoading(true);
-    setUploadProgress(0);
     setError(null);
-
-    // Create preview URL
-    const preview = URL.createObjectURL(file);
-    setPreviewUrl(preview);
-
+    
     try {
-      // Process the receipt with our updated utility
-      const result = await processReceipt(file, currentUser.uid, setUploadProgress);
+      // Create preview URL
+      const preview = URL.createObjectURL(file);
+      setPreviewUrl(preview);
+
+      // Process receipt with Textract
+      const processedData = await processReceipt(file, currentUser.uid, setUploadProgress);
       
-      // Update state with extracted data
+      // Detect category using enhanced detection
+      const detectedCategory = detectCategory(
+        processedData.rawTextractData || '', // Full text
+        processedData.merchantName || '',     // Merchant name
+        processedData.items || []            // Line items
+      );
+
       setExtractedData({
-        merchantName: result.merchantName,
-        total: result.total,
-        date: result.date,
-        items: result.items,
-        imageUrl: result.imageUrl,
-        dataUrl: result.dataUrl
+        ...processedData,
+        merchantName: processedData.merchantName || 'Unknown Merchant',
+        total: processedData.total || 0,
+        date: processedData.date || new Date().toISOString(),
+        items: processedData.items || [],
+        imageUrl: processedData.imageUrl || '',
+        dataUrl: processedData.dataUrl || ''
       });
-      
-      // Set the detected category if available
-      if (result.category) {
-        setSelectedCategory(result.category);
-      }
-      
+
+      // Set the detected category
+      setSelectedCategory(detectedCategory);
       setIsVerifying(true);
-      setIsLoading(false);
+      
     } catch (error) {
-      console.error('Receipt processing error:', error);
+      console.error('Error processing receipt:', error);
       setError(error instanceof Error ? error.message : 'Failed to process receipt');
       toast.error('Failed to process receipt');
-      setIsLoading(false);
+      
       if (previewUrl) {
         URL.revokeObjectURL(previewUrl);
         setPreviewUrl(null);
       }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -137,8 +155,8 @@ export function UploadReceiptCard() {
     if (!extractedData) return;
 
     try {
-      // Add to Firestore through ReceiptContext
-      await addReceipt({
+      // Create receipt data object, omitting undefined values
+      const receiptData = {
         merchant: extractedData.merchantName || 'Unknown Merchant',
         total: extractedData.total || 0,
         date: extractedData.date || new Date().toISOString(),
@@ -148,15 +166,42 @@ export function UploadReceiptCard() {
         })) || [],
         imageUrl: extractedData.imageUrl || '',
         status: 'completed',
-        category: selectedCategory || 'Uncategorized',
-        vendor: {
-          name: extractedData.merchantName || 'Unknown Merchant'
-        },
-        taxDeductible: false,
-        rawTextractData: {}
-      });
+        category: selectedCategory,
+        createdAt: new Date().toISOString(),
+        lastModified: new Date().toISOString()
+      };
+
+      // Only add tax if it exists and has a total
+      if (extractedData.tax?.total) {
+        Object.assign(receiptData, {
+          tax: {
+            total: extractedData.tax.total,
+            ...(extractedData.tax.breakdown && {
+              breakdown: {
+                salesTax: extractedData.tax.breakdown.salesTax || 0,
+                stateTax: extractedData.tax.breakdown.stateTax || 0,
+                localTax: extractedData.tax.breakdown.localTax || 0,
+                ...(extractedData.tax.breakdown.otherTaxes && {
+                  otherTaxes: extractedData.tax.breakdown.otherTaxes
+                })
+              }
+            })
+          }
+        });
+      }
+
+      // Only add dataUrl if it exists
+      if (extractedData.dataUrl) {
+        Object.assign(receiptData, {
+          rawTextractData: extractedData.dataUrl
+        });
+      }
+
+      // Add to Firestore through ReceiptContext
+      await addReceipt(receiptData);
 
       toast.success('Receipt uploaded successfully!');
+      refreshReceipts();
       
     } catch (error) {
       console.error('Upload error:', error);
@@ -166,7 +211,7 @@ export function UploadReceiptCard() {
       setIsLoading(false);
       setIsVerifying(false);
       setExtractedData(null);
-      setSelectedCategory('Uncategorized'); // Reset category
+      setSelectedCategory('Uncategorized');
       if (previewUrl) {
         URL.revokeObjectURL(previewUrl);
         setPreviewUrl(null);
@@ -321,6 +366,106 @@ export function UploadReceiptCard() {
                       </div>
                     ))}
                   </div>
+                </div>
+
+                {/* Tax Information */}
+                <div className="space-y-2">
+                  <label className="block text-xs font-medium text-gray-700">
+                    Tax Information
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500">
+                        Total Tax
+                      </label>
+                      <input
+                        type="number"
+                        value={extractedData?.tax?.total || 0}
+                        onChange={(e) => setExtractedData(prev => prev ? {
+                          ...prev,
+                          tax: {
+                            ...prev.tax,
+                            total: parseFloat(e.target.value)
+                          }
+                        } : null)}
+                        className="w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 text-sm h-8"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500">
+                        Sales Tax
+                      </label>
+                      <input
+                        type="number"
+                        value={extractedData?.tax?.breakdown?.salesTax || 0}
+                        onChange={(e) => setExtractedData(prev => prev ? {
+                          ...prev,
+                          tax: {
+                            ...prev.tax,
+                            breakdown: {
+                              ...prev.tax?.breakdown,
+                              salesTax: parseFloat(e.target.value)
+                            }
+                          }
+                        } : null)}
+                        className="w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 text-sm h-8"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Tax Information Section */}
+                {extractedData?.tax && (
+                  <div className="space-y-2">
+                    <div className="font-medium mt-4">Tax Information</div>
+                    <div className="space-y-1 text-sm text-gray-600">
+                      <div>Total Tax: ${extractedData.tax.total.toFixed(2)}</div>
+                      {extractedData.tax.breakdown?.salesTax > 0 && (
+                        <div>Sales Tax: ${extractedData.tax.breakdown.salesTax.toFixed(2)}</div>
+                      )}
+                      {extractedData.tax.breakdown?.stateTax > 0 && (
+                        <div>State Tax: ${extractedData.tax.breakdown.stateTax.toFixed(2)}</div>
+                      )}
+                      {extractedData.tax.breakdown?.localTax > 0 && (
+                        <div>Local Tax: ${extractedData.tax.breakdown.localTax.toFixed(2)}</div>
+                      )}
+                      {extractedData.tax.breakdown?.otherTaxes?.map((tax, index) => (
+                        <div key={index}>{tax.name}: ${tax.amount.toFixed(2)}</div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Receipt Preview Details */}
+              <div className="space-y-4">
+                {/* Merchant Name */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Merchant</label>
+                  <div className="mt-1 text-sm text-gray-900">{extractedData?.merchantName || 'Unknown Merchant'}</div>
+                </div>
+
+                {/* Date */}
+                {extractedData?.date && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Date</label>
+                    <div className="mt-1 text-sm text-gray-900">
+                      {new Date(extractedData.date).toLocaleDateString('en-US', {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Total Amount */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Total Amount</label>
+                  <div className="mt-1 text-sm text-gray-900">${extractedData?.total?.toFixed(2) || '0.00'}</div>
                 </div>
               </div>
 

@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { Camera, Upload, X, Scan } from 'lucide-react';
+import { Camera, Upload, X, Scan, Edit2, Download } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useReceipts } from './ReceiptContext';
 import { Calendar } from 'lucide-react';
@@ -29,6 +29,7 @@ interface UploadedReceipt {
   };
   phone?: string;
   invoiceNumber?: string;
+  isEditing?: boolean;
 }
 
 export function ReceiptUploader() {
@@ -143,43 +144,151 @@ export function ReceiptUploader() {
     }
   };
 
+  const handleDownload = (receipt: UploadedReceipt) => {
+    const link = document.createElement('a');
+    link.href = receipt.preview;
+    link.download = `receipt-${receipt.merchant}-${receipt.date}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleEditToggle = () => {
+    if (uploadedReceipt) {
+      setUploadedReceipt({
+        ...uploadedReceipt,
+        isEditing: !uploadedReceipt.isEditing
+      });
+    }
+  };
+
+  const handleInputChange = (field: keyof UploadedReceipt, value: any) => {
+    if (uploadedReceipt) {
+      setUploadedReceipt({
+        ...uploadedReceipt,
+        [field]: value
+      });
+    }
+  };
+
   function ReceiptPreview({ receipt }: { receipt: UploadedReceipt }) {
     return (
       <div className="space-y-4">
-        <img 
-          src={receipt.preview} 
-          alt="Receipt preview" 
-          className="w-[350px] h-[525px] object-contain mx-auto rounded-lg shadow-xl flex-shrink-0 bg-gray-50" 
-          style={{ imageRendering: 'crisp-edges' }}
-        />
+        <div className="relative">
+          <img 
+            src={receipt.preview} 
+            alt="Receipt preview" 
+            className="w-[350px] h-[525px] object-contain mx-auto rounded-lg shadow-xl flex-shrink-0 bg-gray-50" 
+            style={{ imageRendering: 'crisp-edges' }}
+          />
+          <div className="absolute top-2 right-2 flex gap-2">
+            <button
+              onClick={() => handleDownload(receipt)}
+              className="p-2 bg-white rounded-full shadow-md hover:bg-gray-50"
+              title="Download Receipt"
+            >
+              <Download size={16} className="text-gray-600" />
+            </button>
+            <button
+              onClick={handleEditToggle}
+              className="p-2 bg-white rounded-full shadow-md hover:bg-gray-50"
+              title="Edit Receipt Details"
+            >
+              <Edit2 size={16} className="text-gray-600" />
+            </button>
+          </div>
+        </div>
         
         <div className="space-y-2">
           <div className="font-medium">Merchant</div>
-          <div>{receipt.merchant}</div>
-          {receipt.tax && receipt.tax.total > 0 && (
-            <div className="text-gray-600">Tax: ${receipt.tax.total.toFixed(2)}</div>
+          {receipt.isEditing ? (
+            <input
+              type="text"
+              value={receipt.merchant}
+              onChange={(e) => handleInputChange('merchant', e.target.value)}
+              className="w-full p-2 border rounded"
+            />
+          ) : (
+            <div>{receipt.merchant}</div>
           )}
+
+          {receipt.tax && receipt.tax.total > 0 && (
+            <>
+              <div className="font-medium mt-4">Tax</div>
+              {receipt.isEditing ? (
+                <input
+                  type="number"
+                  value={receipt.tax.total}
+                  onChange={(e) => handleInputChange('tax', { 
+                    ...receipt.tax, 
+                    total: parseFloat(e.target.value) 
+                  })}
+                  className="w-full p-2 border rounded"
+                  step="0.01"
+                />
+              ) : (
+                <div className="text-gray-600">${receipt.tax.total.toFixed(2)}</div>
+              )}
+            </>
+          )}
+
           <div className="font-medium mt-4">Total Amount</div>
-          <div>${receipt.amount.toFixed(2)}</div>
+          {receipt.isEditing ? (
+            <input
+              type="number"
+              value={receipt.amount}
+              onChange={(e) => handleInputChange('amount', parseFloat(e.target.value))}
+              className="w-full p-2 border rounded"
+              step="0.01"
+            />
+          ) : (
+            <div>${receipt.amount.toFixed(2)}</div>
+          )}
 
           <div className="font-medium mt-4">Date</div>
-          <div>{receipt.date}</div>
+          {receipt.isEditing ? (
+            <input
+              type="date"
+              value={receipt.date}
+              onChange={(e) => handleInputChange('date', e.target.value)}
+              className="w-full p-2 border rounded"
+            />
+          ) : (
+            <div>{receipt.date}</div>
+          )}
 
           <div className="font-medium mt-4">Category</div>
           <select
             value={receipt.category}
-            onChange={(e) => {
-              // Handle category change
-            }}
+            onChange={(e) => handleInputChange('category', e.target.value)}
             className="w-full p-2 border rounded"
+            disabled={!receipt.isEditing}
           >
             <option value="Food & Dining">Food & Dining</option>
             <option value="Shopping">Shopping</option>
             <option value="Transportation">Transportation</option>
             <option value="Entertainment">Entertainment</option>
             <option value="Healthcare">Healthcare</option>
+            <option value="Utilities">Utilities</option>
             <option value="Other">Other</option>
           </select>
+
+          {receipt.isEditing && (
+            <div className="flex justify-end gap-2 mt-4">
+              <button
+                onClick={handleEditToggle}
+                className="px-4 py-2 text-sm border rounded-lg hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmUpload}
+                className="px-4 py-2 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+              >
+                Save Changes
+              </button>
+            </div>
+          )}
         </div>
       </div>
     );

@@ -72,10 +72,10 @@ const Navbar = () => {
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            onClick={() => handleNavigation('/register')}
+            onClick={() => handleNavigation('/onboarding')}
             className="bg-purple-700 text-white px-4 py-2 rounded-md hover:bg-purple-600 transition-colors font-semibold"
           >
-            Get Started
+            Start Free Trial
           </motion.button>
         </div>
 
@@ -119,10 +119,10 @@ const Navbar = () => {
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                onClick={() => handleNavigation('/register')}
+                onClick={() => handleNavigation('/onboarding')}
                 className="bg-purple-700 text-white px-4 py-2 rounded-md hover:bg-purple-600 transition-colors font-semibold w-full text-center"
               >
-                Get Started
+                Start Free Trial
               </motion.button>
             </motion.div>
             

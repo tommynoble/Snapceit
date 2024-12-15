@@ -13,6 +13,9 @@ export function useStats() {
         value: 0,
         trend: { value: 0, isPositive: true }
       },
+      totalSpending: {
+        value: 0
+      },
       averageTransaction: {
         value: 0,
         trend: { value: 0, isPositive: true }
@@ -22,6 +25,18 @@ export function useStats() {
     };
   }
 
+  // Calculate total spending across all receipts
+  const totalSpending = receipts.reduce((total, receipt) => {
+    try {
+      const amount = typeof receipt.total === 'number' ? receipt.total : 
+                    typeof receipt.total === 'string' ? parseFloat(receipt.total) : 0;
+      return total + (isNaN(amount) ? 0 : amount);
+    } catch (error) {
+      console.error('Error calculating total spending:', error);
+      return total;
+    }
+  }, 0);
+
   // Calculate total receipts
   const totalReceipts = receipts.length;
 
@@ -30,38 +45,22 @@ export function useStats() {
   const currentMonth = currentDate.getMonth();
   const currentYear = currentDate.getFullYear();
 
-  console.log('Calculating stats for:', { 
-    currentMonth: currentMonth + 1, 
-    currentYear,
-    totalReceipts: receipts.length,
-    receipts 
-  });
-
   const currentMonthReceipts = receipts.filter(receipt => {
-    // Ensure we have a valid date
-    const receiptDate = new Date(receipt.date);
-    if (isNaN(receiptDate.getTime())) {
-      console.warn('Invalid date found:', receipt.date);
+    try {
+      // Handle both ISO string and custom date formats
+      const receiptDate = new Date(receipt.date);
+      if (isNaN(receiptDate.getTime())) {
+        console.warn('Invalid date found:', receipt.date);
+        return false;
+      }
+
+      return receiptDate.getMonth() === currentMonth && 
+             receiptDate.getFullYear() === currentYear;
+    } catch (error) {
+      console.error('Error parsing date:', receipt.date, error);
       return false;
     }
-
-    const isCurrentMonth = receiptDate.getMonth() === currentMonth;
-    const isCurrentYear = receiptDate.getFullYear() === currentYear;
-    
-    console.log('Checking receipt:', {
-      id: receipt.id,
-      date: receipt.date,
-      parsedDate: receiptDate,
-      total: receipt.total,
-      isCurrentMonth,
-      isCurrentYear,
-      included: isCurrentMonth && isCurrentYear
-    });
-    
-    return isCurrentMonth && isCurrentYear;
   });
-
-  console.log('Current month receipts:', currentMonthReceipts);
 
   // Get last month's receipts
   const lastMonthDate = new Date(currentDate);
@@ -70,32 +69,46 @@ export function useStats() {
   const lastMonthYear = lastMonthDate.getFullYear();
 
   const lastMonthReceipts = receipts.filter(receipt => {
-    const receiptDate = new Date(receipt.date);
-    return receiptDate.getMonth() === lastMonth && 
-           receiptDate.getFullYear() === lastMonthYear;
+    try {
+      const receiptDate = new Date(receipt.date);
+      if (isNaN(receiptDate.getTime())) return false;
+      
+      return receiptDate.getMonth() === lastMonth && 
+             receiptDate.getFullYear() === lastMonthYear;
+    } catch (error) {
+      console.error('Error parsing date:', receipt.date, error);
+      return false;
+    }
   });
 
   // Calculate monthly spending with validation
   const currentMonthSpending = currentMonthReceipts.reduce((total, receipt) => {
-    const amount = Number(receipt.total) || 0;
-    console.log('Adding to monthly total:', {
-      receiptId: receipt.id,
-      currentTotal: total,
-      receiptTotal: amount,
-      newTotal: total + amount
-    });
-    return total + amount;
+    try {
+      // Ensure we have a valid number
+      const amount = typeof receipt.total === 'number' ? receipt.total : 
+                    typeof receipt.total === 'string' ? parseFloat(receipt.total) : 0;
+                    
+      if (isNaN(amount)) {
+        console.warn('Invalid amount found:', receipt.total);
+        return total;
+      }
+      
+      return total + amount;
+    } catch (error) {
+      console.error('Error calculating total:', error);
+      return total;
+    }
   }, 0);
 
-  console.log('Monthly spending calculation:', {
-    totalReceipts: receipts.length,
-    currentMonthReceipts: currentMonthReceipts.length,
-    currentMonthSpending,
-    receiptsWithTotals: currentMonthReceipts.map(r => ({ id: r.id, total: r.total }))
-  });
-
   const lastMonthSpending = lastMonthReceipts.reduce((total, receipt) => {
-    return total + (receipt.total || 0);
+    try {
+      const amount = typeof receipt.total === 'number' ? receipt.total : 
+                    typeof receipt.total === 'string' ? parseFloat(receipt.total) : 0;
+      return total + (isNaN(amount) ? 0 : amount);
+    } catch (error) {
+      console.error('Error calculating last month total:', error);
+      return total;
+    }
   }, 0);
 
   // Calculate spending trend
@@ -123,33 +136,43 @@ export function useStats() {
 
   // Calculate category breakdown
   const categoryBreakdown = receipts.reduce((acc, receipt) => {
-    const category = receipt.category || 'Uncategorized';
-    if (!acc[category]) {
-      acc[category] = 0;
+    try {
+      const category = receipt.category || 'Uncategorized';
+      if (!acc[category]) {
+        acc[category] = 0;
+      }
+      const amount = typeof receipt.total === 'number' ? receipt.total : 
+                    typeof receipt.total === 'string' ? parseFloat(receipt.total) : 0;
+      acc[category] += isNaN(amount) ? 0 : amount;
+      return acc;
+    } catch (error) {
+      console.error('Error calculating category breakdown:', error);
+      return acc;
     }
-    acc[category] += receipt.total || 0;
-    return acc;
   }, {} as Record<string, number>);
 
   return {
     totalReceipts: {
       value: totalReceipts,
       trend: {
-        value: receiptsTrend,
+        value: Math.round(receiptsTrend * 100) / 100,
         isPositive: receiptsTrend >= 0
       }
     },
     monthlySpending: {
-      value: currentMonthSpending,
+      value: Math.round(currentMonthSpending * 100) / 100,
       trend: {
-        value: spendingTrend,
+        value: Math.round(spendingTrend * 100) / 100,
         isPositive: spendingTrend >= 0
       }
     },
+    totalSpending: {
+      value: Math.round(totalSpending * 100) / 100
+    },
     averageTransaction: {
-      value: averageTransaction,
+      value: Math.round(averageTransaction * 100) / 100,
       trend: {
-        value: averageTransactionTrend,
+        value: Math.round(averageTransactionTrend * 100) / 100,
         isPositive: averageTransactionTrend >= 0
       }
     },

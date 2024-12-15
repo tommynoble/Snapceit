@@ -1,117 +1,122 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Receipt, MoreVertical, Download, Trash2, Edit } from 'lucide-react';
-import { useReceipts } from './ReceiptContext';
+import { MoreVertical, Download, Edit, Trash2 } from 'lucide-react';
 import { EditReceiptModal } from './EditReceiptModal';
+import { useReceipts } from './ReceiptContext';
+import type { Receipt } from './ReceiptContext';
 
 export function ReceiptsList() {
-  const { receipts, deleteReceipt, updateReceipt, downloadReceipt } = useReceipts();
-  const [activeMenu, setActiveMenu] = useState<number | null>(null);
-  const [editingReceipt, setEditingReceipt] = useState<number | null>(null);
+  const { receipts, deleteReceipt, updateReceipt } = useReceipts();
+  const [activeMenu, setActiveMenu] = useState<string | null>(null);
+  const [editingReceipt, setEditingReceipt] = useState<string | null>(null);
+  const [sortedReceipts, setSortedReceipts] = useState<Receipt[]>([]);
 
-  const handleDelete = (id: number) => {
-    deleteReceipt(id);
-    setActiveMenu(null);
+  useEffect(() => {
+    // Sort receipts by date in descending order (most recent first)
+    setSortedReceipts([...receipts].sort((a, b) => {
+      return new Date(b.date).getTime() - new Date(a.date).getTime();
+    }));
+  }, [receipts]);
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteReceipt(id);
+      setActiveMenu(null);
+    } catch (error) {
+      console.error('Error deleting receipt:', error);
+    }
   };
 
-  const handleEdit = (id: number) => {
+  const handleEdit = (id: string) => {
     setEditingReceipt(id);
     setActiveMenu(null);
   };
 
-  const handleDownload = (id: number) => {
-    downloadReceipt(id);
+  const handleDownload = (id: string) => {
+    // Implement download logic
+    console.log('Downloading receipt:', id);
     setActiveMenu(null);
   };
 
-  const handleSaveEdit = (id: number, data: {
-    date: string;
-    amount: number;
-    merchant: string;
-    category: string;
-  }) => {
-    updateReceipt(id, data);
-    setEditingReceipt(null);
+  const handleSaveEdit = async (formData: Partial<Receipt>) => {
+    if (editingReceipt !== null) {
+      try {
+        await updateReceipt(editingReceipt, formData);
+        setEditingReceipt(null);
+      } catch (error) {
+        console.error('Error updating receipt:', error);
+      }
+    }
   };
 
   return (
-    <>
-      <div className="space-y-4">
-        {receipts.map((receipt, index) => (
-          <motion.div
-            key={receipt.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-            className="group relative flex items-center justify-between rounded-lg border border-gray-200 p-4 hover:bg-gray-50"
-          >
-            <div className="flex items-center gap-4">
-              {receipt.preview ? (
-                <img 
-                  src={receipt.preview} 
-                  alt="Receipt thumbnail" 
-                  className="h-[525px] w-[350px] rounded-lg object-contain flex-shrink-0 shadow-xl bg-gray-50"
-                  style={{ imageRendering: 'crisp-edges' }}
-                />
-              ) : (
-                <div className="rounded-full bg-purple-100 p-2">
-                  <Receipt className="h-5 w-5 text-purple-600" />
-                </div>
-              )}
-              <div>
-                <div className="font-medium text-gray-900">
-                  ${receipt.amount.toFixed(2)}
-                </div>
-                <div className="text-sm text-gray-500">
-                  {receipt.merchant}
-                </div>
-                <div className="mt-1 text-xs text-gray-400">
-                  {receipt.category} • {receipt.date}
-                </div>
+    <div className="space-y-4">
+      {sortedReceipts.map((receipt) => (
+        <div key={receipt.id} className="relative bg-white rounded-lg shadow-sm p-4 border border-gray-200">
+          <div className="flex justify-between items-center">
+            <div className="flex-1">
+              <h3 className="text-lg font-medium text-gray-900">{receipt.merchant}</h3>
+              <div className="mt-1 text-sm text-gray-500">
+                {receipt.date && new Date(receipt.date).toLocaleDateString('en-US', {
+                  weekday: 'long',
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric'
+                })}
+              </div>
+              <div className="text-sm text-gray-500">
+                Category: {receipt.category}
               </div>
             </div>
-            
-            <div className="relative">
-              <button 
-                onClick={() => setActiveMenu(activeMenu === receipt.id ? null : receipt.id)}
-                className="rounded-full p-1 text-gray-400 opacity-0 hover:bg-gray-100 group-hover:opacity-100"
-              >
-                <MoreVertical className="h-5 w-5" />
-              </button>
-
-              {activeMenu === receipt.id && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="absolute right-0 top-full z-10 mt-2 w-48 rounded-lg bg-white py-2 shadow-xl ring-1 ring-black ring-opacity-5"
+            <div className="text-right flex items-center space-x-4">
+              <div>
+                <div className="text-lg font-semibold text-gray-900">
+                  ${receipt.total.toFixed(2)}
+                </div>
+                {receipt.tax && (
+                  <div className="text-sm text-gray-500">
+                    Tax: ${receipt.tax.total.toFixed(2)}
+                  </div>
+                )}
+              </div>
+              <div className="relative inline-block text-left">
+                <button 
+                  onClick={() => setActiveMenu(activeMenu === receipt.id ? null : receipt.id)}
+                  className="p-2 rounded-full hover:bg-gray-100 focus:outline-none"
                 >
-                  <button
-                    className="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    onClick={() => handleDownload(receipt.id)}
+                  <MoreVertical className="h-5 w-5 text-gray-500" />
+                </button>
+
+                {activeMenu === receipt.id && (
+                  <div 
+                    className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50"
+                    style={{ top: '100%' }}
                   >
-                    <Download size={16} />
-                    Download
-                  </button>
-                  <button
-                    className="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    onClick={() => handleEdit(receipt.id)}
-                  >
-                    <Edit size={16} />
-                    Edit Details
-                  </button>
-                  <button
-                    className="flex w-full items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50"
-                    onClick={() => handleDelete(receipt.id)}
-                  >
-                    <Trash2 size={16} />
-                    Delete
-                  </button>
-                </motion.div>
-              )}
+                    <div className="py-1" role="menu">
+                      <button
+                        onClick={() => handleEdit(receipt.id)}
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                        role="menuitem"
+                      >
+                        <Edit className="h-4 w-4 mr-2" />
+                        Edit Receipt
+                      </button>
+                      <button
+                        onClick={() => handleDelete(receipt.id)}
+                        className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center"
+                        role="menuitem"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
-          </motion.div>
-        ))}
-      </div>
+          </div>
+        </div>
+      ))}
 
       {editingReceipt !== null && (
         <EditReceiptModal
@@ -121,6 +126,6 @@ export function ReceiptsList() {
           onSave={handleSaveEdit}
         />
       )}
-    </>
+    </div>
   );
 }

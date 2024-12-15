@@ -4,38 +4,50 @@
         {
             "Effect": "Allow",
             "Action": [
-                "s3:CreateBucket",
                 "s3:PutObject",
                 "s3:GetObject",
                 "s3:ListBucket",
+                "s3:DeleteObject",
                 "s3:PutBucketPolicy",
-                "s3:PutBucketAcl",
-                "s3:PutBucketCors"
+                "s3:CreateBucket",
+                "s3:PutBucketCORS"
             ],
             "Resource": [
-                "arn:aws:s3:::snapceit/*",
-                "arn:aws:s3:::snapceit"
+                "arn:aws:s3:::snapceit",
+                "arn:aws:s3:::snapceit/*"
             ]
         },
         {
             "Effect": "Allow",
             "Action": [
-                "s3:PutObject",
-                "s3:GetObject",
-                "s3:ListBucket"
-            ],
-            "Resource": [
-                "arn:aws:s3:::snapceit/*",
-                "arn:aws:s3:::snapceit"
-            ]
-        },
-        {
-            "Effect": "Allow",
-            "Action": [
+                "textract:AnalyzeDocument",
                 "textract:AnalyzeExpense",
-                "textract:GetExpenseAnalysis"
+                "textract:AnalyzeID",
+                "textract:DetectDocumentText",
+                "textract:GetDocumentAnalysis",
+                "textract:GetDocumentTextDetection",
+                "textract:StartDocumentAnalysis",
+                "textract:StartDocumentTextDetection"
             ],
             "Resource": "*"
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "dynamodb:CreateTable",
+                "dynamodb:DeleteItem",
+                "dynamodb:GetItem",
+                "dynamodb:PutItem",
+                "dynamodb:Query",
+                "dynamodb:Scan",
+                "dynamodb:UpdateItem",
+                "dynamodb:DescribeTable",
+                "dynamodb:ListTables"
+            ],
+            "Resource": [
+                "arn:aws:dynamodb:*:*:table/receipts",
+                "arn:aws:dynamodb:*:*:table/receipts/index/*"
+            ]
         }
     ]
 }

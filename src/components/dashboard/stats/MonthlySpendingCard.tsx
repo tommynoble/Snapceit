@@ -5,11 +5,16 @@ import { useStats } from './useStats';
 
 export function MonthlySpendingCard() {
   const stats = useStats();
-  console.log('Monthly spending stats:', stats);
-  const formattedValue = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD'
-  }).format(stats.monthlySpending.value);
+  
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(value);
+  };
+
+  const monthlySpending = formatCurrency(stats.monthlySpending.value);
+  const totalSpending = formatCurrency(stats.totalSpending?.value || 0);
 
   return (
     <motion.div
@@ -23,26 +28,35 @@ export function MonthlySpendingCard() {
         backdropFilter: 'blur(10px)',
       }}
     >
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col space-y-4">
+        {/* Total Spending */}
         <div>
-          <p className="text-sm font-medium text-white/80">Monthly Spending</p>
-          <h3 className="mt-2 text-3xl font-bold text-white">
-            {stats.loading ? '-' : formattedValue}
+          <p className="text-sm font-medium text-white/80">Total Spending</p>
+          <h3 className="mt-1 text-2xl font-bold text-white">
+            {stats.loading ? '-' : totalSpending}
           </h3>
         </div>
-        <div className="rounded-full bg-gradient-to-r from-purple-500/20 to-purple-600/20 p-3">
-          <TrendingUp className="h-6 w-6 text-white" />
+
+        {/* Monthly Spending */}
+        <div>
+          <p className="text-sm font-medium text-white/80">Monthly Spending</p>
+          <h3 className="mt-1 text-2xl font-bold text-white">
+            {stats.loading ? '-' : monthlySpending}
+          </h3>
+          {!stats.loading && stats.monthlySpending.trend && (
+            <div className="mt-1 flex items-center">
+              <span className={`text-sm font-medium ${stats.monthlySpending.trend.isPositive ? 'text-green-400' : 'text-red-400'}`}>
+                {stats.monthlySpending.trend.isPositive ? '↑' : '↓'} {Math.abs(stats.monthlySpending.trend.value)}%
+              </span>
+              <span className="ml-2 text-sm text-white/60">vs last month</span>
+            </div>
+          )}
         </div>
       </div>
-      
-      {!stats.loading && stats.monthlySpending.trend && (
-        <div className="mt-4 flex items-center">
-          <span className={`text-sm font-medium ${stats.monthlySpending.trend.isPositive ? 'text-green-400' : 'text-red-400'}`}>
-            {stats.monthlySpending.trend.isPositive ? '↑' : '↓'} {Math.abs(stats.monthlySpending.trend.value)}%
-          </span>
-          <span className="ml-2 text-sm text-white/60">vs last month</span>
-        </div>
-      )}
+
+      <div className="absolute top-6 right-6 rounded-full bg-gradient-to-r from-purple-500/20 to-purple-600/20 p-3">
+        <TrendingUp className="h-6 w-6 text-white" />
+      </div>
 
       {stats.loading && (
         <div className="mt-4 animate-pulse">

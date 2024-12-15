@@ -18,10 +18,14 @@ export function ReceiptFilters() {
         <Filter className="h-4 w-4 text-gray-500" />
         <select className="bg-transparent text-sm text-gray-600 focus:outline-none">
           <option>All Categories</option>
-          <option>Food & Dining</option>
-          <option>Shopping</option>
+          <option>Advertising</option>
+          <option>Car and Truck Expenses</option>
+          <option>Office Expenses</option>
           <option>Travel</option>
-          <option>Others</option>
+          <option>Meals</option>
+          <option>Utilities</option>
+          <option>Taxes and Licenses</option>
+          <option>Supplies</option>
         </select>
       </div>
     </div>
