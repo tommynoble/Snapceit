@@ -2,6 +2,7 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, PhoneAuthProvider } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
+import { getDatabase } from 'firebase/database';
 
 // Log environment variables (remove in production)
 console.log('Firebase Config:', {
@@ -17,7 +18,8 @@ const firebaseConfig = {
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
+  databaseURL: "https://reciepts-scanner-default-rtdb.firebaseio.com"
 };
 
 // Initialize Firebase
@@ -25,17 +27,18 @@ const app = initializeApp(firebaseConfig);
 
 // Initialize Firebase services
 export const auth = getAuth(app);
-
-// Ensure phone authentication is properly configured
-auth.settings = {
-  ...auth.settings,
-  appVerificationDisabledForTesting: false // Enable real SMS verification
-};
+export const db = getDatabase(app);
+export const firestore = getFirestore(app);
+export const storage = getStorage(app);
 
 // Export providers and IDs
 export const phoneAuthProvider = new PhoneAuthProvider(auth);
 export const webClientId = import.meta.env.VITE_FIREBASE_WEB_CLIENT_ID;
-export const db = getFirestore(app);
-export const storage = getStorage(app);
+
+// Ensure phone authentication is properly configured
+auth.settings = {
+  ...auth.settings,
+  appVerificationDisabledForTesting: false,
+};
 
 export default app;

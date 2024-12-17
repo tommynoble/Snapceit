@@ -1,15 +1,19 @@
 import React from 'react';
+import { TopNavbar } from './TopNavbar';
 
 interface DashboardHeaderProps {
   userName: string;
+  onProfileClick: () => void;
 }
 
-export function DashboardHeader({ userName }: DashboardHeaderProps) {
+export const DashboardHeader = ({ userName, onProfileClick }: DashboardHeaderProps) => {
   return (
-    <header>
-      <h1 className="text-4xl font-bold text-white pt-4 sm:pt-0">
+    <div className="mt-2">
+      <TopNavbar onProfileClick={onProfileClick} />
+      <div className="h-px bg-white/5 mt-1"></div>
+      <h1 className="text-3xl font-bold text-white py-2">
         Welcome back, {userName}!
       </h1>
-    </header>
+    </div>
   );
-}
+};

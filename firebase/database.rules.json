@@ -1,0 +1,42 @@
+{
+  "rules": {
+    "users": {
+      "$uid": {
+        // Allow read/write only if the user is authenticated and accessing their own data
+        ".read": "$uid === auth.uid",
+        ".write": "$uid === auth.uid",
+        
+        // Validate user profile data
+        ".validate": "newData.hasChildren(['email', 'accountStatus', 'createdAt', 'updatedAt'])",
+        
+        "email": {
+          ".validate": "newData.isString() && newData.val().matches(/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$/)"
+        },
+        "accountStatus": {
+          ".validate": "newData.isString() && newData.val().matches(/^(active|suspended|deleted)$/)"
+        },
+        "subscriptionPlan": {
+          ".validate": "newData.isString() && newData.val().matches(/^(free|basic|premium|enterprise)$/)"
+        },
+        "subscriptionStatus": {
+          ".validate": "newData.isString() && newData.val().matches(/^(active|canceled|past_due)$/)"
+        },
+        "storageUsed": {
+          ".validate": "newData.isNumber() && newData.val() >= 0"
+        },
+        "totalReceiptsScanned": {
+          ".validate": "newData.isNumber() && newData.val() >= 0"
+        },
+        "totalExpenseAmount": {
+          ".validate": "newData.isNumber() && newData.val() >= 0"
+        },
+        "createdAt": {
+          ".validate": "newData.isString() && newData.val().matches(/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}.\\d{3}Z$/)"
+        },
+        "updatedAt": {
+          ".validate": "newData.isString() && newData.val().matches(/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}.\\d{3}Z$/)"
+        }
+      }
+    }
+  }
+}
