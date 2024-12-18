@@ -1,7 +1,10 @@
-import { User, LogOut, Mail, Calendar, X, Shield, CreditCard, Settings } from 'lucide-react';
+import { User, LogOut, Mail, Calendar, X, Shield, CreditCard, Settings, Camera, Loader2 } from 'lucide-react';
 import { useAuth } from '../../../firebase/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
+import { useState, useRef } from 'react';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { updateProfile } from 'firebase/auth';
 
 interface UserProfileModalProps {
   isOpen: boolean;
@@ -11,6 +14,8 @@ interface UserProfileModalProps {
 
 export function UserProfileModal({ isOpen, onClose, onLogout }: UserProfileModalProps) {
   const { currentUser } = useAuth();
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSignOut = async () => {
     try {
@@ -19,6 +24,37 @@ export function UserProfileModal({ isOpen, onClose, onLogout }: UserProfileModal
     } catch (error) {
       console.error('Failed to sign out:', error);
     }
+  };
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !currentUser) return;
+
+    try {
+      setIsUploading(true);
+      const storage = getStorage();
+      const storageRef = ref(storage, `profile-images/${currentUser.uid}/${file.name}`);
+      
+      // Upload the file
+      await uploadBytes(storageRef, file);
+      
+      // Get the download URL
+      const downloadURL = await getDownloadURL(storageRef);
+      
+      // Update the user's profile
+      await updateProfile(currentUser, {
+        photoURL: downloadURL
+      });
+
+    } catch (error) {
+      console.error('Error uploading image:', error);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const triggerImageUpload = () => {
+    fileInputRef.current?.click();
   };
 
   if (!isOpen) return null;
@@ -49,17 +85,39 @@ export function UserProfileModal({ isOpen, onClose, onLogout }: UserProfileModal
                   <X size={20} />
                 </button>
                 <div className="flex items-center gap-4">
-                  {currentUser?.photoURL ? (
-                    <img
-                      src={currentUser.photoURL}
-                      alt="Profile"
-                      className="h-20 w-20 rounded-full border-4 border-white/20"
+                  <div className="relative group">
+                    {currentUser?.photoURL ? (
+                      <img
+                        src={currentUser.photoURL}
+                        alt="Profile"
+                        className="h-20 w-20 rounded-full border-4 border-white/20 object-cover transition-transform group-hover:scale-105"
+                      />
+                    ) : (
+                      <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white/10 border-4 border-white/20 transition-transform group-hover:scale-105">
+                        <User className="h-10 w-10 text-white" />
+                      </div>
+                    )}
+                    
+                    <button
+                      onClick={triggerImageUpload}
+                      disabled={isUploading}
+                      className="absolute bottom-0 right-0 rounded-full bg-white p-2 shadow-lg transition-transform hover:scale-110 disabled:opacity-50"
+                    >
+                      {isUploading ? (
+                        <Loader2 className="h-4 w-4 text-purple-500 animate-spin" />
+                      ) : (
+                        <Camera className="h-4 w-4 text-purple-500" />
+                      )}
+                    </button>
+
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
                     />
-                  ) : (
-                    <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white/10 border-4 border-white/20">
-                      <User className="h-10 w-10 text-white" />
-                    </div>
-                  )}
+                  </div>
                   <div>
                     <h3 className="text-2xl font-semibold text-white">
                       {currentUser?.displayName || 'User'}

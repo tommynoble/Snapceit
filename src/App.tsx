@@ -11,6 +11,9 @@ import { AnimatePresence } from 'framer-motion';
 import { PageTransition } from './components/transitions/PageTransition';
 import Home from './pages/Home';
 import AuthLayout from './components/auth/AuthLayout';
+import SpendingHabits from './components/dashboard/spending/SpendingHabits';
+import Features from './components/Features';
+import Features2 from './components/Features2';
 
 // Protected Route Component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {

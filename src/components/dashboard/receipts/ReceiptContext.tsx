@@ -1,6 +1,4 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { collection, addDoc, updateDoc, doc } from 'firebase/firestore';
-import { db } from '../../../firebase/config';
 import { useAuth } from '../../../firebase/AuthContext';
 import { dynamoDb } from '../../../utils/dynamodb';
 import { v4 as uuidv4 } from 'uuid';
@@ -30,7 +28,7 @@ export interface Receipt {
     };
   };
   taxDeductible?: boolean;
-  taxCategory?: 'business' | 'personal' | 'medical' | 'charity' | 'education';
+  taxCategory?: 'advertising' | 'car_and_truck' | 'office' | 'taxes_and_licenses' | 'supplies' | 'travel_and_meals';
   vendor?: {
     name: string;
     address?: string;
@@ -45,6 +43,7 @@ export interface Receipt {
   };
   createdAt?: string;
   updatedAt?: string;
+  userId: string;
 }
 
 interface ReceiptContextType {
@@ -89,7 +88,7 @@ export function ReceiptProvider({ children }: { children: React.ReactNode }) {
       if (!mounted) return;
       
       try {
-        const dynamoReceipts = await dynamoDb.queryReceipts(currentUser!.uid);
+        const dynamoReceipts = await dynamoDb.queryReceipts(currentUser.uid);
         
         if (!mounted) return;
 
@@ -122,33 +121,21 @@ export function ReceiptProvider({ children }: { children: React.ReactNode }) {
           updatedAt: r.updatedAt
         }));
 
-        // Only update state if the data has actually changed
-        setReceipts(prevReceipts => {
-          const hasChanged = JSON.stringify(prevReceipts) !== JSON.stringify(receiptsData);
-          return hasChanged ? receiptsData : prevReceipts;
-        });
-
-        if (loading) setLoading(false);
-      } catch (error) {
-        console.error('Error fetching receipts:', error);
+        setReceipts(receiptsData);
+        setLoading(false);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching receipts:', err);
         if (mounted) {
-          setError(error instanceof Error ? error.message : 'Error fetching receipts');
+          setError('Failed to fetch receipts');
           setLoading(false);
         }
       }
     }
 
-    // Initial fetch
-    setLoading(true);
     fetchReceipts();
-
-    // Set up polling every 5 seconds
-    const pollInterval = setInterval(fetchReceipts, 5000);
-
-    // Cleanup
     return () => {
       mounted = false;
-      clearInterval(pollInterval);
     };
   }, [currentUser]);
 
@@ -158,24 +145,12 @@ export function ReceiptProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      console.log('Starting receipt upload process...');
-      
-      // Generate a unique ID that will be used in both databases
+      // Generate a unique ID
       const receiptId = uuidv4();
-      console.log('Generated receipt ID:', receiptId);
       
-      // Add to Firestore
-      const receiptsRef = collection(db, 'receipts', currentUser!.uid, 'userReceipts');
-      await addDoc(receiptsRef, {
-        ...receipt,
-        id: receiptId,
-        createdAt: new Date().toISOString(),
-      });
-      console.log('Receipt added to Firestore');
-
       // Add to DynamoDB
       const dynamoReceipt = {
-        userId: currentUser!.uid,
+        userId: currentUser.uid,
         receiptId,
         merchantName: receipt.merchant,
         date: receipt.date,
@@ -188,31 +163,28 @@ export function ReceiptProvider({ children }: { children: React.ReactNode }) {
             localTax: receipt.tax.breakdown?.localTax || 0,
             otherTaxes: receipt.tax.breakdown?.otherTaxes || []
           }
-        } : {
-          total: 0,
-          breakdown: {
-            salesTax: 0,
-            stateTax: 0,
-            localTax: 0,
-            otherTaxes: []
-          }
-        },
+        } : undefined,
         items: receipt.items?.map(item => ({
           description: item.name,
           price: item.price
         })),
         category: receipt.category,
         imageUrl: receipt.imageUrl,
+        status: receipt.status || 'completed',
         createdAt: new Date().toISOString()
       };
-      console.log('Preparing DynamoDB receipt with tax info:', dynamoReceipt);
-      
-      await dynamoDb.putReceipt(dynamoReceipt);
-      console.log('Receipt successfully added to DynamoDB');
 
-    } catch (error) {
-      console.error('Error adding receipt:', error);
-      throw error;
+      await dynamoDb.putReceipt(dynamoReceipt);
+      
+      const newReceipt = { 
+        ...receipt, 
+        id: receiptId 
+      } as Receipt;
+      
+      setReceipts(prev => [...prev, newReceipt]);
+    } catch (err) {
+      console.error('Error adding receipt:', err);
+      throw err;
     }
   };
 
@@ -222,15 +194,7 @@ export function ReceiptProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      // Update in Firestore
-      const receiptRef = doc(db, 'receipts', currentUser!.uid, 'userReceipts', id);
-      await updateDoc(receiptRef, {
-        ...updates,
-        updatedAt: new Date().toISOString(),
-      });
-
-      // Update in DynamoDB
-      await dynamoDb.updateReceipt(currentUser!.uid, id, {
+      await dynamoDb.updateReceipt(currentUser.uid, id, {
         merchantName: updates.merchant,
         date: updates.date,
         total: updates.total,
@@ -241,12 +205,18 @@ export function ReceiptProvider({ children }: { children: React.ReactNode }) {
         })),
         category: updates.category,
         imageUrl: updates.imageUrl,
+        status: updates.status,
         updatedAt: new Date().toISOString()
       });
-
-    } catch (error) {
-      console.error('Error updating receipt:', error);
-      throw error;
+      
+      setReceipts(prev =>
+        prev.map(receipt =>
+          receipt.id === id ? { ...receipt, ...updates } : receipt
+        )
+      );
+    } catch (err) {
+      console.error('Error updating receipt:', err);
+      throw err;
     }
   };
 
@@ -256,16 +226,11 @@ export function ReceiptProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      console.log('Deleting receipt from DynamoDB:', receiptId);
-      await dynamoDb.deleteReceipt(currentUser!.uid, receiptId);
-      console.log('Successfully deleted receipt from DynamoDB');
-
-      // Update local state to remove the deleted receipt
-      setReceipts(prevReceipts => prevReceipts.filter(r => r.id !== receiptId));
-
-    } catch (error) {
-      console.error('Error deleting receipt:', error);
-      throw error;
+      await dynamoDb.deleteReceipt(currentUser.uid, receiptId);
+      setReceipts(prev => prev.filter(receipt => receipt.id !== receiptId));
+    } catch (err) {
+      console.error('Error deleting receipt:', err);
+      throw err;
     }
   };
 
@@ -277,10 +242,11 @@ export function ReceiptProvider({ children }: { children: React.ReactNode }) {
     async function refresh() {
       try {
         setLoading(true);
-        const dynamoReceipts = await dynamoDb.queryReceipts(currentUser!.uid);
+        const dynamoReceipts = await dynamoDb.queryReceipts(currentUser.uid);
         
         if (!mounted) return;
-        
+
+        // Transform DynamoDB receipts to match our Receipt interface
         const receiptsData = dynamoReceipts.map(r => ({
           id: r.receiptId,
           merchant: r.merchantName,
@@ -310,13 +276,12 @@ export function ReceiptProvider({ children }: { children: React.ReactNode }) {
         }));
 
         setReceipts(receiptsData);
-      } catch (error) {
-        console.error('Error refreshing receipts:', error);
+        setLoading(false);
+        setError(null);
+      } catch (err) {
+        console.error('Error refreshing receipts:', err);
         if (mounted) {
-          setError(error instanceof Error ? error.message : 'Error refreshing receipts');
-        }
-      } finally {
-        if (mounted) {
+          setError('Failed to refresh receipts');
           setLoading(false);
         }
       }

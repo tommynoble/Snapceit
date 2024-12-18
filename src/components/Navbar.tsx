@@ -38,8 +38,8 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="px-6 py-4 pt-6">
-      <div className="max-w-7xl mx-auto flex items-center justify-between">
+    <nav className="sticky top-0 z-50 px-6 py-4 bg-transparent">
+      <div className="max-w-7xl mx-auto flex items-center justify-between p-4 bg-black/20 backdrop-blur-md rounded-[48px] border-2 border-[rgb(208,67,239)]">
         {/* Logo on far left */}
         <Link to="/" className="text-white" onClick={() => setIsOpen(false)}>
           <img src={logo} alt="Logo" className="h-16 md:h-16 h-12 w-auto" />
@@ -47,18 +47,46 @@ const Navbar = () => {
 
         {/* Desktop Navigation - Centered */}
         <div className="hidden md:flex items-center space-x-8">
-          <Link to="/capabilities" className="text-white hover:text-purple-100 transition-colors font-semibold">
-            Capabilities
-          </Link>
-          <Link to="/product" className="text-white hover:text-purple-100 transition-colors font-semibold">
-            Product
-          </Link>
-          <Link to="/action" className="text-white hover:text-purple-100 transition-colors font-semibold">
-            Action
-          </Link>
-          <Link to="/pricing" className="text-white hover:text-purple-100 transition-colors font-semibold">
-            Pricing
-          </Link>
+          <motion.div whileHover={{ scale: 1.05 }} className="relative">
+            <Link to="/capabilities" className="text-white hover:text-purple-100 transition-colors font-semibold text-lg">
+              Capabilities
+              <motion.div
+                className="absolute bottom-0 left-0 w-0 h-[2px] bg-[rgb(208,67,239)]"
+                whileHover={{ width: '100%' }}
+                transition={{ duration: 0.2 }}
+              />
+            </Link>
+          </motion.div>
+          <motion.div whileHover={{ scale: 1.05 }} className="relative">
+            <Link to="/product" className="text-white hover:text-purple-100 transition-colors font-semibold text-lg">
+              Product
+              <motion.div
+                className="absolute bottom-0 left-0 w-0 h-[2px] bg-[rgb(208,67,239)]"
+                whileHover={{ width: '100%' }}
+                transition={{ duration: 0.2 }}
+              />
+            </Link>
+          </motion.div>
+          <motion.div whileHover={{ scale: 1.05 }} className="relative">
+            <Link to="/action" className="text-white hover:text-purple-100 transition-colors font-semibold text-lg">
+              Action
+              <motion.div
+                className="absolute bottom-0 left-0 w-0 h-[2px] bg-[rgb(208,67,239)]"
+                whileHover={{ width: '100%' }}
+                transition={{ duration: 0.2 }}
+              />
+            </Link>
+          </motion.div>
+          <motion.div whileHover={{ scale: 1.05 }} className="relative">
+            <Link to="/pricing" className="text-white hover:text-purple-100 transition-colors font-semibold text-lg">
+              Pricing
+              <motion.div
+                className="absolute bottom-0 left-0 w-0 h-[2px] bg-[rgb(208,67,239)]"
+                whileHover={{ width: '100%' }}
+                transition={{ duration: 0.2 }}
+              />
+            </Link>
+          </motion.div>
         </div>
 
         {/* Right side buttons */}
@@ -73,7 +101,7 @@ const Navbar = () => {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => handleNavigation('/onboarding')}
-            className="bg-purple-700 text-white px-4 py-2 rounded-md hover:bg-purple-600 transition-colors font-semibold"
+            className="bg-purple-800 text-white px-6 py-2.5 rounded-xl hover:bg-purple-700 transition-colors font-semibold"
           >
             Start Free Trial
           </motion.button>
@@ -113,14 +141,14 @@ const Navbar = () => {
             animate="open"
             exit="closed"
             variants={menuVariants}
-            className="md:hidden mt-4 px-4 py-5 space-y-4 bg-purple-500/50 rounded-md backdrop-blur-sm"
+            className="md:hidden mt-4 px-6 py-6 space-y-6 bg-black/20 backdrop-blur-md rounded-3xl border-2 border-[rgb(208,67,239)]"
           >
-            <motion.div variants={itemVariants} className="mb-4">
+            <motion.div variants={itemVariants} className="mb-6">
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => handleNavigation('/onboarding')}
-                className="bg-purple-700 text-white px-4 py-2 rounded-md hover:bg-purple-600 transition-colors font-semibold w-full text-center"
+                className="bg-purple-800 text-white px-6 py-2.5 rounded-xl hover:bg-purple-700 transition-colors font-semibold"
               >
                 Start Free Trial
               </motion.button>

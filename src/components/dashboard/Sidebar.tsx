@@ -1,4 +1,4 @@
-import { Settings, LineChart, Calculator, CircleDollarSign, LogOut, Home, User } from 'lucide-react';
+import { Settings, LineChart, Calculator, CircleDollarSign, LogOut, Home, User, FileText } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useMemo } from 'react';
 
@@ -25,6 +25,7 @@ export function Sidebar({
   const navItems = useMemo(() => [
     { icon: User, label: 'Profile', onClick: () => {}, path: '/dashboard/profile' },
     { icon: Home, label: 'Dashboard', onClick: () => navigate('/dashboard'), path: '/dashboard' },
+    { icon: FileText, label: 'My Files', onClick: () => navigate('/dashboard/files'), path: '/dashboard/files' },
     { icon: LineChart, label: 'Spending Habits', onClick: onSpendingHabitsClick, path: '/dashboard/spending-habits' },
     { icon: CircleDollarSign, label: 'Price Match', onClick: onPriceMatchClick, path: '/dashboard/price-match' },
     { icon: Calculator, label: 'Tax Calculator', onClick: onTaxPageClick, path: '/dashboard/tax-calculator' },

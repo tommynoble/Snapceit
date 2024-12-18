@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Routes, Route, useNavigate } from 'react-router-dom';
 import { Menu } from 'lucide-react';
 import { DashboardHeader } from './DashboardHeader';
@@ -9,7 +9,6 @@ import { UploadReceiptCard } from './upload/UploadReceiptCard';
 import { SpendingOverviewCard } from './spending/SpendingOverviewCard';
 import { RecentReceiptsCard } from './receipts/RecentReceiptsCard';
 import { ReminderCard } from './reminders/ReminderCard';
-import { SettingsModal } from './settings/SettingsModal';
 import { UserProfileModal } from './user/UserProfileModal';
 import { TaxDetailsCard } from './tax/TaxDetailsCard';
 import { PriceMatchModal } from './pricematch/PriceMatchModal';
@@ -17,18 +16,15 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../firebase/AuthContext';
 import { Sidebar } from './Sidebar';
 import logo from '../../../images/logo.svg';
-import { DashboardHome } from '../../pages/dashboard/DashboardHome';
-import { SpendingHabits } from '../../pages/dashboard/SpendingHabits';
+import SpendingHabits from './spending/SpendingHabits';
 import { PriceMatch } from '../../pages/dashboard/PriceMatch';
-import { TaxCalculator } from '../../pages/dashboard/TaxCalculator';
+import { TaxCalculator } from './tax/TaxCalculator';
+import { Profile } from '../../pages/dashboard/Profile';
+import { Settings } from '../../pages/dashboard/Settings';
 
 export function DashboardLayout() {
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [showSpendingHabits, setShowSpendingHabits] = useState(false);
+  const [isUserProfileOpen, setIsUserProfileOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [showTaxPage, setShowTaxPage] = useState(false);
-  const [showPriceMatch, setShowPriceMatch] = useState(false);
   const { logout } = useAuth();
   const navigate = useNavigate();
 
@@ -44,7 +40,44 @@ export function DashboardLayout() {
   const handleSpendingHabitsClick = () => navigate('/dashboard/spending-habits');
   const handlePriceMatchClick = () => navigate('/dashboard/price-match');
   const handleTaxPageClick = () => navigate('/dashboard/tax-calculator');
-  const handleSettingsClick = () => setIsSettingsOpen(true);
+  const handleSettingsClick = () => navigate('/dashboard/settings');
+
+  const handleProfileClick = () => {
+    setIsUserProfileOpen(true);
+  };
+
+  const DashboardContent = () => (
+    <>
+      <div className="mt-8">
+        <DashboardHeader 
+          userName="Thomas"
+          onProfileClick={handleProfileClick}
+          onSettingsClick={handleSettingsClick}
+          onLogout={handleLogout}
+        />
+      </div>
+      
+      {/* Summary Cards */}
+      <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <TaxDetailsCard />
+        <TotalReceiptsCard />
+        <MonthlySpendingCard />
+        <CategoriesCard />
+      </div>
+
+      {/* Main Content */}
+      <div className="mt-3 grid gap-3 lg:grid-cols-3">
+        <div className="lg:col-span-2 space-y-3">
+          <UploadReceiptCard />
+          <RecentReceiptsCard />
+        </div>
+        <div className="space-y-3">
+          <SpendingOverviewCard />
+          <ReminderCard />
+        </div>
+      </div>
+    </>
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#D444EF]/5 via-[#AF3AEB]/5 to-purple-900/5">
@@ -92,7 +125,7 @@ export function DashboardLayout() {
                 navigate('/dashboard/tax-calculator');
                 setIsMobileMenuOpen(false);
               }}
-              onSettingsClick={() => setIsSettingsOpen(true)}
+              onSettingsClick={() => setIsMobileMenuOpen(false)}
               onLogout={handleLogout}
             />
           </motion.div>
@@ -108,39 +141,15 @@ export function DashboardLayout() {
             <div className="flex-1 overflow-auto">
               <div className="container mx-auto p-2 sm:p-6">
                 <Routes>
-                  <Route index element={
-                    <>
-                      <div className="mt-8">
-                        <DashboardHeader 
-                          userName="Thomas"
-                          onProfileClick={() => setIsProfileOpen(true)}
-                        />
-                      </div>
-                      
-                      {/* Summary Cards */}
-                      <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                        <TaxDetailsCard />
-                        <TotalReceiptsCard />
-                        <MonthlySpendingCard />
-                        <CategoriesCard />
-                      </div>
-
-                      {/* Main Content */}
-                      <div className="mt-3 grid gap-3 lg:grid-cols-3">
-                        <div className="lg:col-span-2 space-y-3">
-                          <UploadReceiptCard />
-                          <RecentReceiptsCard />
-                        </div>
-                        <div className="space-y-3">
-                          <SpendingOverviewCard />
-                          <ReminderCard />
-                        </div>
-                      </div>
-                    </>
-                  } />
-                  <Route path="spending-habits" element={<SpendingHabits />} />
+                  <Route index element={<DashboardContent />} />
+                  <Route 
+                    path="spending-habits" 
+                    element={<SpendingHabits onProfileClick={handleProfileClick} />} 
+                  />
                   <Route path="price-match" element={<PriceMatch />} />
                   <Route path="tax-calculator" element={<TaxCalculator />} />
+                  <Route path="profile" element={<Profile />} />
+                  <Route path="settings" element={<Settings />} />
                 </Routes>
               </div>
             </div>
@@ -149,13 +158,12 @@ export function DashboardLayout() {
       </main>
 
       {/* Modals */}
-      <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
       <UserProfileModal 
-        isOpen={isProfileOpen} 
-        onClose={() => setIsProfileOpen(false)} 
+        isOpen={isUserProfileOpen} 
+        onClose={() => setIsUserProfileOpen(false)} 
         onLogout={handleLogout}
       />
-      <PriceMatchModal isOpen={showPriceMatch} onClose={() => setShowPriceMatch(false)} />
+      <PriceMatchModal isOpen={false} onClose={() => {}} />
 
       <footer className="lg:pl-64 mt-6 pb-4 text-center text-sm text-white/50">
         <p>You are using <a href="http://localhost:5184/" className="underline hover:text-white/80 transition-colors">Snapceit</a> v1.0</p>

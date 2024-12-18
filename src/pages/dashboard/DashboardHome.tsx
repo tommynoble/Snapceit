@@ -1,16 +1,29 @@
 import React from 'react';
 import { DashboardHeader } from '../../components/dashboard/DashboardHeader';
-import { ExpenseCard } from '../../components/dashboard/ExpenseCard';
-import { UploadReceiptCard } from '../../components/dashboard/UploadReceiptCard';
+import { UploadReceiptCard } from '../../components/dashboard/upload/UploadReceiptCard';
+import { RecentReceiptsCard } from '../../components/dashboard/receipts/RecentReceiptsCard';
+import { SpendingOverviewCard } from '../../components/dashboard/spending/SpendingOverviewCard';
 
-export const DashboardHome = () => {
+interface DashboardHomeProps {
+  onProfileClick?: () => void;
+}
+
+export const DashboardHome: React.FC<DashboardHomeProps> = ({ onProfileClick }) => {
   return (
     <div className="space-y-6">
-      <DashboardHeader userName="Thomas" onProfileClick={() => {}} />
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <ExpenseCard />
-        <UploadReceiptCard />
-        {/* Add more dashboard cards here */}
+      <div className="mt-8">
+        <DashboardHeader 
+          userName="Thomas"
+          onProfileClick={onProfileClick}
+        />
+      </div>
+      
+      <div className="p-6 space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <UploadReceiptCard />
+          <SpendingOverviewCard />
+        </div>
+        <RecentReceiptsCard />
       </div>
     </div>
   );

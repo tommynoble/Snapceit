@@ -2,18 +2,32 @@ import React from 'react';
 import { TopNavbar } from './TopNavbar';
 
 interface DashboardHeaderProps {
-  userName: string;
+  title?: string;
+  userName?: string;
   onProfileClick: () => void;
+  onSettingsClick: () => void;
+  onLogout: () => void;
 }
 
-export const DashboardHeader = ({ userName, onProfileClick }: DashboardHeaderProps) => {
+export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ 
+  title,
+  userName,
+  onProfileClick,
+  onSettingsClick,
+  onLogout
+}) => {
+  const displayTitle = userName ? `Welcome back ${userName}` : title;
+
   return (
-    <div className="mt-2">
-      <TopNavbar onProfileClick={onProfileClick} />
-      <div className="h-px bg-white/5 mt-1"></div>
-      <h1 className="text-3xl font-bold text-white py-2">
-        Welcome back, {userName}!
-      </h1>
+    <div>
+      <TopNavbar 
+        onProfileClick={onProfileClick}
+        onSettingsClick={onSettingsClick}
+        onLogout={onLogout}
+      />
+      <div className="px-6 mt-4">
+        <h1 className="text-2xl font-bold text-white">{displayTitle}</h1>
+      </div>
     </div>
   );
 };

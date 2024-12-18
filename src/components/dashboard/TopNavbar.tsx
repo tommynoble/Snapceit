@@ -1,14 +1,20 @@
-import { Search, Bell, HelpCircle, Sun, X } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { Search, Bell, HelpCircle, Sun, X, User, Settings, LogOut } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { useAuth } from '../../firebase/AuthContext';
 
 interface TopNavbarProps {
   onProfileClick: () => void;
+  onSettingsClick: () => void;
+  onLogout: () => void;
 }
 
-export const TopNavbar = ({ onProfileClick }: TopNavbarProps) => {
+export const TopNavbar = ({ onProfileClick, onSettingsClick, onLogout }: TopNavbarProps) => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const { currentUser } = useAuth();
 
   useEffect(() => {
     const checkMobile = () => {
@@ -19,6 +25,17 @@ export const TopNavbar = ({ onProfileClick }: TopNavbarProps) => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const toggleSearch = () => {
     setIsSearchOpen(!isSearchOpen);
     if (window.navigator.vibrate) {
@@ -26,9 +43,28 @@ export const TopNavbar = ({ onProfileClick }: TopNavbarProps) => {
     }
   };
 
+  const handleAvatarClick = () => {
+    if (isMobile) {
+      onProfileClick();
+    } else {
+      setIsDropdownOpen(!isDropdownOpen);
+    }
+  };
+
+  const getInitials = () => {
+    if (currentUser?.displayName) {
+      return currentUser.displayName
+        .split(' ')
+        .map(n => n[0])
+        .join('')
+        .toUpperCase();
+    }
+    return currentUser?.email?.[0].toUpperCase() || 'U';
+  };
+
   return (
-    <>
-      <div className="flex items-center justify-end gap-4 px-6 -mt-2">
+    <div className="w-full">
+      <div className="flex items-center justify-end gap-4 px-6 py-4 border-b border-white/10">
         <div className="flex items-center gap-4 relative">
           <div className="relative">
             <button 
@@ -89,14 +125,92 @@ export const TopNavbar = ({ onProfileClick }: TopNavbarProps) => {
             <Sun className="h-[18px] w-[18px] text-white/70" />
           </button>
           
-          <button 
-            onClick={onProfileClick}
-            className="relative p-1.5 rounded-full transition-all hover:scale-105"
-          >
-            <div className="h-7 w-7 rounded-full bg-white/10 ring-1 ring-white/20 flex items-center justify-center">
-              <span className="text-white/90 text-sm font-medium">T</span>
-            </div>
-          </button>
+          <div className="relative" ref={dropdownRef}>
+            <button 
+              onClick={handleAvatarClick}
+              className="relative p-1.5 rounded-full transition-all hover:scale-105 focus:outline-none focus:ring-2 focus:ring-[#4FDDE6]/50"
+            >
+              {currentUser?.photoURL ? (
+                <img
+                  src={currentUser.photoURL}
+                  alt="Profile"
+                  className="h-7 w-7 rounded-full object-cover ring-1 ring-white/20"
+                />
+              ) : (
+                <div className="h-7 w-7 rounded-full bg-white/10 ring-1 ring-white/20 flex items-center justify-center">
+                  <span className="text-white/90 text-sm font-medium">{getInitials()}</span>
+                </div>
+              )}
+            </button>
+
+            <AnimatePresence>
+              {isDropdownOpen && !isMobile && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                  transition={{ duration: 0.2 }}
+                  className="absolute right-0 mt-2 w-64 origin-top-right rounded-xl bg-white/10 backdrop-blur-xl shadow-lg ring-1 ring-white/20 focus:outline-none z-50"
+                >
+                  <div className="p-4 border-b border-white/10">
+                    <div className="flex items-center gap-3">
+                      {currentUser?.photoURL ? (
+                        <img
+                          src={currentUser.photoURL}
+                          alt="Profile"
+                          className="h-10 w-10 rounded-full object-cover ring-1 ring-white/20"
+                        />
+                      ) : (
+                        <div className="h-10 w-10 rounded-full bg-white/10 ring-1 ring-white/20 flex items-center justify-center">
+                          <User className="h-5 w-5 text-white/70" />
+                        </div>
+                      )}
+                      <div>
+                        <p className="text-sm font-medium text-white">
+                          {currentUser?.displayName || 'User'}
+                        </p>
+                        <p className="text-xs text-white/70">{currentUser?.email}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-2">
+                    <button
+                      onClick={() => {
+                        setIsDropdownOpen(false);
+                        onProfileClick();
+                      }}
+                      className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-white/90 hover:bg-white/10 transition-colors"
+                    >
+                      <User className="h-4 w-4" />
+                      View Profile
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsDropdownOpen(false);
+                        onSettingsClick();
+                      }}
+                      className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-white/90 hover:bg-white/10 transition-colors"
+                    >
+                      <Settings className="h-4 w-4" />
+                      Settings
+                    </button>
+                    <div className="my-1 border-t border-white/10" />
+                    <button
+                      onClick={() => {
+                        setIsDropdownOpen(false);
+                        onLogout();
+                      }}
+                      className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-red-400 hover:bg-white/10 transition-colors"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Sign Out
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
       </div>
 
@@ -138,6 +252,6 @@ export const TopNavbar = ({ onProfileClick }: TopNavbarProps) => {
           </>
         )}
       </AnimatePresence>
-    </>
+    </div>
   );
 };

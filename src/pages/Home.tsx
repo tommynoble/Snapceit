@@ -1,8 +1,12 @@
 import { useState } from 'react';
 import Features from '../components/Features';
+import Features2 from '../components/Features2';
 import Hero from '../components/Hero';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import QuickbooksSection from '../components/QuickbooksSection';
+import PricingSection from '../components/PricingSection';
+import ReviewsSection from '../components/ReviewsSection';
 
 const Home = () => {
   return (
@@ -16,6 +20,10 @@ const Home = () => {
       <main>
         {/* Features Section */}
         <Features />
+        <QuickbooksSection />
+        <Features2 />
+        <ReviewsSection />
+        <PricingSection />
         <Footer />
       </main>
     </div>
