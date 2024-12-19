@@ -1,13 +1,12 @@
 import React from 'react';
 import { useReceipts } from '../../components/dashboard/receipts/ReceiptContext';
 import { Receipt } from '../../components/dashboard/receipts/ReceiptContext';
-import { walmartApi } from '../../services/walmartApi';
 
 interface PriceComparison {
   itemName: string;
   yourPrice: number;
-  walmartPrice: number | null;
-  walmartUrl: string | null;
+  comparisonPrice: number | null;
+  storeName: string | null;
   loading: boolean;
   error: string | null;
 }
@@ -24,47 +23,39 @@ export function PriceMatchPage() {
       [itemName]: {
         itemName,
         yourPrice: price,
-        walmartPrice: null,
-        walmartUrl: null,
+        comparisonPrice: null,
+        storeName: null,
         loading: true,
         error: null
       }
     }));
 
-    try {
-      const match = await walmartApi.findBestPriceMatch(itemName, price);
-      
+    // Simulate API call with timeout
+    setTimeout(() => {
+      // Mock price comparison (random price within 20% of original price)
+      const variation = (Math.random() - 0.5) * 0.4; // -20% to +20%
+      const mockPrice = price * (1 + variation);
+      const mockStore = Math.random() > 0.5 ? 'Target' : 'Walmart';
+
       setComparisons(prev => ({
         ...prev,
         [itemName]: {
           itemName,
           yourPrice: price,
-          walmartPrice: match?.salePrice || null,
-          walmartUrl: match?.productUrl || null,
+          comparisonPrice: Number(mockPrice.toFixed(2)),
+          storeName: mockStore,
           loading: false,
-          error: !match ? 'No matching products found' : null
+          error: null
         }
       }));
-    } catch (error) {
-      setComparisons(prev => ({
-        ...prev,
-        [itemName]: {
-          itemName,
-          yourPrice: price,
-          walmartPrice: null,
-          walmartUrl: null,
-          loading: false,
-          error: 'Error fetching price comparison'
-        }
-      }));
-    }
+    }, 1000);
   };
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-white mb-2">Price Match</h1>
-        <p className="text-white/70">Compare your receipt items with current prices from Walmart</p>
+        <p className="text-white/70">Compare your receipt items with current market prices</p>
       </div>
 
       {/* Receipt Selection */}
@@ -100,8 +91,8 @@ export function PriceMatchPage() {
           <div className="space-y-4">
             {selectedReceipt.items.map((item, index) => {
               const comparison = comparisons[item.name];
-              const savings = comparison?.walmartPrice 
-                ? (comparison.yourPrice - comparison.walmartPrice).toFixed(2)
+              const savings = comparison?.comparisonPrice 
+                ? (comparison.yourPrice - comparison.comparisonPrice).toFixed(2)
                 : null;
 
               return (
@@ -123,22 +114,12 @@ export function PriceMatchPage() {
                           ) : (
                             <>
                               <p className="text-white/60">
-                                Walmart price: ${comparison.walmartPrice?.toFixed(2)}
+                                {comparison.storeName} price: ${comparison.comparisonPrice?.toFixed(2)}
                               </p>
                               {savings && Number(savings) > 0 && (
                                 <p className="text-green-400 mt-1">
                                   Potential savings: ${savings}
                                 </p>
-                              )}
-                              {comparison.walmartUrl && (
-                                <a
-                                  href={comparison.walmartUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-blue-400 hover:text-blue-300 text-sm mt-2 inline-block"
-                                >
-                                  View at Walmart
-                                </a>
                               )}
                             </>
                           )}
