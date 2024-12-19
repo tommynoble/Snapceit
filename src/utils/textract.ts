@@ -1,5 +1,6 @@
 import { TextractClient, AnalyzeExpenseCommand } from "@aws-sdk/client-textract";
 import { detectCategory } from './categoryDetection';
+import { parseNumber } from './formatters';
 
 const textractClient = new TextractClient({
   region: import.meta.env.VITE_AWS_REGION || 'us-east-1',
@@ -112,7 +113,7 @@ function extractTaxInformation(blocks: any[], summaryFields: any[] = []) {
   // First check Textract's tax fields
   for (const field of summaryFields) {
     if (field.Type?.Text === 'TAX' && field.ValueDetection?.Text) {
-      const amount = parseFloat(field.ValueDetection.Text.replace(/[^0-9.-]+/g, ''));
+      const amount = parseNumber(field.ValueDetection.Text);
       if (!isNaN(amount)) {
         console.log('Found tax in Textract fields:', amount);
         taxInfo.total = amount;
@@ -125,17 +126,21 @@ function extractTaxInformation(blocks: any[], summaryFields: any[] = []) {
   // Common tax-related keywords and patterns
   const taxKeywords = [
     'tax:', 'tax', 'taxes', 'tx:', 'tx', 'hst', 'gst', 'vat',
-    'sales tax', 'state tax', 'local tax', 'service tax', 'excise tax'
+    'sales tax', 'state tax', 'local tax', 'service tax', 'excise tax',
+    'mwst', 'tva', 'iva' // Add international tax terms
   ];
 
-  // Enhanced tax line patterns
+  // Enhanced tax line patterns including international formats
   const taxPatterns = [
-    /(?:tax|tx|gst|hst|vat)[:\s]+[$]?\s*(\d+\.?\d*)/i,
-    /[$]?\s*(\d+\.?\d*)\s*(?:tax|tx|gst|hst|vat)/i,
-    /total\s+tax[:\s]+[$]?\s*(\d+\.?\d*)/i,
-    /tax\s+total[:\s]+[$]?\s*(\d+\.?\d*)/i,
-    /sales\s+tax[:\s]+[$]?\s*(\d+\.?\d*)/i,
-    /state\s+tax[:\s]+[$]?\s*(\d+\.?\d*)/i
+    /(?:tax|tx|gst|hst|vat|mwst|tva|iva)[:\s]+[$€£¥]?\s*([0-9.,]+)/i,
+    /[$€£¥]?\s*([0-9.,]+)\s*(?:tax|tx|gst|hst|vat|mwst|tva|iva)/i,
+    /total\s+tax[:\s]+[$€£¥]?\s*([0-9.,]+)/i,
+    /tax\s+total[:\s]+[$€£¥]?\s*([0-9.,]+)/i,
+    /sales\s+tax[:\s]+[$€£¥]?\s*([0-9.,]+)/i,
+    /state\s+tax[:\s]+[$€£¥]?\s*([0-9.,]+)/i,
+    /mwst\.?\s*([0-9.,]+)/i,  // German VAT
+    /tva\.?\s*([0-9.,]+)/i,   // French VAT
+    /iva\.?\s*([0-9.,]+)/i    // Italian/Spanish VAT
   ];
 
   // Sort blocks by vertical position (top to bottom)
@@ -199,20 +204,20 @@ function extractTaxInformation(blocks: any[], summaryFields: any[] = []) {
   // Helper function to extract amount from text
   function extractAmount(text: string): number | null {
     // Remove any currency symbols and trim
-    const cleanText = text.replace(/[^0-9.\s]/g, '').trim();
+    const cleanText = text.replace(/[^0-9.\s,€£¥]/g, '').trim();
     
     // Try tax patterns first
     for (const pattern of taxPatterns) {
       const match = text.match(pattern);
       if (match && match[1]) {
-        const amount = parseFloat(match[1]);
+        const amount = parseNumber(match[1].replace(',', '.'));
         if (!isNaN(amount) && amount > 0) return amount;
       }
     }
 
     // If no pattern match, try to extract any number from the cleaned text
     if (cleanText.length > 0) {
-      const amount = parseFloat(cleanText);
+      const amount = parseNumber(cleanText.replace(',', '.'));
       if (!isNaN(amount) && amount > 0) return amount;
     }
 
@@ -330,11 +335,11 @@ export async function analyzeReceiptFromS3(bucketName: string, objectKey: string
         }
         if (field.Type?.Text === 'TOTAL') {
           const totalText = field.ValueDetection?.Text || '0';
-          total = parseFloat(totalText.replace(/[^0-9.-]+/g, '')) || 0;
+          total = parseNumber(totalText);
         }
         if (field.Type?.Text === 'SUBTOTAL') {
           const subtotalText = field.ValueDetection?.Text || '0';
-          subtotal = parseFloat(subtotalText.replace(/[^0-9.-]+/g, '')) || 0;
+          subtotal = parseNumber(subtotalText);
         }
       });
 
@@ -353,11 +358,11 @@ export async function analyzeReceiptFromS3(bucketName: string, objectKey: string
             }
             if (field.Type?.Text === 'PRICE') {
               const priceText = field.ValueDetection?.Text || '0';
-              item.price = parseFloat(priceText.replace(/[^0-9.-]+/g, '')) || 0;
+              item.price = parseNumber(priceText);
             }
             if (field.Type?.Text === 'QUANTITY') {
               const quantityText = field.ValueDetection?.Text || '0';
-              item.quantity = parseFloat(quantityText.replace(/[^0-9.-]+/g, '')) || 0;
+              item.quantity = parseNumber(quantityText);
             }
           });
 

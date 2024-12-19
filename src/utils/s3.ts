@@ -10,9 +10,11 @@ import {
 const s3Client = new S3Client({
   region: import.meta.env.VITE_AWS_REGION || 'us-east-1',
   credentials: {
-    accessKeyId: import.meta.env.VITE_AWS_ACCESS_KEY_ID,
-    secretAccessKey: import.meta.env.VITE_AWS_SECRET_ACCESS_KEY,
+    accessKeyId: import.meta.env.VITE_AWS_ACCESS_KEY_ID || '',
+    secretAccessKey: import.meta.env.VITE_AWS_SECRET_ACCESS_KEY || '',
   },
+  endpoint: import.meta.env.VITE_AWS_ENDPOINT,
+  forcePathStyle: true,
 });
 
 const BUCKET_NAME = 'snapceit';
@@ -23,8 +25,10 @@ const ensureBucketExists = async () => {
     // Check if bucket exists
     try {
       await s3Client.send(new HeadBucketCommand({ Bucket: BUCKET_NAME }));
+      console.log('Bucket exists:', BUCKET_NAME);
       return; // Bucket exists
     } catch (error) {
+      console.log('Creating new bucket:', BUCKET_NAME);
       // Bucket doesn't exist, create it
       await s3Client.send(new CreateBucketCommand({ 
         Bucket: BUCKET_NAME
@@ -57,8 +61,10 @@ const ensureBucketExists = async () => {
             AllowedHeaders: ["*"],
             AllowedMethods: ["PUT", "POST", "GET", "HEAD"],
             AllowedOrigins: [
-              "http://localhost:5184",
-              "https://your-production-domain.com" // Add your production domain when ready
+              "http://localhost:5173",
+              "http://localhost:5174",
+              "http://localhost:5175",
+              "http://localhost:*"
             ],
             ExposeHeaders: ["ETag"]
           }
@@ -69,7 +75,7 @@ const ensureBucketExists = async () => {
         Bucket: BUCKET_NAME,
         CORSConfiguration: corsConfig
       }));
-      
+
       console.log('Created bucket with CORS configuration:', BUCKET_NAME);
     }
   } catch (error) {
@@ -112,10 +118,12 @@ export const uploadToS3 = async (
     }
     
     // Return both the URL and key
-    return {
-      url: `https://${BUCKET_NAME}.s3.${import.meta.env.VITE_AWS_REGION || 'us-east-1'}.amazonaws.com/${key}`,
-      key: key
-    };
+    const endpoint = import.meta.env.VITE_AWS_ENDPOINT;
+    const url = endpoint 
+      ? `${endpoint}/${BUCKET_NAME}/${key}`
+      : `https://${BUCKET_NAME}.s3.${import.meta.env.VITE_AWS_REGION || 'us-east-1'}.amazonaws.com/${key}`;
+
+    return { url, key };
   } catch (error) {
     console.error('Error uploading to S3:', error);
     throw new Error('Upload failed: ' + (error as Error).message);

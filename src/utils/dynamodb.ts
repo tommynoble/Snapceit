@@ -122,13 +122,18 @@ export const dynamoDb = {
     const expressionAttributeNames: Record<string, string> = {};
     const expressionAttributeValues: Record<string, any> = {};
 
-    Object.entries(updates).forEach(([key, value]) => {
-      updateExpressions.push(`#${key} = :${key}`);
-      expressionAttributeNames[`#${key}`] = key;
-      expressionAttributeValues[`:${key}`] = value;
+    // Remove updatedAt from updates if it exists to prevent overlap
+    const { updatedAt, ...otherUpdates } = updates;
+
+    Object.entries(otherUpdates).forEach(([key, value]) => {
+      if (value !== undefined) {  // Only include defined values
+        updateExpressions.push(`#${key} = :${key}`);
+        expressionAttributeNames[`#${key}`] = key;
+        expressionAttributeValues[`:${key}`] = value;
+      }
     });
 
-    // Always update the updatedAt timestamp
+    // Add updatedAt timestamp
     updateExpressions.push('#updatedAt = :updatedAt');
     expressionAttributeNames['#updatedAt'] = 'updatedAt';
     expressionAttributeValues[':updatedAt'] = new Date().toISOString();
@@ -141,8 +146,10 @@ export const dynamoDb = {
       },
       UpdateExpression: `SET ${updateExpressions.join(', ')}`,
       ExpressionAttributeNames: expressionAttributeNames,
-      ExpressionAttributeValues: expressionAttributeValues
+      ExpressionAttributeValues: expressionAttributeValues,
+      ReturnValues: 'ALL_NEW'
     });
+
     return docClient.send(command);
   },
 

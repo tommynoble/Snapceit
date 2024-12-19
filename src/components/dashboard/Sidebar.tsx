@@ -1,4 +1,4 @@
-import { Settings, LineChart, Calculator, CircleDollarSign, LogOut, Home, User, FileText } from 'lucide-react';
+import { Settings, LineChart, Calculator, CircleDollarSign, LogOut, Home, User, FileText, Percent } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useMemo } from 'react';
 
@@ -7,6 +7,7 @@ interface SidebarProps {
   onPriceMatchClick: () => void;
   onTaxPageClick: () => void;
   onSettingsClick: () => void;
+  onDeductionsClick: () => void;
   onLogout: () => void;
 }
 
@@ -15,6 +16,7 @@ export function Sidebar({
   onPriceMatchClick,
   onTaxPageClick,
   onSettingsClick,
+  onDeductionsClick,
   onLogout
 }: SidebarProps) {
   const location = useLocation();
@@ -23,14 +25,14 @@ export function Sidebar({
 
   // Memoize navItems to prevent re-renders
   const navItems = useMemo(() => [
-    { icon: User, label: 'Profile', onClick: () => {}, path: '/dashboard/profile' },
     { icon: Home, label: 'Dashboard', onClick: () => navigate('/dashboard'), path: '/dashboard' },
     { icon: FileText, label: 'My Files', onClick: () => navigate('/dashboard/files'), path: '/dashboard/files' },
     { icon: LineChart, label: 'Spending Habits', onClick: onSpendingHabitsClick, path: '/dashboard/spending-habits' },
     { icon: CircleDollarSign, label: 'Price Match', onClick: onPriceMatchClick, path: '/dashboard/price-match' },
     { icon: Calculator, label: 'Tax Calculator', onClick: onTaxPageClick, path: '/dashboard/tax-calculator' },
+    { icon: Percent, label: 'Deductions', onClick: onDeductionsClick, path: '/dashboard/deductions' },
     { icon: Settings, label: 'Settings', onClick: onSettingsClick, path: '/dashboard/settings' },
-  ], [navigate, onSpendingHabitsClick, onPriceMatchClick, onTaxPageClick, onSettingsClick]);
+  ], [navigate, onSpendingHabitsClick, onPriceMatchClick, onTaxPageClick, onSettingsClick, onDeductionsClick]);
 
   return (
     <div className="fixed left-0 top-0 h-full w-64 bg-black/10 backdrop-blur-xl border-r border-white/10 flex flex-col">

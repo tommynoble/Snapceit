@@ -1,18 +1,67 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Receipt, MoreVertical, Edit2, Trash2, X, AlertTriangle, Copy, Check } from 'lucide-react';
+import { 
+  Receipt as ReceiptIcon, 
+  MoreVertical, 
+  Edit2, 
+  Trash2, 
+  X, 
+  AlertTriangle, 
+  Copy, 
+  Check, 
+  ShoppingBag, 
+  Coffee, 
+  Car, 
+  Home, 
+  Utensils, 
+  Gift, 
+  Book, 
+  Briefcase, 
+  Heart, 
+  Globe, 
+  Zap, 
+  Megaphone, 
+  FileText 
+} from 'lucide-react';
 import { useReceipts } from './ReceiptContext';
 import { EditReceiptModal } from './EditReceiptModal';
 import { toast } from 'react-hot-toast';
 
 export function RecentReceiptsCard() {
-  const { receipts, deleteReceipt } = useReceipts();
+  const { receipts, deleteReceipt, updateReceipt } = useReceipts();
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [selectedReceipt, setSelectedReceipt] = useState<any>(null);
   const [selectedReceipts, setSelectedReceipts] = useState<Set<string>>(new Set());
   const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
+
+  // Category icon mapping
+  const categoryIcons: { [key: string]: { 
+    icon: React.ComponentType<any>, 
+    color: string,
+    bgColor: string
+  }} = {
+    'Advertising': { icon: Megaphone, color: 'text-pink-500', bgColor: 'bg-pink-100' },
+    'Car and Truck Expenses': { icon: Car, color: 'text-blue-500', bgColor: 'bg-blue-100' },
+    'Office Expenses': { icon: Briefcase, color: 'text-purple-500', bgColor: 'bg-purple-100' },
+    'Travel': { icon: Globe, color: 'text-teal-500', bgColor: 'bg-teal-100' },
+    'Meals': { icon: Utensils, color: 'text-orange-500', bgColor: 'bg-orange-100' },
+    'Utilities': { icon: Zap, color: 'text-yellow-500', bgColor: 'bg-yellow-100' },
+    'Taxes and Licenses': { icon: FileText, color: 'text-emerald-500', bgColor: 'bg-emerald-100' },
+    'Supplies': { icon: ShoppingBag, color: 'text-indigo-500', bgColor: 'bg-indigo-100' },
+    'Other': { icon: ReceiptIcon, color: 'text-gray-500', bgColor: 'bg-gray-100' }
+  };
+
+  const getCategoryIcon = (category: string) => {
+    const config = categoryIcons[category] || categoryIcons['Other'];
+    const Icon = config.icon;
+    return (
+      <div className={`p-2.5 rounded-full ${config.bgColor} flex items-center justify-center`}>
+        <Icon className={`h-5 w-5 ${config.color}`} />
+      </div>
+    );
+  };
 
   // Handle shift key press
   useEffect(() => {
@@ -46,6 +95,8 @@ export function RecentReceiptsCard() {
         newSelected.add(receipt.id);
       }
       setSelectedReceipts(newSelected);
+    } else {
+      handleEdit(receipt);
     }
   };
 
@@ -109,9 +160,18 @@ export function RecentReceiptsCard() {
     }
   };
 
-  const handleSave = async (id: string, updatedData: any) => {
-    // Implement save functionality
-    setEditModalOpen(false);
+  const handleSave = async (formData: any) => {
+    try {
+      if (selectedReceipt) {
+        await updateReceipt(selectedReceipt.id, formData);
+        toast.success('Receipt updated successfully');
+        setEditModalOpen(false);
+        setSelectedReceipt(null);
+      }
+    } catch (error) {
+      console.error('Error updating receipt:', error);
+      toast.error('Failed to update receipt');
+    }
   };
 
   return (
@@ -141,7 +201,7 @@ export function RecentReceiptsCard() {
           </div>
         )}
       </div>
-      
+
       <div className="h-[400px] overflow-y-auto pr-2 space-y-4 scrollbar-thin scrollbar-thumb-purple-200 scrollbar-track-transparent">
         {receipts.map((receipt, index) => (
           <motion.div
@@ -149,19 +209,13 @@ export function RecentReceiptsCard() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
-            onClick={() => handleReceiptClick(receipt)}
+            onClick={() => isMultiSelectMode ? handleReceiptClick(receipt) : handleEdit(receipt)}
             className={`group relative flex items-center justify-between rounded-lg border p-4 hover:bg-gray-50 cursor-pointer
               ${selectedReceipts.has(receipt.id) ? 'border-purple-500 bg-purple-50' : 'border-gray-200'}
               ${isMultiSelectMode ? 'hover:border-purple-500' : ''}`}
           >
             <div className="flex items-center gap-4">
-              <div className={`rounded-full p-2 ${selectedReceipts.has(receipt.id) ? 'bg-purple-100' : 'bg-purple-100'}`}>
-                {selectedReceipts.has(receipt.id) ? (
-                  <Check className="h-5 w-5 text-purple-600" />
-                ) : (
-                  <Receipt className="h-5 w-5 text-purple-600" />
-                )}
-              </div>
+              {getCategoryIcon(receipt.category)}
               <div>
                 <div className="font-medium text-gray-900">
                   ${(receipt.total || 0).toFixed(2)}
@@ -174,66 +228,76 @@ export function RecentReceiptsCard() {
                 </div>
               </div>
             </div>
-            
-            {!isMultiSelectMode && (
-              <div className="relative">
-                <button 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setActiveMenu(activeMenu === receipt.id ? null : receipt.id);
-                  }}
-                  className="opacity-0 group-hover:opacity-100 rounded-full p-1 hover:bg-gray-100"
-                >
-                  <MoreVertical className="h-5 w-5 text-gray-400" />
-                </button>
 
-                <AnimatePresence>
-                  {activeMenu === receipt.id && (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.95 }}
-                      className="absolute right-0 top-full z-10 mt-2 w-48 rounded-lg bg-white py-2 shadow-xl ring-1 ring-black ring-opacity-5"
-                    >
+            <div className="relative ml-auto">
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveMenu(activeMenu === receipt.id ? null : receipt.id);
+                }}
+                className="rounded-full p-1.5 hover:bg-gray-100 transition-colors"
+              >
+                <MoreVertical className="h-5 w-5 text-gray-400" />
+              </button>
+
+              <AnimatePresence>
+                {activeMenu === receipt.id && (
+                  <motion.div 
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50"
+                    style={{ top: '100%' }}
+                  >
+                    <div className="py-1" role="menu">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           handleEdit(receipt);
                         }}
-                        className="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                        role="menuitem"
                       >
-                        <Edit2 size={16} />
-                        Edit Receipt
+                        <Edit2 className="h-4 w-4 mr-2" />
+                        Edit
                       </button>
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           handleDeleteClick(receipt);
                         }}
-                        className="flex w-full items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                        disabled={receipt.status === 'adding'}
+                        className={`w-full text-left px-4 py-2 text-sm flex items-center
+                          ${receipt.status === 'adding' 
+                            ? 'text-gray-400 cursor-not-allowed' 
+                            : 'text-red-600 hover:bg-gray-100'
+                          }`}
+                        role="menuitem"
                       >
-                        <Trash2 size={16} />
+                        <Trash2 className="h-4 w-4 mr-2" />
                         Delete
+                        {receipt.status === 'adding' && (
+                          <span className="ml-2 text-xs">(Adding in progress)</span>
+                        )}
                       </button>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            )}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </motion.div>
         ))}
         {receipts.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-gray-500">
-            <Receipt className="h-12 w-12 text-gray-300 mb-2" />
+            <ReceiptIcon className="h-12 w-12 text-gray-300 mb-2" />
             <p>No receipts yet</p>
           </div>
         )}
       </div>
 
-      {/* Edit Modal */}
       {editModalOpen && selectedReceipt && (
         <EditReceiptModal
-          isOpen={editModalOpen}
+          isOpen={true}
           onClose={() => {
             setEditModalOpen(false);
             setSelectedReceipt(null);
@@ -243,51 +307,52 @@ export function RecentReceiptsCard() {
         />
       )}
 
-      {/* Delete Confirmation Modal */}
-      <AnimatePresence>
-        {deleteModalOpen && (selectedReceipt || selectedReceipts.size > 0) && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-          >
+      {deleteModalOpen && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50">
+          <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
             <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-xl"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="relative transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:p-6"
             >
-              <div className="mb-4 flex items-center gap-3 text-red-600">
-                <AlertTriangle size={24} />
-                <h3 className="text-lg font-semibold">Delete Receipt{selectedReceipts.size > 0 ? 's' : ''}</h3>
+              <div className="sm:flex sm:items-start">
+                <div className="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                  <AlertTriangle className="h-6 w-6 text-red-600" />
+                </div>
+                <div className="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left">
+                  <h3 className="text-lg font-semibold leading-6 text-gray-900">
+                    Delete Receipt
+                  </h3>
+                  <div className="mt-2">
+                    <p className="text-sm text-gray-500">
+                      Are you sure you want to delete {selectedReceipts.size > 0 ? `these ${selectedReceipts.size} receipts` : 'this receipt'}? This action cannot be undone.
+                    </p>
+                  </div>
+                </div>
               </div>
-              
-              <p className="mb-6 text-gray-600">
-                Are you sure you want to delete {selectedReceipts.size > 0 ? `${selectedReceipts.size} receipts` : 'this receipt'}? This action cannot be undone.
-              </p>
-
-              <div className="flex justify-end gap-3">
+              <div className="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse gap-3">
                 <button
+                  type="button"
+                  onClick={handleDeleteConfirm}
+                  className="inline-flex w-full justify-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 sm:w-auto"
+                >
+                  Delete
+                </button>
+                <button
+                  type="button"
                   onClick={() => {
                     setDeleteModalOpen(false);
                     setSelectedReceipt(null);
                   }}
-                  className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  className="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
                 >
                   Cancel
                 </button>
-                <button
-                  onClick={handleDeleteConfirm}
-                  className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
-                >
-                  Delete
-                </button>
               </div>
             </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </div>
+        </div>
+      )}
     </motion.div>
   );
 }

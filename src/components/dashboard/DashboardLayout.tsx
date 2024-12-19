@@ -17,10 +17,11 @@ import { useAuth } from '../../firebase/AuthContext';
 import { Sidebar } from './Sidebar';
 import logo from '../../../images/logo.svg';
 import SpendingHabits from './spending/SpendingHabits';
-import { PriceMatch } from '../../pages/dashboard/PriceMatch';
 import { TaxCalculator } from './tax/TaxCalculator';
 import { Profile } from '../../pages/dashboard/Profile';
 import { Settings } from '../../pages/dashboard/Settings';
+import { DeductionsPage } from '../../pages/dashboard/DeductionsPage';
+import { PriceMatchPage } from '../../pages/dashboard/PriceMatchPage';
 
 export function DashboardLayout() {
   const [isUserProfileOpen, setIsUserProfileOpen] = useState(false);
@@ -41,6 +42,7 @@ export function DashboardLayout() {
   const handlePriceMatchClick = () => navigate('/dashboard/price-match');
   const handleTaxPageClick = () => navigate('/dashboard/tax-calculator');
   const handleSettingsClick = () => navigate('/dashboard/settings');
+  const handleDeductionsClick = () => navigate('/dashboard/deductions');
 
   const handleProfileClick = () => {
     setIsUserProfileOpen(true);
@@ -88,6 +90,7 @@ export function DashboardLayout() {
           onPriceMatchClick={handlePriceMatchClick}
           onTaxPageClick={handleTaxPageClick}
           onSettingsClick={handleSettingsClick}
+          onDeductionsClick={handleDeductionsClick}
           onLogout={handleLogout}
         />
       </div>
@@ -126,6 +129,10 @@ export function DashboardLayout() {
                 setIsMobileMenuOpen(false);
               }}
               onSettingsClick={() => setIsMobileMenuOpen(false)}
+              onDeductionsClick={() => {
+                navigate('/dashboard/deductions');
+                setIsMobileMenuOpen(false);
+              }}
               onLogout={handleLogout}
             />
           </motion.div>
@@ -146,10 +153,11 @@ export function DashboardLayout() {
                     path="spending-habits" 
                     element={<SpendingHabits onProfileClick={handleProfileClick} />} 
                   />
-                  <Route path="price-match" element={<PriceMatch />} />
+                  <Route path="price-match" element={<PriceMatchPage />} />
                   <Route path="tax-calculator" element={<TaxCalculator />} />
                   <Route path="profile" element={<Profile />} />
                   <Route path="settings" element={<Settings />} />
+                  <Route path="deductions" element={<DeductionsPage />} />
                 </Routes>
               </div>
             </div>

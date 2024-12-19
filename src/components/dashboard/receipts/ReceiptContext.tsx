@@ -194,26 +194,53 @@ export function ReceiptProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      await dynamoDb.updateReceipt(currentUser.uid, id, {
+      // Transform the updates to match DynamoDB field names
+      const dynamoUpdates = {
         merchantName: updates.merchant,
         date: updates.date,
         total: updates.total,
-        tax: updates.tax,
+        tax: updates.tax ? {
+          total: updates.tax.total || 0,
+          breakdown: {
+            salesTax: updates.tax.breakdown?.salesTax || 0,
+            stateTax: updates.tax.breakdown?.stateTax || 0,
+            localTax: updates.tax.breakdown?.localTax || 0,
+            otherTaxes: updates.tax.breakdown?.otherTaxes || []
+          }
+        } : undefined,
         items: updates.items?.map(item => ({
           description: item.name,
           price: item.price
         })),
         category: updates.category,
         imageUrl: updates.imageUrl,
-        status: updates.status,
-        updatedAt: new Date().toISOString()
-      });
+        status: updates.status || 'completed'
+      };
+
+      const result = await dynamoDb.updateReceipt(currentUser.uid, id, dynamoUpdates);
       
-      setReceipts(prev =>
-        prev.map(receipt =>
-          receipt.id === id ? { ...receipt, ...updates } : receipt
-        )
-      );
+      // Update local state with the returned data
+      if (result.Attributes) {
+        const updatedReceipt = {
+          id,
+          merchant: result.Attributes.merchantName,
+          date: result.Attributes.date,
+          total: result.Attributes.total,
+          category: result.Attributes.category,
+          imageUrl: result.Attributes.imageUrl,
+          status: result.Attributes.status,
+          tax: result.Attributes.tax,
+          items: result.Attributes.items?.map(item => ({
+            name: item.description,
+            price: item.price
+          })) || []
+        };
+        setReceipts(prev =>
+          prev.map(receipt =>
+            receipt.id === id ? updatedReceipt : receipt
+          )
+        );
+      }
     } catch (err) {
       console.error('Error updating receipt:', err);
       throw err;

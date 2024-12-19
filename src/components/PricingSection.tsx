@@ -5,14 +5,14 @@ const PricingSection = () => {
   const plans = [
     {
       name: 'Basic',
-      price: '9.99',
-      description: 'Perfect for individuals and small businesses',
+      price: '39.99',
+      description: 'Perfect for small businesses and startups',
       features: [
-        'Scan up to 50 receipts/month',
-        'Basic text recognition (OCR)',
-        'Export to PDF & CSV',
-        'Mobile app access',
+        'Receipt scanning and digitization',
+        'Basic expense tracking',
+        'CSV export',
         'Email support',
+        'Mobile app access',
       ],
       popular: false,
       gradient: 'from-blue-500 to-cyan-400',
@@ -20,16 +20,16 @@ const PricingSection = () => {
     },
     {
       name: 'Professional',
-      price: '24.99',
+      price: '60.00',
       description: 'Ideal for growing businesses',
       features: [
         'Unlimited receipt scanning',
-        'Advanced OCR with field detection',
-        'QuickBooks integration',
-        'Custom expense categories',
-        'Priority email & chat support',
-        'Receipt analytics dashboard',
-        'Multi-user access (up to 3)',
+        'Unlimited uploads and downloads',
+        'QuickBooks Integration',
+        'Advanced analytics',
+        'Tax deductions tracking',
+        'Price match & refund alerts',
+        'Priority support',
       ],
       popular: true,
       gradient: 'from-purple-600 to-pink-500',
@@ -37,16 +37,14 @@ const PricingSection = () => {
     },
     {
       name: 'Enterprise',
-      price: '49.99',
-      description: 'For large organizations',
+      price: 'Contact Support',
+      description: 'For large organizations with custom needs',
       features: [
         'Everything in Professional',
-        'Unlimited team members',
-        'Advanced analytics & reporting',
-        'Custom API access',
+        'Custom integrations',
         'Dedicated account manager',
-        'Custom integration support',
-        'SLA & premium support',
+        'SLA support',
+        'Custom AI training',
       ],
       popular: false,
       gradient: 'from-orange-500 to-amber-400',
@@ -102,11 +100,13 @@ const PricingSection = () => {
                 <h3 className="text-xl md:text-2xl font-bold text-gray-900">{plan.name}</h3>
                 <div className="mt-4 md:mt-4 flex items-baseline justify-center gap-x-2">
                   <span className="text-3xl md:text-4xl font-bold tracking-tight text-gray-900">
-                    ${plan.price}
+                    {plan.price === 'Contact Support' ? plan.price : `$${plan.price}`}
                   </span>
-                  <span className="text-sm font-semibold leading-6 tracking-wide text-gray-600">
-                    /month
-                  </span>
+                  {plan.price !== 'Contact Support' && (
+                    <span className="text-sm font-semibold leading-6 tracking-wide text-gray-600">
+                      /month
+                    </span>
+                  )}
                 </div>
                 <p className="mt-4 text-sm md:text-base text-gray-600">{plan.description}</p>
               </div>
@@ -132,13 +132,13 @@ const PricingSection = () => {
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className={`mt-6 md:mt-8 block w-full rounded-lg px-3 py-3 text-center text-sm font-semibold leading-6 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
+                className={`mt-6 md:mt-8 block w-full text-base sm:text-lg px-3 sm:px-8 py-2 sm:py-3 rounded-md font-semibold leading-6 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
                   plan.popular
-                    ? 'bg-gradient-to-r from-[#FF6B00] to-orange-600 text-white shadow-sm hover:opacity-90 focus-visible:outline-orange-600'
+                    ? 'bg-purple-700 text-white hover:bg-purple-600 transition-colors'
                     : `bg-gradient-to-r ${plan.buttonGradient} text-white hover:opacity-90 focus-visible:outline-${plan.buttonGradient.split(' ')[1]}`
                 }`}
               >
-                Get started
+                {plan.price === 'Contact Support' ? 'Contact Us' : 'Get started'}
               </motion.button>
             </motion.div>
           ))}

@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '../../firebase/AuthContext';
 import { UserSettings } from '../../types/settings';
+import { useReceipts } from '../../components/dashboard/receipts/ReceiptContext';
 import { 
   Bell, 
   Globe, 
@@ -17,8 +18,13 @@ import { format } from 'date-fns';
 
 export function Settings() {
   const { currentUser } = useAuth();
+  const { receipts } = useReceipts();
   const [settings, setSettings] = useState<UserSettings | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const userCategories = useMemo(() => {
+    return Array.from(new Set(receipts.map(receipt => receipt.category))).filter(Boolean);
+  }, [receipts]);
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -193,27 +199,19 @@ export function Settings() {
         <SettingsSection title="Categories" icon={Tags}>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm text-white/70">Default Categories</label>
+              <label className="block text-sm text-white/70">Your Categories</label>
               <div className="flex flex-wrap gap-2 mt-2">
-                {settings.defaultCategories.map(category => (
-                  <span key={category} className="px-3 py-1 bg-white/10 rounded-full text-sm text-white">
-                    {category}
-                  </span>
-                ))}
-              </div>
-            </div>
-            {settings.customCategories.length > 0 && (
-              <div>
-                <label className="block text-sm text-white/70">Custom Categories</label>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {settings.customCategories.map(category => (
+                {userCategories.length > 0 ? (
+                  userCategories.map(category => (
                     <span key={category} className="px-3 py-1 bg-white/10 rounded-full text-sm text-white">
                       {category}
                     </span>
-                  ))}
-                </div>
+                  ))
+                ) : (
+                  <p className="text-white/70 text-sm">No categories found in your receipts yet</p>
+                )}
               </div>
-            )}
+            </div>
           </div>
         </SettingsSection>
 
