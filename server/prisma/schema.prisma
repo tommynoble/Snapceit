@@ -1,0 +1,56 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DB_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id                  String        @id @default(uuid())
+  email               String        @unique
+  firstName           String?
+  lastName            String?
+  accountStatus       String        @default("active")
+  emailVerified       Boolean       @default(false)
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+  receipts            Receipt[]
+  settings            UserSettings?
+
+  @@map("users")
+}
+
+model Receipt {
+  id          String    @id @default(uuid())
+  userId      String
+  merchant    String
+  date        DateTime
+  total       Float
+  category    String?
+  items       Json?
+  imageUrl    String?
+  notes       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  user        User      @relation(fields: [userId], references: [id])
+
+  @@map("receipts")
+}
+
+model UserSettings {
+  id                  String   @id @default(uuid())
+  userId              String   @unique
+  notificationEmail   Boolean  @default(true)
+  notificationPush    Boolean  @default(true)
+  notificationSms     Boolean  @default(false)
+  preferredCurrency   String   @default("USD")
+  language            String   @default("en")
+  timezone            String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  user                User     @relation(fields: [userId], references: [id])
+
+  @@map("user_settings")
+}
