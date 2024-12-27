@@ -1,21 +1,48 @@
 import React, { useState } from 'react';
 import { DashboardHeader } from '../../components/dashboard/DashboardHeader';
-import { UserProfile } from '../../types/user';
-import { Switch } from '@headlessui/react';
-import { PencilIcon, BellIcon, DocumentIcon, UserCircleIcon } from '@heroicons/react/24/outline';
+import {
+  PencilIcon,
+  DocumentIcon,
+  UserCircleIcon,
+  BellIcon,
+  ShieldCheckIcon,
+  ClockIcon,
+  CheckIcon,
+  XMarkIcon,
+} from '@heroicons/react/24/outline';
+import { useAuth } from '../../auth/CognitoAuthContext';
+import { useSettings } from '../../hooks/useSettings';
+import { useCurrency } from '../../hooks/useCurrency';
+import { ContentContainer } from '../../components/template/ContentContainer';
+import toast from 'react-hot-toast';
+import type { UserProfile } from '../../types/user';
+import { settingsService } from '../../services/settingsService';
+
+interface ProfileState extends UserProfile {
+  // Additional fields can be added here
+}
+
+interface EditableField {
+  field: keyof ProfileState;
+  value: string;
+}
 
 export const Profile: React.FC = () => {
-  const [profile, setProfile] = useState<UserProfile>({
-    userId: 'user-123',
-    email: 'user@example.com',
-    firstName: 'Thomas',
-    lastName: 'Asante',
+  const { currentUser } = useAuth();
+  const { settings } = useSettings();
+  const { formatCurrency } = useCurrency();
+  const [editing, setEditing] = useState<EditableField | null>(null);
+  const [profile, setProfile] = useState<ProfileState>({
+    userId: currentUser?.uid || '',
+    email: currentUser?.email || '',
+    firstName: '',
+    lastName: '',
     accountStatus: 'active',
     emailVerified: false,
     twoFactorEnabled: false,
-    preferredCurrency: 'USD',
-    language: 'en',
-    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    preferredCurrency: settings?.currency || 'USD',
+    language: settings?.language || 'en-US',
+    timezone: settings?.timezone || 'UTC',
     subscriptionPlan: 'free',
     subscriptionStatus: 'active',
     notificationPreferences: {
@@ -24,43 +51,22 @@ export const Profile: React.FC = () => {
       sms: false,
       receiptScanned: true,
       monthlyReport: true,
-      budgetAlerts: true
+      budgetAlerts: true,
     },
-    defaultCategories: ['Food', 'Transportation', 'Shopping', 'Entertainment', 'Bills'],
+    defaultCategories: [],
     customCategories: [],
     exportPreferences: {
       format: 'pdf',
-      frequency: 'monthly',
-      includeReceipts: true,
-      includeSummary: true
+      includeImages: true,
+      compression: true,
     },
     totalReceiptsScanned: 0,
     totalExpenseAmount: 0,
     storageUsed: 0,
     lastLoginDate: new Date().toISOString(),
     createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
+    updatedAt: new Date().toISOString(),
   });
-
-  const toggleNotification = (key: keyof typeof profile.notificationPreferences) => {
-    setProfile(prev => ({
-      ...prev,
-      notificationPreferences: {
-        ...prev.notificationPreferences,
-        [key]: !prev.notificationPreferences[key]
-      }
-    }));
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
 
   const formatBytes = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';
@@ -70,222 +76,236 @@ export const Profile: React.FC = () => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  const SectionHeader = ({ icon, title }: { icon: React.ReactNode; title: string }) => (
-    <div className="flex items-center gap-2 mb-4">
-      {icon}
-      <h2 className="text-xl font-semibold text-white">{title}</h2>
+  const formatDate = (date: string) => {
+    return new Date(date).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  };
+
+  const handleEdit = (field: keyof ProfileState) => {
+    setEditing({ field, value: String(profile[field]) });
+  };
+
+  const handleSave = async () => {
+    if (!editing) return;
+
+    try {
+      // Update DynamoDB using settingsService
+      const updatedSettings = await settingsService.updateUserSettings(currentUser.uid, {
+        [editing.field]: editing.value,
+      });
+
+      setProfile(prev => ({
+        ...prev,
+        [editing.field]: editing.value,
+        updatedAt: new Date().toISOString(),
+      }));
+      toast.success('Profile updated successfully');
+    } catch (error) {
+      toast.error('Failed to update profile');
+      console.error('Error updating profile:', error);
+    } finally {
+      setEditing(null);
+    }
+  };
+
+  const handleCancel = () => {
+    setEditing(null);
+  };
+
+  const handleToggleNotification = async (key: string) => {
+    try {
+      const updatedPreferences = {
+        ...profile.notificationPreferences,
+        [key]: !profile.notificationPreferences[key as keyof typeof profile.notificationPreferences],
+      };
+      
+      // Update DynamoDB using settingsService
+      await settingsService.updateUserSettings(currentUser.uid, {
+        notificationPreferences: updatedPreferences,
+      });
+      
+      setProfile(prev => ({
+        ...prev,
+        notificationPreferences: updatedPreferences,
+        updatedAt: new Date().toISOString(),
+      }));
+      toast.success('Notification preferences updated');
+    } catch (error) {
+      toast.error('Failed to update notification preferences');
+      console.error('Error updating notification preferences:', error);
+    }
+  };
+
+  const renderEditableField = (label: string, field: keyof ProfileState) => (
+    <div>
+      <label className="block text-sm text-white/60 mb-1">{label}</label>
+      <div className="relative">
+        {editing?.field === field ? (
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={editing.value}
+              onChange={(e) => setEditing({ ...editing, value: e.target.value })}
+              className="flex-1 bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white"
+              autoFocus
+            />
+            <button
+              onClick={handleSave}
+              className="p-2 bg-green-500/10 text-green-500 rounded-lg hover:bg-green-500/20"
+            >
+              <CheckIcon className="w-5 h-5" />
+            </button>
+            <button
+              onClick={handleCancel}
+              className="p-2 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500/20"
+            >
+              <XMarkIcon className="w-5 h-5" />
+            </button>
+          </div>
+        ) : (
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={String(profile[field])}
+              className="flex-1 bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white"
+              readOnly
+            />
+            <button
+              onClick={() => handleEdit(field)}
+              className="p-2 bg-white/5 text-white/40 rounded-lg hover:bg-white/10 hover:text-white/60"
+            >
+              <PencilIcon className="w-5 h-5" />
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 
   return (
-    <div className="max-w-5xl mx-auto">
-      <DashboardHeader title="Profile Settings" />
+    <div className="space-y-6">
+      <DashboardHeader 
+        title="Profile" 
+        description="Manage your personal information and preferences"
+      />
       
-      <div className="p-6 space-y-8">
+      <div className="space-y-6">
         {/* Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-white/90 backdrop-blur-xl rounded-lg p-4 flex items-center gap-4">
-            <div className="bg-purple-100 p-3 rounded-lg">
-              <DocumentIcon className="w-6 h-6 text-purple-600" />
+          <div className="bg-white/5 backdrop-blur-xl rounded-xl p-4 flex items-center gap-4">
+            <div className="bg-purple-500/40 p-3 rounded-lg">
+              <DocumentIcon className="w-6 h-6 text-purple-200" />
             </div>
             <div>
-              <p className="text-sm text-gray-600">Total Receipts</p>
-              <p className="text-lg font-semibold text-gray-900">{profile.totalReceiptsScanned}</p>
+              <p className="text-sm text-white/60">Total Receipts</p>
+              <p className="text-lg font-semibold text-white">{profile.totalReceiptsScanned}</p>
             </div>
           </div>
-          <div className="bg-white/90 backdrop-blur-xl rounded-lg p-4 flex items-center gap-4">
-            <div className="bg-blue-100 p-3 rounded-lg">
-              <UserCircleIcon className="w-6 h-6 text-blue-600" />
+          <div className="bg-white/5 backdrop-blur-xl rounded-xl p-4 flex items-center gap-4">
+            <div className="bg-blue-500/40 p-3 rounded-lg">
+              <UserCircleIcon className="w-6 h-6 text-blue-200" />
             </div>
             <div>
-              <p className="text-sm text-gray-600">Account Type</p>
-              <p className="text-lg font-semibold text-gray-900 capitalize">{profile.subscriptionPlan}</p>
+              <p className="text-sm text-white/60">Total Expenses</p>
+              <p className="text-lg font-semibold text-white">
+                {formatCurrency(profile.totalExpenseAmount)}
+              </p>
             </div>
           </div>
-          <div className="bg-white/90 backdrop-blur-xl rounded-lg p-4 flex items-center gap-4">
-            <div className="bg-green-100 p-3 rounded-lg">
-              <DocumentIcon className="w-6 h-6 text-green-600" />
+          <div className="bg-white/5 backdrop-blur-xl rounded-xl p-4 flex items-center gap-4">
+            <div className="bg-green-500/40 p-3 rounded-lg">
+              <DocumentIcon className="w-6 h-6 text-green-200" />
             </div>
             <div>
-              <p className="text-sm text-gray-600">Storage Used</p>
-              <p className="text-lg font-semibold text-gray-900">{formatBytes(profile.storageUsed)}</p>
+              <p className="text-sm text-white/60">Storage Used</p>
+              <p className="text-lg font-semibold text-white">{formatBytes(profile.storageUsed)}</p>
             </div>
           </div>
         </div>
 
         {/* Personal Information */}
-        <section>
-          <SectionHeader 
-            icon={<UserCircleIcon className="w-6 h-6 text-white" />}
-            title="Personal Information"
-          />
-          <div className="bg-white/90 backdrop-blur-xl rounded-lg p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm text-gray-600 mb-1">First Name</label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      value={profile.firstName}
-                      className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 text-gray-900"
-                      readOnly
-                    />
-                    <button className="absolute right-2 top-2 text-gray-400 hover:text-gray-600">
-                      <PencilIcon className="w-5 h-5" />
-                    </button>
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm text-gray-600 mb-1">Email</label>
+        <ContentContainer
+          title="Personal Information"
+          icon={<UserCircleIcon className="w-6 h-6 text-white" />}
+        >
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              {renderEditableField('First Name', 'firstName')}
+              <div>
+                <label className="block text-sm text-white/60 mb-1">Email</label>
+                <div className="relative">
                   <input
                     type="email"
                     value={profile.email}
-                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 text-gray-900"
+                    className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white"
                     readOnly
                   />
+                  {profile.emailVerified && (
+                    <div className="absolute right-2 top-2 text-green-500">
+                      <ShieldCheckIcon className="w-5 h-5" />
+                    </div>
+                  )}
                 </div>
               </div>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm text-gray-600 mb-1">Last Name</label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      value={profile.lastName}
-                      className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 text-gray-900"
-                      readOnly
-                    />
-                    <button className="absolute right-2 top-2 text-gray-400 hover:text-gray-600">
-                      <PencilIcon className="w-5 h-5" />
-                    </button>
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm text-gray-600 mb-1">Timezone</label>
-                  <select
-                    value={profile.timezone}
-                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 text-gray-900"
-                  >
-                    <option value={profile.timezone}>{profile.timezone}</option>
-                  </select>
+            </div>
+            <div className="space-y-4">
+              {renderEditableField('Last Name', 'lastName')}
+              <div>
+                <label className="block text-sm text-white/60 mb-1">Account Status</label>
+                <div className="px-4 py-2 bg-green-500/10 text-green-500 rounded-lg inline-block">
+                  {profile.accountStatus.charAt(0).toUpperCase() + profile.accountStatus.slice(1)}
                 </div>
               </div>
             </div>
           </div>
-        </section>
+        </ContentContainer>
 
         {/* Notification Preferences */}
-        <section>
-          <SectionHeader 
-            icon={<BellIcon className="w-6 h-6 text-white" />}
-            title="Notification Preferences"
-          />
-          <div className="bg-white/90 backdrop-blur-xl rounded-lg p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {Object.entries(profile.notificationPreferences).map(([key, value]) => (
-                <div key={key} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div>
-                    <label className="text-gray-900 font-medium capitalize">
-                      {key.replace(/([A-Z])/g, ' $1').trim()}
-                    </label>
-                    <p className="text-sm text-gray-600">
-                      {value ? 'Enabled' : 'Disabled'}
-                    </p>
-                  </div>
-                  <Switch
-                    checked={value}
-                    onChange={() => toggleNotification(key as keyof typeof profile.notificationPreferences)}
-                    className={`${
-                      value ? 'bg-purple-600' : 'bg-gray-200'
-                    } relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none`}
-                  >
-                    <span
-                      className={`${
-                        value ? 'translate-x-6' : 'translate-x-1'
-                      } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
-                    />
-                  </Switch>
-                </div>
-              ))}
-            </div>
+        <ContentContainer
+          title="Notification Preferences"
+          icon={<BellIcon className="w-6 h-6 text-white" />}
+        >
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {Object.entries(profile.notificationPreferences).map(([key, enabled]) => (
+              <button
+                key={key}
+                onClick={() => handleToggleNotification(key)}
+                className="flex items-center justify-between p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-colors"
+              >
+                <span className="text-sm text-white/60 capitalize">
+                  {key.replace(/([A-Z])/g, ' $1').trim()}
+                </span>
+                <div className={`w-4 h-4 rounded-full ${
+                  enabled ? 'bg-green-500' : 'bg-white/20'
+                }`} />
+              </button>
+            ))}
           </div>
-        </section>
+        </ContentContainer>
 
-        {/* Export Preferences */}
-        <section>
-          <SectionHeader 
-            icon={<DocumentIcon className="w-6 h-6 text-white" />}
-            title="Export Settings"
-          />
-          <div className="bg-white/90 backdrop-blur-xl rounded-lg p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm text-gray-600 mb-1">Export Format</label>
-                  <select
-                    value={profile.exportPreferences.format}
-                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 text-gray-900"
-                  >
-                    <option value="pdf">PDF</option>
-                    <option value="csv">CSV</option>
-                    <option value="excel">Excel</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm text-gray-600 mb-1">Export Frequency</label>
-                  <select
-                    value={profile.exportPreferences.frequency}
-                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 text-gray-900"
-                  >
-                    <option value="weekly">Weekly</option>
-                    <option value="monthly">Monthly</option>
-                    <option value="quarterly">Quarterly</option>
-                  </select>
-                </div>
+        {/* Account History */}
+        <ContentContainer
+          title="Account History"
+          icon={<ClockIcon className="w-6 h-6 text-white" />}
+        >
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm text-white/60 mb-1">Account Created</label>
+              <div className="px-4 py-2 bg-white/5 text-white rounded-lg">
+                {formatDate(profile.createdAt)}
               </div>
-              <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
-                <h3 className="font-medium text-gray-900">Include in Export</h3>
-                <div className="space-y-3">
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={profile.exportPreferences.includeReceipts}
-                      className="w-4 h-4 text-purple-600 rounded"
-                    />
-                    <span className="text-gray-700">Receipt Images</span>
-                  </label>
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={profile.exportPreferences.includeSummary}
-                      className="w-4 h-4 text-purple-600 rounded"
-                    />
-                    <span className="text-gray-700">Summary Report</span>
-                  </label>
-                </div>
+            </div>
+            <div>
+              <label className="block text-sm text-white/60 mb-1">Last Login</label>
+              <div className="px-4 py-2 bg-white/5 text-white rounded-lg">
+                {formatDate(profile.lastLoginDate)}
               </div>
             </div>
           </div>
-        </section>
-
-        {/* Account Activity */}
-        <section>
-          <SectionHeader 
-            icon={<UserCircleIcon className="w-6 h-6 text-white" />}
-            title="Account Activity"
-          />
-          <div className="bg-white/90 backdrop-blur-xl rounded-lg divide-y divide-gray-100">
-            <div className="p-4">
-              <p className="text-sm text-gray-600">Last Login</p>
-              <p className="text-gray-900 font-medium">{formatDate(profile.lastLoginDate)}</p>
-            </div>
-            <div className="p-4">
-              <p className="text-sm text-gray-600">Account Created</p>
-              <p className="text-gray-900 font-medium">{formatDate(profile.createdAt)}</p>
-            </div>
-          </div>
-        </section>
+        </ContentContainer>
       </div>
     </div>
   );

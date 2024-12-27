@@ -23,6 +23,7 @@ const Footer = () => {
       { name: 'Help Center', href: '/help' },
       { name: 'Privacy Policy', href: '/privacy' },
       { name: 'Terms of Service', href: '/terms' },
+      { name: 'Style Guide', href: '/style-guide' },
     ],
     social: [
       { name: 'Twitter', icon: TwitterIcon, href: 'https://twitter.com/snapceit', fill: true },

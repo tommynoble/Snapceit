@@ -3,17 +3,20 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useLocat
 import { OnboardingSlide } from './components/onboarding/OnboardingSlide';
 import { LoginForm } from './components/auth/LoginForm';
 import { RegisterForm } from './components/auth/RegisterForm';
+import { VerifyEmail } from './components/auth/VerifyEmail';
 import { DashboardLayout } from './components/dashboard/DashboardLayout';
 import { ReceiptProvider } from './components/dashboard/receipts/ReceiptContext';
-import { AuthProvider, useAuth } from './firebase/AuthContext';
+import { AuthProvider, useAuth } from './auth/CognitoAuthContext';
 import { Onboarding } from './components/onboarding/OnboardingQuestionnaire';
 import { AnimatePresence } from 'framer-motion';
 import { PageTransition } from './components/transitions/PageTransition';
+import { Toaster } from 'react-hot-toast';
 import Home from './pages/Home';
 import AuthLayout from './components/auth/AuthLayout';
 import SpendingHabits from './components/dashboard/spending/SpendingHabits';
 import Features from './components/Features';
 import Features2 from './components/Features2';
+import StyleGuide from './components/StyleGuide';
 
 // Protected Route Component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -42,7 +45,7 @@ const RegisterFormWrapper: React.FC = () => {
   const navigate = useNavigate();
   return (
     <RegisterForm 
-      onBack={() => navigate('/')}
+      onBack={() => navigate('/login')}
       heading="Get started with Snapceit"
     />
   );
@@ -52,10 +55,7 @@ const RegisterFormWrapper: React.FC = () => {
 const OnboardingWrapper: React.FC = () => {
   const navigate = useNavigate();
   return (
-    <Onboarding 
-      onComplete={() => navigate('/register')}
-      onBack={() => navigate('/')}
-    />
+    <Onboarding onComplete={() => navigate('/dashboard')} />
   );
 };
 
@@ -65,62 +65,47 @@ function AppContent() {
   return (
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
-        <Route path="/" element={
-          <PublicRoute>
-            <PageTransition>
-              <Home />
-            </PageTransition>
-          </PublicRoute>
-        } />
+        <Route path="/" element={<Home />} />
+        <Route path="/features" element={<Features />} />
+        <Route path="/features2" element={<Features2 />} />
+        <Route path="/style-guide" element={<StyleGuide />} />
         
-        <Route path="/get-started" element={
-          <PublicRoute>
-            <PageTransition>
-              <OnboardingSlide />
-            </PageTransition>
-          </PublicRoute>
-        } />
-        
-        <Route path="/onboarding" element={
-          <PublicRoute>
-            <PageTransition>
-              <OnboardingWrapper />
-            </PageTransition>
-          </PublicRoute>
-        } />
-        
+        {/* Auth Routes */}
         <Route path="/login" element={
           <PublicRoute>
-            <PageTransition>
-              <AuthLayout>
-                <LoginForm />
-              </AuthLayout>
-            </PageTransition>
+            <AuthLayout>
+              <LoginForm />
+            </AuthLayout>
           </PublicRoute>
         } />
-        
         <Route path="/register" element={
           <PublicRoute>
-            <PageTransition>
-              <AuthLayout>
-                <RegisterFormWrapper />
-              </AuthLayout>
-            </PageTransition>
+            <AuthLayout>
+              <RegisterFormWrapper />
+            </AuthLayout>
+          </PublicRoute>
+        } />
+        <Route path="/verify-email" element={
+          <PublicRoute>
+            <AuthLayout>
+              <VerifyEmail />
+            </AuthLayout>
           </PublicRoute>
         } />
         
+        {/* Protected Routes */}
         <Route path="/dashboard/*" element={
           <ProtectedRoute>
-            <PageTransition>
-              <ReceiptProvider>
-                <DashboardLayout />
-              </ReceiptProvider>
-            </PageTransition>
+            <ReceiptProvider>
+              <DashboardLayout />
+            </ReceiptProvider>
           </ProtectedRoute>
         } />
-        
-        {/* Catch all route */}
-        <Route path="*" element={<Navigate to="/" />} />
+        <Route path="/onboarding" element={
+          <ProtectedRoute>
+            <OnboardingWrapper />
+          </ProtectedRoute>
+        } />
       </Routes>
     </AnimatePresence>
   );
@@ -128,13 +113,22 @@ function AppContent() {
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
+    <Router>
+      <AuthProvider>
         <div className="min-h-screen bg-gradient-to-br from-fuchsia-500 via-purple-600 to-purple-800">
           <AppContent />
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              style: {
+                background: '#4A5568',
+                color: '#fff',
+              },
+            }}
+          />
         </div>
-      </Router>
-    </AuthProvider>
+      </AuthProvider>
+    </Router>
   );
 }
 

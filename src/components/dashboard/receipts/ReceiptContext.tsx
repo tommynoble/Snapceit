@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useAuth } from '../../../firebase/AuthContext';
-import { dynamoDb } from '../../../utils/dynamodb';
-import { v4 as uuidv4 } from 'uuid';
+import { useAuth } from '../../../auth/CognitoAuthContext';
+import { api } from '../../../utils/api';
 
 export interface Receipt {
   id: string;
@@ -27,20 +26,6 @@ export interface Receipt {
       }>;
     };
   };
-  taxDeductible?: boolean;
-  taxCategory?: 'advertising' | 'car_and_truck' | 'office' | 'taxes_and_licenses' | 'supplies' | 'travel_and_meals';
-  vendor?: {
-    name: string;
-    address?: string;
-    phone?: string;
-    addressBlock?: string;
-    city?: string;
-    state?: string;
-  };
-  receiptDate?: string;
-  rawTextractData?: {
-    [key: string]: string;
-  };
   createdAt?: string;
   updatedAt?: string;
   userId: string;
@@ -52,7 +37,7 @@ interface ReceiptContextType {
   error: string | null;
   selectedReceipt: Receipt | null;
   setSelectedReceipt: (receipt: Receipt | null) => void;
-  addReceipt: (receipt: Omit<Receipt, 'id'>) => Promise<void>;
+  addReceipt: (receipt: Omit<Receipt, 'id' | 'userId'>) => Promise<void>;
   updateReceipt: (id: string, updates: Partial<Receipt>) => Promise<void>;
   deleteReceipt: (receiptId: string) => Promise<void>;
   refreshReceipts: () => void;
@@ -75,113 +60,65 @@ export function ReceiptProvider({ children }: { children: React.ReactNode }) {
   const [selectedReceipt, setSelectedReceipt] = useState<Receipt | null>(null);
   const { currentUser } = useAuth();
 
+  const fetchReceipts = async () => {
+    if (!currentUser?.sub) return;
+
+    try {
+      setLoading(true);
+      const data = await api.receipts.list(currentUser.sub);
+      setReceipts(data.map((r: any) => ({
+        id: r.receiptId,
+        merchant: r.merchantName,
+        total: r.total,
+        date: r.date,
+        items: r.items?.map((item: any) => ({
+          name: item.description,
+          price: item.price
+        })) || [],
+        imageUrl: r.imageUrl,
+        status: r.status,
+        category: r.category,
+        tax: r.tax,
+        createdAt: r.createdAt,
+        updatedAt: r.updatedAt,
+        userId: r.userId
+      })));
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching receipts:', err);
+      setError('Failed to fetch receipts');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    if (!currentUser) {
+    if (currentUser?.sub) {
+      fetchReceipts();
+    } else {
       setReceipts([]);
       setLoading(false);
-      return;
     }
-
-    let mounted = true;
-
-    async function fetchReceipts() {
-      if (!mounted) return;
-      
-      try {
-        const dynamoReceipts = await dynamoDb.queryReceipts(currentUser.uid);
-        
-        if (!mounted) return;
-
-        // Transform DynamoDB receipts to match our Receipt interface
-        const receiptsData = dynamoReceipts.map(r => ({
-          id: r.receiptId,
-          merchant: r.merchantName,
-          total: r.total,
-          date: r.date,
-          items: r.items?.map(item => ({
-            name: item.description,
-            price: item.price
-          })) || [],
-          imageUrl: r.imageUrl,
-          status: r.status || 'completed',
-          category: r.category || 'Uncategorized',
-          tax: r.tax,
-          vendor: {
-            name: r.merchantName,
-            address: r.vendor?.address,
-            phone: r.vendor?.phone,
-            addressBlock: r.vendor?.addressBlock,
-            city: r.vendor?.city,
-            state: r.vendor?.state
-          },
-          rawTextractData: r.rawTextractData,
-          taxDeductible: r.taxDeductible,
-          taxCategory: r.taxCategory,
-          createdAt: r.createdAt,
-          updatedAt: r.updatedAt
-        }));
-
-        setReceipts(receiptsData);
-        setLoading(false);
-        setError(null);
-      } catch (err) {
-        console.error('Error fetching receipts:', err);
-        if (mounted) {
-          setError('Failed to fetch receipts');
-          setLoading(false);
-        }
-      }
-    }
-
-    fetchReceipts();
-    return () => {
-      mounted = false;
-    };
   }, [currentUser]);
 
-  const addReceipt = async (receipt: Omit<Receipt, 'id'>) => {
-    if (!currentUser) {
-      throw new Error('Must be logged in to add receipts');
+  const addReceipt = async (receipt: Omit<Receipt, 'id' | 'userId'>) => {
+    if (!currentUser?.sub) {
+      throw new Error('User must be logged in to add receipts');
     }
 
     try {
-      // Generate a unique ID
-      const receiptId = uuidv4();
-      
-      // Add to DynamoDB
-      const dynamoReceipt = {
-        userId: currentUser.uid,
-        receiptId,
+      const newReceipt = await api.receipts.create({
+        ...receipt,
         merchantName: receipt.merchant,
-        date: receipt.date,
-        total: receipt.total,
-        tax: receipt.tax ? {
-          total: receipt.tax.total || 0,
-          breakdown: {
-            salesTax: receipt.tax.breakdown?.salesTax || 0,
-            stateTax: receipt.tax.breakdown?.stateTax || 0,
-            localTax: receipt.tax.breakdown?.localTax || 0,
-            otherTaxes: receipt.tax.breakdown?.otherTaxes || []
-          }
-        } : undefined,
-        items: receipt.items?.map(item => ({
-          description: item.name,
-          price: item.price
-        })),
-        category: receipt.category,
-        imageUrl: receipt.imageUrl,
-        status: receipt.status || 'completed',
-        createdAt: new Date().toISOString()
-      };
+        createdAt: new Date().toISOString(),
+      });
 
-      await dynamoDb.putReceipt(dynamoReceipt);
-      
-      const newReceipt = { 
-        ...receipt, 
-        id: receiptId 
-      } as Receipt;
-      
-      setReceipts(prev => [...prev, newReceipt]);
+      setReceipts(prev => [...prev, {
+        ...receipt,
+        id: newReceipt.receiptId,
+        userId: currentUser.sub
+      } as Receipt]);
+
     } catch (err) {
       console.error('Error adding receipt:', err);
       throw err;
@@ -189,58 +126,17 @@ export function ReceiptProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateReceipt = async (id: string, updates: Partial<Receipt>) => {
-    if (!currentUser) {
-      throw new Error('Must be logged in to update receipts');
-    }
+    if (!currentUser?.sub) return;
 
     try {
-      // Transform the updates to match DynamoDB field names
-      const dynamoUpdates = {
+      const updatedReceipt = await api.receipts.update(currentUser.sub, id, {
+        ...updates,
         merchantName: updates.merchant,
-        date: updates.date,
-        total: updates.total,
-        tax: updates.tax ? {
-          total: updates.tax.total || 0,
-          breakdown: {
-            salesTax: updates.tax.breakdown?.salesTax || 0,
-            stateTax: updates.tax.breakdown?.stateTax || 0,
-            localTax: updates.tax.breakdown?.localTax || 0,
-            otherTaxes: updates.tax.breakdown?.otherTaxes || []
-          }
-        } : undefined,
-        items: updates.items?.map(item => ({
-          description: item.name,
-          price: item.price
-        })),
-        category: updates.category,
-        imageUrl: updates.imageUrl,
-        status: updates.status || 'completed'
-      };
+      });
 
-      const result = await dynamoDb.updateReceipt(currentUser.uid, id, dynamoUpdates);
-      
-      // Update local state with the returned data
-      if (result.Attributes) {
-        const updatedReceipt = {
-          id,
-          merchant: result.Attributes.merchantName,
-          date: result.Attributes.date,
-          total: result.Attributes.total,
-          category: result.Attributes.category,
-          imageUrl: result.Attributes.imageUrl,
-          status: result.Attributes.status,
-          tax: result.Attributes.tax,
-          items: result.Attributes.items?.map(item => ({
-            name: item.description,
-            price: item.price
-          })) || []
-        };
-        setReceipts(prev =>
-          prev.map(receipt =>
-            receipt.id === id ? updatedReceipt : receipt
-          )
-        );
-      }
+      setReceipts(prev => prev.map(r => 
+        r.id === id ? { ...r, ...updates, updatedAt: updatedReceipt.updatedAt } : r
+      ));
     } catch (err) {
       console.error('Error updating receipt:', err);
       throw err;
@@ -248,92 +144,29 @@ export function ReceiptProvider({ children }: { children: React.ReactNode }) {
   };
 
   const deleteReceipt = async (receiptId: string) => {
-    if (!currentUser) {
-      throw new Error('Must be logged in to delete receipts');
-    }
+    if (!currentUser?.sub) return;
 
     try {
-      await dynamoDb.deleteReceipt(currentUser.uid, receiptId);
-      setReceipts(prev => prev.filter(receipt => receipt.id !== receiptId));
+      await api.receipts.delete(currentUser.sub, receiptId);
+      setReceipts(prev => prev.filter(r => r.id !== receiptId));
     } catch (err) {
       console.error('Error deleting receipt:', err);
       throw err;
     }
   };
 
-  const refreshReceipts = () => {
-    if (!currentUser) return;
-    
-    let mounted = true;
-    
-    async function refresh() {
-      try {
-        setLoading(true);
-        const dynamoReceipts = await dynamoDb.queryReceipts(currentUser.uid);
-        
-        if (!mounted) return;
-
-        // Transform DynamoDB receipts to match our Receipt interface
-        const receiptsData = dynamoReceipts.map(r => ({
-          id: r.receiptId,
-          merchant: r.merchantName,
-          total: r.total,
-          date: r.date,
-          items: r.items?.map(item => ({
-            name: item.description,
-            price: item.price
-          })) || [],
-          imageUrl: r.imageUrl,
-          status: r.status || 'completed',
-          category: r.category || 'Uncategorized',
-          tax: r.tax,
-          vendor: {
-            name: r.merchantName,
-            address: r.vendor?.address,
-            phone: r.vendor?.phone,
-            addressBlock: r.vendor?.addressBlock,
-            city: r.vendor?.city,
-            state: r.vendor?.state
-          },
-          rawTextractData: r.rawTextractData,
-          taxDeductible: r.taxDeductible,
-          taxCategory: r.taxCategory,
-          createdAt: r.createdAt,
-          updatedAt: r.updatedAt
-        }));
-
-        setReceipts(receiptsData);
-        setLoading(false);
-        setError(null);
-      } catch (err) {
-        console.error('Error refreshing receipts:', err);
-        if (mounted) {
-          setError('Failed to refresh receipts');
-          setLoading(false);
-        }
-      }
-    }
-
-    refresh();
-    return () => {
-      mounted = false;
-    };
-  };
-
   return (
-    <ReceiptContext.Provider
-      value={{
-        receipts,
-        loading,
-        error,
-        selectedReceipt,
-        setSelectedReceipt,
-        addReceipt,
-        updateReceipt,
-        deleteReceipt,
-        refreshReceipts,
-      }}
-    >
+    <ReceiptContext.Provider value={{
+      receipts,
+      loading,
+      error,
+      selectedReceipt,
+      setSelectedReceipt,
+      addReceipt,
+      updateReceipt,
+      deleteReceipt,
+      refreshReceipts: fetchReceipts
+    }}>
       {children}
     </ReceiptContext.Provider>
   );

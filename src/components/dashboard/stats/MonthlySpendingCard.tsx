@@ -2,17 +2,12 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { TrendingUp } from 'lucide-react';
 import { useStats } from './useStats';
+import { useCurrency } from '../../../hooks/useCurrency';
 
 export function MonthlySpendingCard() {
   const stats = useStats();
+  const { formatCurrency } = useCurrency();
   
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(value);
-  };
-
   const totalSpending = formatCurrency(stats.totalSpending.value);
   const totalTax = formatCurrency(stats.totalSpending.tax);
 

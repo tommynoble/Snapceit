@@ -1,6 +1,6 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
-import { useAuth } from '../../firebase/AuthContext';
+import { useAuth } from '../../auth/CognitoAuthContext';
 
 interface PublicRouteProps {
   children: React.ReactNode;

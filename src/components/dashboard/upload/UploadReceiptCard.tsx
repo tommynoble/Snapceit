@@ -2,7 +2,7 @@ import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Camera, Upload, Loader, AlertCircle, Check, X } from 'lucide-react';
 import { useReceipts } from '../receipts/ReceiptContext';
-import { useAuth } from '../../../firebase/AuthContext';
+import { useAuth } from '../../../auth/CognitoAuthContext';
 import { processReceipt } from '../../../utils/receipt-processor';
 import { toast } from 'react-hot-toast';
 import { useDropzone } from 'react-dropzone';
@@ -152,10 +152,10 @@ export function UploadReceiptCard() {
   };
 
   const confirmAndUpload = async () => {
-    if (!extractedData) return;
+    if (!extractedData || !currentUser) return;
 
     try {
-      // Create receipt data object, omitting undefined values
+      // Create receipt data object
       const receiptData = {
         merchant: extractedData.merchantName || 'Unknown Merchant',
         total: extractedData.total || 0,
@@ -165,57 +165,35 @@ export function UploadReceiptCard() {
           price: item.price || 0
         })) || [],
         imageUrl: extractedData.imageUrl || '',
-        status: 'completed',
+        status: 'completed' as const,
         category: selectedCategory,
-        createdAt: new Date().toISOString(),
-        lastModified: new Date().toISOString()
+        tax: extractedData.tax?.total ? {
+          total: extractedData.tax.total,
+          breakdown: {
+            salesTax: extractedData.tax.breakdown?.salesTax || 0,
+            stateTax: extractedData.tax.breakdown?.stateTax || 0,
+            localTax: extractedData.tax.breakdown?.localTax || 0,
+            otherTaxes: extractedData.tax.breakdown?.otherTaxes || []
+          }
+        } : undefined,
+        rawTextractData: extractedData.dataUrl ? { url: extractedData.dataUrl } : undefined
       };
 
-      // Only add tax if it exists and has a total
-      if (extractedData.tax?.total) {
-        Object.assign(receiptData, {
-          tax: {
-            total: extractedData.tax.total,
-            ...(extractedData.tax.breakdown && {
-              breakdown: {
-                salesTax: extractedData.tax.breakdown.salesTax || 0,
-                stateTax: extractedData.tax.breakdown.stateTax || 0,
-                localTax: extractedData.tax.breakdown.localTax || 0,
-                ...(extractedData.tax.breakdown.otherTaxes && {
-                  otherTaxes: extractedData.tax.breakdown.otherTaxes
-                })
-              }
-            })
-          }
-        });
-      }
-
-      // Only add dataUrl if it exists
-      if (extractedData.dataUrl) {
-        Object.assign(receiptData, {
-          rawTextractData: extractedData.dataUrl
-        });
-      }
-
-      // Add to Firestore through ReceiptContext
+      // Add receipt through context
       await addReceipt(receiptData);
-
+      
+      // Show success message
       toast.success('Receipt uploaded successfully!');
+      
+      // Reset form
+      cancelUpload();
+      
+      // Refresh receipts list
       refreshReceipts();
       
     } catch (error) {
-      console.error('Upload error:', error);
-      setError(error instanceof Error ? error.message : 'Failed to upload receipt');
-      toast.error('Failed to upload receipt');
-    } finally {
-      setIsLoading(false);
-      setIsVerifying(false);
-      setExtractedData(null);
-      setSelectedCategory('Uncategorized');
-      if (previewUrl) {
-        URL.revokeObjectURL(previewUrl);
-        setPreviewUrl(null);
-      }
+      console.error('Error saving receipt:', error);
+      toast.error('Failed to save receipt. Please try again.');
     }
   };
 

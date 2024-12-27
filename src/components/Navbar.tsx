@@ -38,8 +38,8 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="sticky top-0 z-50 px-6 py-4 bg-transparent">
-      <div className="max-w-7xl mx-auto flex items-center justify-between p-4 bg-black/20 backdrop-blur-md rounded-[48px] border-2 border-[rgb(208,67,239)]">
+    <nav className="sticky top-0 z-50 px-4 py-3">
+      <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-2 backdrop-blur-md rounded-[48px] border-2 border-[rgb(216,94,241,0.54)]">
         {/* Logo on far left */}
         <Link to="/" className="text-white" onClick={() => setIsOpen(false)}>
           <img src={logo} alt="Logo" className="h-16 md:h-16 h-12 w-auto" />
@@ -48,7 +48,7 @@ const Navbar = () => {
         {/* Desktop Navigation - Centered */}
         <div className="hidden md:flex items-center space-x-8">
           <motion.div whileHover={{ scale: 1.05 }} className="relative">
-            <Link to="/capabilities" className="text-white hover:text-purple-100 transition-colors font-semibold text-lg">
+            <Link to="/capabilities" className="text-base text-white hover:text-purple-200 transition-colors font-semibold">
               Capabilities
               <motion.div
                 className="absolute bottom-0 left-0 w-0 h-[2px] bg-[rgb(208,67,239)]"
@@ -58,7 +58,7 @@ const Navbar = () => {
             </Link>
           </motion.div>
           <motion.div whileHover={{ scale: 1.05 }} className="relative">
-            <Link to="/product" className="text-white hover:text-purple-100 transition-colors font-semibold text-lg">
+            <Link to="/product" className="text-base text-white hover:text-purple-200 transition-colors font-semibold">
               Product
               <motion.div
                 className="absolute bottom-0 left-0 w-0 h-[2px] bg-[rgb(208,67,239)]"
@@ -68,7 +68,7 @@ const Navbar = () => {
             </Link>
           </motion.div>
           <motion.div whileHover={{ scale: 1.05 }} className="relative">
-            <Link to="/action" className="text-white hover:text-purple-100 transition-colors font-semibold text-lg">
+            <Link to="/action" className="text-base text-white hover:text-purple-200 transition-colors font-semibold">
               Action
               <motion.div
                 className="absolute bottom-0 left-0 w-0 h-[2px] bg-[rgb(208,67,239)]"
@@ -78,7 +78,7 @@ const Navbar = () => {
             </Link>
           </motion.div>
           <motion.div whileHover={{ scale: 1.05 }} className="relative">
-            <Link to="/pricing" className="text-white hover:text-purple-100 transition-colors font-semibold text-lg">
+            <Link to="/pricing" className="text-base text-white hover:text-purple-200 transition-colors font-semibold">
               Pricing
               <motion.div
                 className="absolute bottom-0 left-0 w-0 h-[2px] bg-[rgb(208,67,239)]"
@@ -93,7 +93,7 @@ const Navbar = () => {
         <div className="hidden md:flex items-center space-x-2">
           <Link 
             to="/login" 
-            className="text-white hover:text-purple-100 transition-colors p-1.5 rounded-md hover:bg-purple-600/20"
+            className="text-base text-white hover:text-purple-200 transition-colors p-1.5 rounded-md hover:bg-purple-600/20"
           >
             <User className="w-6 h-6" />
           </Link>
@@ -141,7 +141,7 @@ const Navbar = () => {
             animate="open"
             exit="closed"
             variants={menuVariants}
-            className="md:hidden mt-4 px-6 py-6 space-y-6 bg-black/20 backdrop-blur-md rounded-3xl border-2 border-[rgb(208,67,239)]"
+            className="md:hidden mt-4 px-6 py-6 space-y-6 bg-black/20 backdrop-blur-md rounded-3xl border-2 border-[rgb(216,94,241,0.54)]"
           >
             <motion.div variants={itemVariants} className="mb-6">
               <motion.button
@@ -157,7 +157,7 @@ const Navbar = () => {
             <motion.div variants={itemVariants}>
               <button
                 onClick={() => handleNavigation('/capabilities')}
-                className="block w-full text-left text-white hover:text-purple-100 transition-colors font-semibold text-lg py-2"
+                className="block w-full text-left text-base text-white hover:text-purple-200 transition-colors font-semibold py-2"
               >
                 Capabilities
               </button>
@@ -166,7 +166,7 @@ const Navbar = () => {
             <motion.div variants={itemVariants}>
               <button
                 onClick={() => handleNavigation('/product')}
-                className="block w-full text-left text-white hover:text-purple-100 transition-colors font-semibold text-lg py-2"
+                className="block w-full text-left text-base text-white hover:text-purple-200 transition-colors font-semibold py-2"
               >
                 Product
               </button>
@@ -175,7 +175,7 @@ const Navbar = () => {
             <motion.div variants={itemVariants}>
               <button
                 onClick={() => handleNavigation('/action')}
-                className="block w-full text-left text-white hover:text-purple-100 transition-colors font-semibold text-lg py-2"
+                className="block w-full text-left text-base text-white hover:text-purple-200 transition-colors font-semibold py-2"
               >
                 Action
               </button>
@@ -184,7 +184,7 @@ const Navbar = () => {
             <motion.div variants={itemVariants}>
               <button
                 onClick={() => handleNavigation('/pricing')}
-                className="block w-full text-left text-white hover:text-purple-100 transition-colors font-semibold text-lg py-2"
+                className="block w-full text-left text-base text-white hover:text-purple-200 transition-colors font-semibold py-2"
               >
                 Pricing
               </button>
@@ -193,7 +193,7 @@ const Navbar = () => {
             <motion.div variants={itemVariants}>
               <button
                 onClick={() => handleNavigation('/login')}
-                className="block w-full text-left text-white hover:text-purple-100 transition-colors font-semibold text-lg py-2"
+                className="block w-full text-left text-base text-white hover:text-purple-200 transition-colors font-semibold py-2"
               >
                 <div className="flex items-center space-x-2">
                   <User className="w-5 h-5" />

@@ -1,88 +1,71 @@
 import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { pool } from '../db/config';
 import { ErrorResponse, SuccessResponse } from '../types';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // Get all categories
 router.get('/', async (req, res) => {
   try {
-    const userId = req.user?.id;
+    const result = await pool.query(`
+      SELECT DISTINCT category 
+      FROM receipts 
+      WHERE category IS NOT NULL 
+      ORDER BY category
+    `);
     
-    const categories = await prisma.category.findMany({
-      where: { userId },
-      orderBy: { name: 'asc' },
-    });
-    
-    res.json({ success: true, data: categories } as SuccessResponse);
+    res.json({ 
+      success: true, 
+      data: result.rows.map(row => row.category) 
+    } as SuccessResponse);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch categories', statusCode: 500 } as ErrorResponse);
+    console.error('Error fetching categories:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch categories', 
+      statusCode: 500 
+    } as ErrorResponse);
   }
 });
 
-// Create custom category
+// Create a new category
 router.post('/', async (req, res) => {
   try {
-    const userId = req.user?.id;
     const { name } = req.body;
     
-    const existingCategory = await prisma.category.findFirst({
-      where: { userId, name },
-    });
-    
-    if (existingCategory) {
+    if (!name) {
+      return res.status(400).json({ 
+        error: 'Category name is required', 
+        statusCode: 400 
+      } as ErrorResponse);
+    }
+
+    // Check if category already exists
+    const existingResult = await pool.query(`
+      SELECT category 
+      FROM receipts 
+      WHERE category = $1 
+      LIMIT 1
+    `, [name]);
+
+    if (existingResult.rows.length > 0) {
       return res.status(400).json({ 
         error: 'Category already exists', 
         statusCode: 400 
       } as ErrorResponse);
     }
-    
-    const category = await prisma.category.create({
-      data: {
-        userId,
-        name,
-        type: 'custom',
-      },
-    });
-    
-    res.status(201).json({ success: true, data: category } as SuccessResponse);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to create category', statusCode: 500 } as ErrorResponse);
-  }
-});
 
-// Delete custom category
-router.delete('/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const userId = req.user?.id;
-    
-    const category = await prisma.category.findFirst({
-      where: { id, userId },
-    });
-    
-    if (!category) {
-      return res.status(404).json({ error: 'Category not found', statusCode: 404 } as ErrorResponse);
-    }
-    
-    if (category.type !== 'custom') {
-      return res.status(400).json({ 
-        error: 'Cannot delete default category', 
-        statusCode: 400 
-      } as ErrorResponse);
-    }
-    
-    await prisma.category.delete({
-      where: { id },
-    });
-    
-    res.json({ 
+    // Since we're not using a separate categories table anymore,
+    // we'll just return success if the category doesn't exist
+    res.status(201).json({ 
       success: true, 
-      data: { message: 'Category deleted successfully' } 
+      data: { name } 
     } as SuccessResponse);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to delete category', statusCode: 500 } as ErrorResponse);
+    console.error('Error creating category:', error);
+    res.status(500).json({ 
+      error: 'Failed to create category', 
+      statusCode: 500 
+    } as ErrorResponse);
   }
 });
 

@@ -12,9 +12,11 @@ import {
   ShoppingBag
 } from 'lucide-react';
 import { useStats } from './useStats';
+import { useCurrency } from '../../../hooks/useCurrency';
 
 export function TotalReceiptsCard() {
   const stats = useStats();
+  const { formatCurrency } = useCurrency();
 
   // Category icon mapping with the same colors as RecentReceiptsCard
   const categoryIcons: { [key: string]: { 
@@ -59,7 +61,7 @@ export function TotalReceiptsCard() {
         <div>
           <p className="text-sm font-medium text-white/80">Total Receipts</p>
           <h3 className="mt-2 text-3xl font-bold text-white">
-            {stats.loading ? '-' : stats.totalReceipts.value}
+            {stats.loading ? '-' : formatCurrency(stats.totalReceipts.value)}
           </h3>
         </div>
         <div className="rounded-full bg-gradient-to-r from-purple-500/20 to-purple-600/20 p-3">

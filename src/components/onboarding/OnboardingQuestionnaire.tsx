@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Building2, User, ChevronLeft, ChevronRight, CheckCircle2 } from 'lucide-react';
+import Footer from '../Footer';
 
 interface OnboardingProps {
   onComplete: () => void;
@@ -254,34 +255,42 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
   ];
 
   return (
-    <div className="w-full max-w-2xl mx-auto px-6 py-12">
-      <AnimatePresence mode="wait">
-        <div className="flex flex-col space-y-8">
-          <ProgressIndicator />
-          {steps[step]}
-          
-          <div className="flex justify-between items-center pt-8">
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={handleBack}
-              className="flex items-center gap-2 px-6 py-2.5 text-white hover:bg-white/10 rounded-md transition-colors"
-            >
-              <ChevronLeft className="w-5 h-5" />
-              Back
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={handleNext}
-              className="flex items-center gap-2 px-8 py-2.5 bg-purple-700 text-white rounded-md hover:bg-purple-600 transition-colors"
-            >
-              {step === 2 ? 'Complete' : 'Next'}
-              {step !== 2 && <ChevronRight className="w-5 h-5" />}
-            </motion.button>
+    <div className="min-h-screen flex flex-col">
+      <main className="flex-grow flex items-center justify-center">
+        <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="w-full max-w-2xl mx-auto px-6 py-12">
+            <AnimatePresence mode="wait">
+              <div className="flex flex-col space-y-8">
+                <ProgressIndicator />
+                {steps[step]}
+                
+                <div className="flex justify-between items-center pt-8">
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={handleBack}
+                    className="flex items-center gap-2 px-6 py-2.5 text-white hover:bg-white/10 rounded-md transition-colors"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                    Back
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={handleNext}
+                    className="flex items-center gap-2 px-8 py-2.5 bg-purple-700 text-white rounded-md hover:bg-purple-600 transition-colors"
+                  >
+                    {step === 2 ? 'Complete' : 'Next'}
+                    {step !== 2 && <ChevronRight className="w-5 h-5" />}
+                  </motion.button>
+                </div>
+              </div>
+            </AnimatePresence>
           </div>
         </div>
-      </AnimatePresence>
+      </main>
+
+      <Footer />
     </div>
   );
 }

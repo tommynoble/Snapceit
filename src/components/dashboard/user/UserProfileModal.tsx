@@ -1,10 +1,8 @@
 import { User, LogOut, Mail, Calendar, X, Shield, CreditCard, Settings, Camera, Loader2 } from 'lucide-react';
-import { useAuth } from '../../../firebase/AuthContext';
+import { useAuth } from '../../../auth/CognitoAuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { useState, useRef } from 'react';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { updateProfile } from 'firebase/auth';
 
 interface UserProfileModalProps {
   isOpen: boolean;
@@ -32,20 +30,8 @@ export function UserProfileModal({ isOpen, onClose, onLogout }: UserProfileModal
 
     try {
       setIsUploading(true);
-      const storage = getStorage();
-      const storageRef = ref(storage, `profile-images/${currentUser.uid}/${file.name}`);
-      
-      // Upload the file
-      await uploadBytes(storageRef, file);
-      
-      // Get the download URL
-      const downloadURL = await getDownloadURL(storageRef);
-      
-      // Update the user's profile
-      await updateProfile(currentUser, {
-        photoURL: downloadURL
-      });
-
+      // TODO: Implement S3 upload for Cognito
+      console.log('Image upload not yet implemented for Cognito');
     } catch (error) {
       console.error('Error uploading image:', error);
     } finally {

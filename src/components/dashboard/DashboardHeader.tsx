@@ -1,33 +1,29 @@
 import React from 'react';
-import { TopNavbar } from './TopNavbar';
+import { Button } from '../ui/Button';
+import { useAuth } from '../../auth/CognitoAuthContext';
+import { useNavigate } from 'react-router-dom';
 
 interface DashboardHeaderProps {
-  title?: string;
-  userName?: string;
-  onProfileClick: () => void;
-  onSettingsClick: () => void;
-  onLogout: () => void;
+  title: string;
+  description?: string;
+  actionButton?: React.ReactNode;
 }
 
-export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ 
+export const DashboardHeader = ({
   title,
-  userName,
-  onProfileClick,
-  onSettingsClick,
-  onLogout
-}) => {
-  const displayTitle = userName ? `Welcome back ${userName}` : title;
+  description,
+  actionButton,
+}: DashboardHeaderProps) => {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
 
   return (
-    <div>
-      <TopNavbar 
-        onProfileClick={onProfileClick}
-        onSettingsClick={onSettingsClick}
-        onLogout={onLogout}
-      />
-      <div className="px-6 mt-4">
-        <h1 className="text-2xl font-bold text-white">{displayTitle}</h1>
+    <div className="flex items-center justify-between mb-6">
+      <div>
+        <h1 className="text-2xl font-bold text-white">{title}</h1>
+        {description && <p className="text-white/70">{description}</p>}
       </div>
+      {actionButton && <div>{actionButton}</div>}
     </div>
   );
 };

@@ -11,6 +11,94 @@ const client = new DynamoDBClient({
   },
 });
 
+async function createUsersTable() {
+  const command = new CreateTableCommand({
+    TableName: 'users',
+    AttributeDefinitions: [
+      {
+        AttributeName: 'userId',
+        AttributeType: 'S',
+      },
+      {
+        AttributeName: 'email',
+        AttributeType: 'S',
+      }
+    ],
+    KeySchema: [
+      {
+        AttributeName: 'userId',
+        KeyType: 'HASH',
+      }
+    ],
+    GlobalSecondaryIndexes: [
+      {
+        IndexName: 'EmailIndex',
+        KeySchema: [
+          {
+            AttributeName: 'email',
+            KeyType: 'HASH',
+          }
+        ],
+        Projection: {
+          ProjectionType: 'ALL'
+        },
+        ProvisionedThroughput: {
+          ReadCapacityUnits: 5,
+          WriteCapacityUnits: 5
+        }
+      }
+    ],
+    ProvisionedThroughput: {
+      ReadCapacityUnits: 5,
+      WriteCapacityUnits: 5
+    }
+  });
+
+  try {
+    const response = await client.send(command);
+    console.log("Users table created successfully:", response);
+  } catch (error) {
+    if ((error as any).name === 'ResourceInUseException') {
+      console.log("Users table already exists");
+    } else {
+      throw error;
+    }
+  }
+}
+
+async function createUserSettingsTable() {
+  const command = new CreateTableCommand({
+    TableName: 'user_settings',
+    AttributeDefinitions: [
+      {
+        AttributeName: 'userId',
+        AttributeType: 'S',
+      }
+    ],
+    KeySchema: [
+      {
+        AttributeName: 'userId',
+        KeyType: 'HASH',
+      }
+    ],
+    ProvisionedThroughput: {
+      ReadCapacityUnits: 5,
+      WriteCapacityUnits: 5
+    }
+  });
+
+  try {
+    const response = await client.send(command);
+    console.log("User Settings table created successfully:", response);
+  } catch (error) {
+    if ((error as any).name === 'ResourceInUseException') {
+      console.log("User Settings table already exists");
+    } else {
+      throw error;
+    }
+  }
+}
+
 async function createReceiptsTable() {
   const command = new CreateTableCommand({
     TableName: 'receipts',
@@ -79,4 +167,11 @@ async function createReceiptsTable() {
   }
 }
 
-createReceiptsTable().catch(console.error);
+// Create all tables
+async function createAllTables() {
+  await createUsersTable();
+  await createUserSettingsTable();
+  await createReceiptsTable();
+}
+
+createAllTables().catch(console.error);

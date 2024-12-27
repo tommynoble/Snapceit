@@ -1,43 +1,33 @@
-import { PrismaClient } from '@prisma/client';
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 import dotenv from 'dotenv';
 import path from 'path';
 
-// Load .env.local from the root directory
+// Load .env from the root directory
 dotenv.config({ 
-  path: path.resolve(__dirname, '../../../.env.local')
+  path: path.resolve(__dirname, '../../.env')
 });
 
-// Construct database URL from individual environment variables
-const DB_URL = `postgresql://${process.env.DB_USER}:${process.env.DB_PASSWORD}@${process.env.DB_HOST}:5432/${process.env.DB_NAME}`;
-
-// Configure Prisma Client with logging
-const prisma = new PrismaClient({
-  datasources: {
-    db: {
-      url: DB_URL,
-    },
+const client = new DynamoDBClient({
+  region: process.env.VITE_AWS_REGION || 'us-east-1',
+  credentials: {
+    accessKeyId: process.env.VITE_AWS_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.VITE_AWS_SECRET_ACCESS_KEY!,
   },
-  log: ['query', 'info', 'warn', 'error'],
 });
 
-// Test the database connection
-async function testConnection() {
-  try {
-    await prisma.$connect();
-    console.log('✅ Successfully connected to PostgreSQL RDS');
-    console.log(`Connected to: ${process.env.DB_HOST}`);
-    
-    // List all tables in the database
-    const tables = await prisma.$queryRaw`
-      SELECT table_name 
-      FROM information_schema.tables 
-      WHERE table_schema = 'public'
-    `;
-    console.log('Available tables:', tables);
-  } catch (error) {
-    console.error('❌ Error connecting to PostgreSQL RDS:', error);
-    process.exit(1);
-  }
-}
+// Create a document client for easier interaction with DynamoDB
+export const docClient = DynamoDBDocumentClient.from(client);
 
-export { prisma, testConnection };
+// Table names
+export const TABLES = {
+  USERS: 'users',
+  USER_SETTINGS: 'user_settings',
+  RECEIPTS: 'receipts'
+} as const;
+
+// Indexes
+export const INDEXES = {
+  EMAIL_INDEX: 'EmailIndex',
+  DATE_INDEX: 'DateIndex'
+} as const;

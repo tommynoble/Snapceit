@@ -1,15 +1,17 @@
 import React from 'react';
 import { TrendingUp, TrendingDown, AlertCircle, DollarSign, PieChart } from 'lucide-react';
 import { useStats } from '../stats/useStats';
+import { useCurrency } from '../../../hooks/useCurrency';
 
 export function SpendingInsights() {
   const stats = useStats();
+  const { formatCurrency } = useCurrency();
 
   const insights = [
     {
       title: 'Average Transaction',
       icon: DollarSign,
-      value: `$${stats.averageTransaction.value.toFixed(2)}`,
+      value: formatCurrency(stats.averageTransaction.value),
       trend: stats.averageTransaction.trend.value,
       isPositive: stats.averageTransaction.trend.isPositive,
       description: `${Math.abs(stats.averageTransaction.trend.value)}% vs last month`,
@@ -63,7 +65,7 @@ export function SpendingInsights() {
 
           {insight.amount && (
             <div className="mt-1 text-sm text-gray-500">
-              ${insight.amount.toFixed(2)} ({insight.percentage.toFixed(1)}% of total)
+              {formatCurrency(insight.amount)} ({insight.percentage.toFixed(1)}% of total)
             </div>
           )}
 

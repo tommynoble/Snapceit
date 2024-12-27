@@ -3,10 +3,12 @@ import { motion } from 'framer-motion';
 import { MoreVertical, Download, Edit, Trash2 } from 'lucide-react';
 import { EditReceiptModal } from './EditReceiptModal';
 import { useReceipts } from './ReceiptContext';
+import { useCurrency } from '../../../hooks/useCurrency';
 import type { Receipt } from './ReceiptContext';
 
 export function ReceiptsList() {
   const { receipts, deleteReceipt, updateReceipt } = useReceipts();
+  const { formatCurrency } = useCurrency();
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [editingReceipt, setEditingReceipt] = useState<string | null>(null);
   const [sortedReceipts, setSortedReceipts] = useState<Receipt[]>([]);
@@ -71,11 +73,11 @@ export function ReceiptsList() {
             <div className="text-right flex items-center space-x-4">
               <div>
                 <div className="text-lg font-semibold text-gray-900">
-                  ${receipt.total.toFixed(2)}
+                  {formatCurrency(receipt.total)}
                 </div>
                 {receipt.tax && (
                   <div className="text-sm text-gray-500">
-                    Tax: ${receipt.tax.total.toFixed(2)}
+                    Tax: {formatCurrency(receipt.tax.total)}
                   </div>
                 )}
               </div>

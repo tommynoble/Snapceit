@@ -1,297 +1,458 @@
-import React, { useEffect, useState, useMemo } from 'react';
-import { useAuth } from '../../firebase/AuthContext';
-import { UserSettings } from '../../types/settings';
-import { useReceipts } from '../../components/dashboard/receipts/ReceiptContext';
+import React, { useState, useEffect } from 'react';
+import { Switch } from '@headlessui/react';
+import { useToast } from '../../hooks/useToast';
+import { DashboardHeader } from '../../components/dashboard/DashboardHeader';
 import { 
-  Bell, 
-  Globe, 
-  Languages, 
-  CreditCard, 
-  Shield, 
-  FileText, 
-  Tags,
-  Download,
-  HardDrive,
-  Clock
-} from 'lucide-react';
-import { format } from 'date-fns';
+  BellIcon, 
+  GlobeAltIcon, 
+  SunIcon, 
+  DocumentIcon, 
+  ClockIcon, 
+  CogIcon,
+  ArrowPathIcon,
+  CloudArrowUpIcon
+} from '@heroicons/react/24/outline';
+import { settingsService, UserSettings } from '../../services/settingsService';
+import { useAuth } from '../../auth/CognitoAuthContext';
+import { useNavigate } from 'react-router-dom';
 
 export function Settings() {
-  const { currentUser } = useAuth();
-  const { receipts } = useReceipts();
-  const [settings, setSettings] = useState<UserSettings | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  const userCategories = useMemo(() => {
-    return Array.from(new Set(receipts.map(receipt => receipt.category))).filter(Boolean);
-  }, [receipts]);
+  const { showToast } = useToast();
+  const { currentUser, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(true);
+  const [settings, setSettings] = useState<Partial<UserSettings>>({
+    emailNotifications: true,
+    pushNotifications: true,
+    notificationSms: false,
+    currency: 'USD',
+    language: 'English',
+    darkMode: false,
+    autoScan: true,
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    defaultTaxRate: 0,
+    defaultExportFormat: 'pdf',
+    includeReceiptImages: true,
+    compressUploads: true,
+    autoDeleteAfterDays: null,
+  });
 
   useEffect(() => {
-    const fetchSettings = async () => {
-      if (!currentUser) return;
-      
-      try {
-        // TODO: Replace with actual API call to fetch user settings
-        const userSettings: UserSettings = {
-          userId: currentUser.uid,
-          email: currentUser.email || '',
-          firstName: currentUser.displayName?.split(' ')[0] || '',
-          lastName: currentUser.displayName?.split(' ')[1] || '',
-          accountStatus: 'active',
-          emailVerified: currentUser.emailVerified,
-          twoFactorEnabled: false,
-          preferredCurrency: 'USD',
-          language: 'en',
-          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-          subscriptionPlan: 'free',
-          subscriptionStatus: 'active',
-          notificationPreferences: {
-            email: true,
-            push: true,
-            sms: false,
-            receiptScanned: true,
-            monthlyReport: true,
-            budgetAlerts: true
-          },
-          defaultCategories: ['Food', 'Transportation', 'Shopping', 'Entertainment', 'Bills'],
-          customCategories: [],
-          exportPreferences: {
-            format: 'pdf',
-            frequency: 'monthly',
-            includeReceipts: true,
-            includeSummary: true
-          },
-          totalReceiptsScanned: 0,
-          totalExpenseAmount: 0,
-          storageUsed: 0,
-          lastLoginDate: new Date().toISOString(),
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        };
+    // Wait for auth to be initialized
+    if (authLoading) return;
 
-        setSettings(userSettings);
+    // Redirect if not logged in
+    if (!currentUser) {
+      navigate('/login');
+      return;
+    }
+
+    const loadSettings = async () => {
+      try {
+        console.log('Loading settings for user:', currentUser.uid);
+        const userSettings = await settingsService.getUserSettings(currentUser.uid);
+        console.log('Fetched settings:', userSettings);
+        
+        if (userSettings) {
+          setSettings(userSettings);
+        } else {
+          console.log('No existing settings found, creating defaults');
+          const defaultSettings = await settingsService.createUserSettings(currentUser.uid, settings);
+          console.log('Created default settings:', defaultSettings);
+          setSettings(defaultSettings);
+        }
       } catch (error) {
-        console.error('Error fetching settings:', error);
+        console.error('Error loading settings:', error);
+        showToast('Failed to load settings', 'error');
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
     };
 
-    fetchSettings();
-  }, [currentUser]);
+    loadSettings();
+  }, [currentUser, authLoading, navigate]);
 
-  if (loading) {
+  const handleSettingChange = async (key: string, value: boolean | string | number | null) => {
+    if (!currentUser) {
+      showToast('Please log in to save settings', 'error');
+      return;
+    }
+
+    try {
+      setSettings(prev => ({ ...prev, [key]: value }));
+      await settingsService.updateUserSettings(currentUser.uid, { [key]: value });
+      showToast('Settings updated successfully', 'success');
+    } catch (error) {
+      console.error('Error updating setting:', error);
+      showToast('Failed to update settings', 'error');
+      // Revert the setting if update failed
+      setSettings(prev => ({ ...prev, [key]: settings[key as keyof UserSettings] }));
+    }
+  };
+
+  if (authLoading || isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+      <div className="p-4">
+        <DashboardHeader
+          title="Settings"
+          description="Loading your preferences..."
+        />
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+        </div>
       </div>
     );
   }
 
-  if (!settings) {
-    return <div>Error loading settings</div>;
-  }
-
-  const SettingsSection = ({ 
-    title, 
-    icon: Icon, 
-    children 
-  }: { 
-    title: string; 
-    icon: React.ElementType; 
-    children: React.ReactNode; 
-  }) => (
-    <div className="bg-white/10 backdrop-blur-xl rounded-xl p-6 space-y-4">
-      <div className="flex items-center gap-3">
-        <Icon className="h-5 w-5 text-blue-400" />
-        <h2 className="text-lg font-semibold text-white">{title}</h2>
-      </div>
-      {children}
-    </div>
-  );
-
   return (
-    <div className="max-w-6xl mx-auto p-6 space-y-6">
-      <h1 className="text-2xl font-bold text-white mb-8">Settings</h1>
+    <div className="p-4 max-w-7xl mx-auto">
+      <DashboardHeader
+        title="Settings"
+        description="Customize your receipt scanner experience"
+      />
 
-      <div className="grid gap-6 md:grid-cols-2">
-        {/* Account Information */}
-        <SettingsSection title="Account Information" icon={Shield}>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm text-white/70">Email</label>
-              <p className="text-white">{settings.email}</p>
-            </div>
-            <div>
-              <label className="block text-sm text-white/70">Name</label>
-              <p className="text-white">{`${settings.firstName} ${settings.lastName}`}</p>
-            </div>
-            <div>
-              <label className="block text-sm text-white/70">Account Status</label>
-              <p className="text-white capitalize">{settings.accountStatus}</p>
-            </div>
-            <div>
-              <label className="block text-sm text-white/70">Email Verification</label>
-              <p className="text-white">{settings.emailVerified ? 'Verified' : 'Not Verified'}</p>
-            </div>
-            <div>
-              <label className="block text-sm text-white/70">Two-Factor Authentication</label>
-              <p className="text-white">{settings.twoFactorEnabled ? 'Enabled' : 'Disabled'}</p>
-            </div>
-          </div>
-        </SettingsSection>
-
-        {/* Preferences */}
-        <SettingsSection title="Preferences" icon={Globe}>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm text-white/70">Preferred Currency</label>
-              <p className="text-white">{settings.preferredCurrency}</p>
-            </div>
-            <div>
-              <label className="block text-sm text-white/70">Language</label>
-              <p className="text-white capitalize">{settings.language}</p>
-            </div>
-            <div>
-              <label className="block text-sm text-white/70">Timezone</label>
-              <p className="text-white">{settings.timezone}</p>
-            </div>
-          </div>
-        </SettingsSection>
-
-        {/* Subscription */}
-        <SettingsSection title="Subscription" icon={CreditCard}>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm text-white/70">Current Plan</label>
-              <p className="text-white capitalize">{settings.subscriptionPlan}</p>
-            </div>
-            <div>
-              <label className="block text-sm text-white/70">Status</label>
-              <p className="text-white capitalize">{settings.subscriptionStatus}</p>
-            </div>
-          </div>
-        </SettingsSection>
-
-        {/* Notifications */}
-        <SettingsSection title="Notifications" icon={Bell}>
-          <div className="space-y-4">
-            {Object.entries(settings.notificationPreferences).map(([key, value]) => (
-              <div key={key} className="flex items-center justify-between">
-                <label className="text-white capitalize">
-                  {key.replace(/([A-Z])/g, ' $1').trim()}
-                </label>
-                <div className="relative inline-block w-10 mr-2 align-middle select-none">
-                  <input 
-                    type="checkbox" 
-                    checked={value}
-                    onChange={() => {}} // TODO: Implement change handler
-                    className="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"
-                  />
-                  <label className="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"></label>
+      <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Left Column */}
+        <div className="space-y-4">
+          {/* Account & Notifications */}
+          <div className="bg-white/10 backdrop-blur-xl shadow-xl rounded-xl overflow-hidden border border-white/10 hover:border-purple-500/50 transition-colors duration-300 h-[400px]">
+            <div className="border-b border-white/10 p-4">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-purple-500/20 rounded-lg">
+                  <BellIcon className="h-5 w-5 text-purple-400" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-white">Account & Notifications</h2>
+                  <p className="text-purple-200/80 text-sm">Manage how you receive updates</p>
                 </div>
               </div>
-            ))}
-          </div>
-        </SettingsSection>
+            </div>
+            
+            <div className="p-4 space-y-4 overflow-y-auto h-[calc(400px-4rem)]">
+              {/* Notification Toggles */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/5 hover:border-purple-500/30 transition-colors duration-300">
+                  <div>
+                    <h3 className="text-base font-medium text-white">Email Notifications</h3>
+                    <p className="text-purple-200/80 text-xs mt-1">Get updates via email</p>
+                  </div>
+                  <Switch
+                    checked={settings.emailNotifications || false}
+                    onChange={(checked) => handleSettingChange('emailNotifications', checked)}
+                    className={`${
+                      settings.emailNotifications ? 'bg-purple-600' : 'bg-white/10'
+                    } relative inline-flex h-6 w-12 items-center rounded-full transition-colors focus:outline-none`}
+                  >
+                    <span className="sr-only">Enable email notifications</span>
+                    <span
+                      className={`${
+                        settings.emailNotifications ? 'translate-x-6' : 'translate-x-1'
+                      } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
+                    />
+                  </Switch>
+                </div>
 
-        {/* Categories */}
-        <SettingsSection title="Categories" icon={Tags}>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm text-white/70">Your Categories</label>
-              <div className="flex flex-wrap gap-2 mt-2">
-                {userCategories.length > 0 ? (
-                  userCategories.map(category => (
-                    <span key={category} className="px-3 py-1 bg-white/10 rounded-full text-sm text-white">
-                      {category}
-                    </span>
-                  ))
-                ) : (
-                  <p className="text-white/70 text-sm">No categories found in your receipts yet</p>
-                )}
+                <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/5 hover:border-purple-500/30 transition-colors duration-300">
+                  <div>
+                    <h3 className="text-base font-medium text-white">Push Notifications</h3>
+                    <p className="text-purple-200/80 text-xs mt-1">Instant updates on your device</p>
+                  </div>
+                  <Switch
+                    checked={settings.pushNotifications || false}
+                    onChange={(checked) => handleSettingChange('pushNotifications', checked)}
+                    className={`${
+                      settings.pushNotifications ? 'bg-purple-600' : 'bg-white/10'
+                    } relative inline-flex h-6 w-12 items-center rounded-full transition-colors focus:outline-none`}
+                  >
+                    <span className="sr-only">Enable push notifications</span>
+                    <span
+                      className={`${
+                        settings.pushNotifications ? 'translate-x-6' : 'translate-x-1'
+                      } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
+                    />
+                  </Switch>
+                </div>
+
+                <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/5 hover:border-purple-500/30 transition-colors duration-300">
+                  <div>
+                    <h3 className="text-base font-medium text-white">SMS Notifications</h3>
+                    <p className="text-purple-200/80 text-xs mt-1">Get text message updates</p>
+                  </div>
+                  <Switch
+                    checked={settings.notificationSms || false}
+                    onChange={(checked) => handleSettingChange('notificationSms', checked)}
+                    className={`${
+                      settings.notificationSms ? 'bg-purple-600' : 'bg-white/10'
+                    } relative inline-flex h-6 w-12 items-center rounded-full transition-colors focus:outline-none`}
+                  >
+                    <span className="sr-only">Enable SMS notifications</span>
+                    <span
+                      className={`${
+                        settings.notificationSms ? 'translate-x-6' : 'translate-x-1'
+                      } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
+                    />
+                  </Switch>
+                </div>
               </div>
             </div>
           </div>
-        </SettingsSection>
 
-        {/* Export Preferences */}
-        <SettingsSection title="Export Preferences" icon={Download}>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm text-white/70">Format</label>
-              <p className="text-white uppercase">{settings.exportPreferences.format}</p>
+          {/* Appearance & Region */}
+          <div className="bg-white/10 backdrop-blur-xl shadow-xl rounded-xl overflow-hidden border border-white/10 hover:border-purple-500/50 transition-colors duration-300 h-[400px]">
+            <div className="border-b border-white/10 p-4">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-purple-500/20 rounded-lg">
+                  <GlobeAltIcon className="h-5 w-5 text-purple-400" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-white">Appearance & Region</h2>
+                  <p className="text-purple-200/80 text-sm">Customize your display preferences</p>
+                </div>
+              </div>
             </div>
-            <div>
-              <label className="block text-sm text-white/70">Frequency</label>
-              <p className="text-white capitalize">{settings.exportPreferences.frequency}</p>
-            </div>
-            <div className="flex items-center justify-between">
-              <label className="text-white">Include Receipts</label>
-              <input 
-                type="checkbox" 
-                checked={settings.exportPreferences.includeReceipts}
-                onChange={() => {}} // TODO: Implement change handler
-                className="form-checkbox h-5 w-5 text-blue-500"
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <label className="text-white">Include Summary</label>
-              <input 
-                type="checkbox" 
-                checked={settings.exportPreferences.includeSummary}
-                onChange={() => {}} // TODO: Implement change handler
-                className="form-checkbox h-5 w-5 text-blue-500"
-              />
+            
+            <div className="p-4 space-y-4 overflow-y-auto h-[calc(400px-4rem)]">
+              <div className="space-y-4">
+                <div className="bg-white/5 rounded-lg border border-white/5 p-3 hover:border-purple-500/30 transition-colors duration-300">
+                  <label htmlFor="language" className="block text-base font-medium text-white mb-1">
+                    Language
+                  </label>
+                  <select
+                    id="language"
+                    value={settings.language}
+                    onChange={(e) => handleSettingChange('language', e.target.value)}
+                    className="w-full rounded-lg border border-white/10 bg-white/5 backdrop-blur-xl text-white shadow-sm focus:border-purple-500 focus:ring-purple-500 px-3 py-2 text-base"
+                  >
+                    <option value="English">English</option>
+                    <option value="Spanish">Spanish</option>
+                    <option value="French">French</option>
+                    <option value="German">German</option>
+                  </select>
+                </div>
+
+                <div className="bg-white/5 rounded-lg border border-white/5 p-3 hover:border-purple-500/30 transition-colors duration-300">
+                  <label htmlFor="timezone" className="block text-base font-medium text-white mb-1">
+                    Timezone
+                  </label>
+                  <select
+                    id="timezone"
+                    value={settings.timezone}
+                    onChange={(e) => handleSettingChange('timezone', e.target.value)}
+                    className="w-full rounded-lg border border-white/10 bg-white/5 backdrop-blur-xl text-white shadow-sm focus:border-purple-500 focus:ring-purple-500 px-3 py-2 text-base"
+                  >
+                    {[
+                      'America/New_York',
+                      'America/Chicago',
+                      'America/Denver',
+                      'America/Los_Angeles',
+                      'Europe/London',
+                      'Europe/Paris',
+                      'Asia/Tokyo',
+                      'Australia/Sydney'
+                    ].map(tz => (
+                      <option key={tz} value={tz}>{tz}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/5 hover:border-purple-500/30 transition-colors duration-300">
+                  <div>
+                    <h3 className="text-base font-medium text-white">Dark Mode</h3>
+                    <p className="text-purple-200/80 text-xs mt-1">Use dark theme</p>
+                  </div>
+                  <Switch
+                    checked={settings.darkMode || false}
+                    onChange={(checked) => handleSettingChange('darkMode', checked)}
+                    className={`${
+                      settings.darkMode ? 'bg-purple-600' : 'bg-white/10'
+                    } relative inline-flex h-6 w-12 items-center rounded-full transition-colors focus:outline-none`}
+                  >
+                    <span className="sr-only">Enable dark mode</span>
+                    <span
+                      className={`${
+                        settings.darkMode ? 'translate-x-6' : 'translate-x-1'
+                      } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
+                    />
+                  </Switch>
+                </div>
+              </div>
             </div>
           </div>
-        </SettingsSection>
+        </div>
 
-        {/* Usage Statistics */}
-        <SettingsSection title="Usage Statistics" icon={HardDrive}>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm text-white/70">Total Receipts Scanned</label>
-              <p className="text-white">{settings.totalReceiptsScanned}</p>
+        {/* Right Column */}
+        <div className="space-y-4">
+          {/* Receipt Settings */}
+          <div className="bg-white/10 backdrop-blur-xl shadow-xl rounded-xl overflow-hidden border border-white/10 hover:border-purple-500/50 transition-colors duration-300 h-[400px]">
+            <div className="border-b border-white/10 p-4">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-purple-500/20 rounded-lg">
+                  <DocumentIcon className="h-5 w-5 text-purple-400" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-white">Receipt Settings</h2>
+                  <p className="text-purple-200/80 text-sm">Configure receipt processing preferences</p>
+                </div>
+              </div>
             </div>
-            <div>
-              <label className="block text-sm text-white/70">Total Expense Amount</label>
-              <p className="text-white">
-                ${settings.totalExpenseAmount.toLocaleString()}
-              </p>
-            </div>
-            <div>
-              <label className="block text-sm text-white/70">Storage Used</label>
-              <p className="text-white">
-                {(settings.storageUsed / 1024 / 1024).toFixed(2)} MB
-              </p>
+            
+            <div className="p-4 space-y-4 overflow-y-auto h-[calc(400px-4rem)]">
+              <div className="space-y-4">
+                <div className="bg-white/5 rounded-lg border border-white/5 p-3 hover:border-purple-500/30 transition-colors duration-300">
+                  <label htmlFor="currency" className="block text-base font-medium text-white mb-1">
+                    Default Currency
+                  </label>
+                  <select
+                    id="currency"
+                    value={settings.currency}
+                    onChange={(e) => handleSettingChange('currency', e.target.value)}
+                    className="w-full rounded-lg border border-white/10 bg-white/5 backdrop-blur-xl text-white shadow-sm focus:border-purple-500 focus:ring-purple-500 px-3 py-2 text-base"
+                  >
+                    <option value="USD">USD ($)</option>
+                    <option value="EUR">EUR (€)</option>
+                    <option value="GBP">GBP (£)</option>
+                    <option value="JPY">JPY (¥)</option>
+                  </select>
+                </div>
+
+                <div className="bg-white/5 rounded-lg border border-white/5 p-3 hover:border-purple-500/30 transition-colors duration-300">
+                  <label htmlFor="taxRate" className="block text-base font-medium text-white mb-1">
+                    Default Tax Rate (%)
+                  </label>
+                  <input
+                    type="number"
+                    id="taxRate"
+                    value={settings.defaultTaxRate}
+                    onChange={(e) => handleSettingChange('defaultTaxRate', parseFloat(e.target.value))}
+                    className="w-full rounded-lg border border-white/10 bg-white/5 backdrop-blur-xl text-white shadow-sm focus:border-purple-500 focus:ring-purple-500 px-3 py-2 text-base"
+                    min="0"
+                    max="100"
+                    step="0.1"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/5 hover:border-purple-500/30 transition-colors duration-300">
+                  <div>
+                    <h3 className="text-base font-medium text-white">Auto-Scan Receipts</h3>
+                    <p className="text-purple-200/80 text-xs mt-1">Automatically process new receipts</p>
+                  </div>
+                  <Switch
+                    checked={settings.autoScan || false}
+                    onChange={(checked) => handleSettingChange('autoScan', checked)}
+                    className={`${
+                      settings.autoScan ? 'bg-purple-600' : 'bg-white/10'
+                    } relative inline-flex h-6 w-12 items-center rounded-full transition-colors focus:outline-none`}
+                  >
+                    <span className="sr-only">Enable auto-scan</span>
+                    <span
+                      className={`${
+                        settings.autoScan ? 'translate-x-6' : 'translate-x-1'
+                      } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
+                    />
+                  </Switch>
+                </div>
+              </div>
             </div>
           </div>
-        </SettingsSection>
 
-        {/* Account Activity */}
-        <SettingsSection title="Account Activity" icon={Clock}>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm text-white/70">Last Login</label>
-              <p className="text-white">
-                {format(new Date(settings.lastLoginDate), 'PPpp')}
-              </p>
+          {/* Storage & Export */}
+          <div className="bg-white/10 backdrop-blur-xl shadow-xl rounded-xl overflow-hidden border border-white/10 hover:border-purple-500/50 transition-colors duration-300 h-[400px]">
+            <div className="border-b border-white/10 p-4">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-purple-500/20 rounded-lg">
+                  <CloudArrowUpIcon className="h-5 w-5 text-purple-400" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-white">Storage & Export</h2>
+                  <p className="text-purple-200/80 text-sm">Manage storage and export options</p>
+                </div>
+              </div>
             </div>
-            <div>
-              <label className="block text-sm text-white/70">Account Created</label>
-              <p className="text-white">
-                {format(new Date(settings.createdAt), 'PPpp')}
-              </p>
-            </div>
-            <div>
-              <label className="block text-sm text-white/70">Last Updated</label>
-              <p className="text-white">
-                {format(new Date(settings.updatedAt), 'PPpp')}
-              </p>
+            
+            <div className="p-4 space-y-4 overflow-y-auto h-[calc(400px-4rem)]">
+              <div className="space-y-4">
+                <div className="bg-white/5 rounded-lg border border-white/5 p-3 hover:border-purple-500/30 transition-colors duration-300">
+                  <label htmlFor="exportFormat" className="block text-base font-medium text-white mb-1">
+                    Default Export Format
+                  </label>
+                  <select
+                    id="exportFormat"
+                    value={settings.defaultExportFormat}
+                    onChange={(e) => handleSettingChange('defaultExportFormat', e.target.value)}
+                    className="w-full rounded-lg border border-white/10 bg-white/5 backdrop-blur-xl text-white shadow-sm focus:border-purple-500 focus:ring-purple-500 px-3 py-2 text-base"
+                  >
+                    <option value="pdf">PDF</option>
+                    <option value="csv">CSV</option>
+                    <option value="excel">Excel</option>
+                  </select>
+                </div>
+
+                <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/5 hover:border-purple-500/30 transition-colors duration-300">
+                  <div>
+                    <h3 className="text-base font-medium text-white">Include Receipt Images</h3>
+                    <p className="text-purple-200/80 text-xs mt-1">Add images to exports</p>
+                  </div>
+                  <Switch
+                    checked={settings.includeReceiptImages || false}
+                    onChange={(checked) => handleSettingChange('includeReceiptImages', checked)}
+                    className={`${
+                      settings.includeReceiptImages ? 'bg-purple-600' : 'bg-white/10'
+                    } relative inline-flex h-6 w-12 items-center rounded-full transition-colors focus:outline-none`}
+                  >
+                    <span className="sr-only">Include receipt images in exports</span>
+                    <span
+                      className={`${
+                        settings.includeReceiptImages ? 'translate-x-6' : 'translate-x-1'
+                      } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
+                    />
+                  </Switch>
+                </div>
+
+                <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/5 hover:border-purple-500/30 transition-colors duration-300">
+                  <div>
+                    <h3 className="text-base font-medium text-white">Compress Uploads</h3>
+                    <p className="text-purple-200/80 text-xs mt-1">Reduce storage usage</p>
+                  </div>
+                  <Switch
+                    checked={settings.compressUploads || false}
+                    onChange={(checked) => handleSettingChange('compressUploads', checked)}
+                    className={`${
+                      settings.compressUploads ? 'bg-purple-600' : 'bg-white/10'
+                    } relative inline-flex h-6 w-12 items-center rounded-full transition-colors focus:outline-none`}
+                  >
+                    <span className="sr-only">Enable upload compression</span>
+                    <span
+                      className={`${
+                        settings.compressUploads ? 'translate-x-6' : 'translate-x-1'
+                      } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
+                    />
+                  </Switch>
+                </div>
+
+                <div className="bg-white/5 rounded-lg border border-white/5 p-3 hover:border-purple-500/30 transition-colors duration-300">
+                  <label htmlFor="autoDelete" className="block text-base font-medium text-white mb-1">
+                    Auto-Delete After Days
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      id="autoDelete"
+                      value={settings.autoDeleteAfterDays || ''}
+                      onChange={(e) => handleSettingChange('autoDeleteAfterDays', e.target.value ? parseInt(e.target.value) : null)}
+                      className="w-full rounded-lg border border-white/10 bg-white/5 backdrop-blur-xl text-white shadow-sm focus:border-purple-500 focus:ring-purple-500 px-3 py-2 pr-14 text-base"
+                      min="0"
+                      placeholder="Never"
+                    />
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                      <span className="text-purple-200 text-sm">days</span>
+                    </div>
+                  </div>
+                  <p className="text-purple-200/80 text-xs mt-1">Leave empty to never auto-delete</p>
+                </div>
+              </div>
             </div>
           </div>
-        </SettingsSection>
+        </div>
       </div>
     </div>
   );

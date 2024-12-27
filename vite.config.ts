@@ -9,6 +9,12 @@ export default defineConfig({
   },
   server: {
     port: 5184,
-    strictPort: true // This will fail if port 5184 is not available instead of trying another port
+    strictPort: true, 
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+      }
+    }
   }
 });

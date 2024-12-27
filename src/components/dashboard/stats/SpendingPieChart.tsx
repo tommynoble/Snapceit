@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Sector, Legend, Tooltip } from 'recharts';
 import { useStats } from './useStats';
+import { useCurrency } from '../../../hooks/useCurrency';
 
 const COLORS = [
   '#8B5CF6', // Purple
@@ -49,7 +50,7 @@ const renderActiveShape = (props: any) => {
         {payload.category}
       </text>
       <text x={cx} y={cy + 12} textAnchor="middle" fill="#6B7280" className="text-lg">
-        ${value.toFixed(2)} ({(percent * 100).toFixed(1)}%)
+        {payload.formatCurrency(value)} ({(percent * 100).toFixed(1)}%)
       </text>
     </g>
   );
@@ -57,12 +58,14 @@ const renderActiveShape = (props: any) => {
 
 export function SpendingPieChart() {
   const { categories } = useStats();
+  const { formatCurrency } = useCurrency();
   const [activeIndex, setActiveIndex] = useState(0);
 
   const data = categories.breakdown.map((item) => ({
     category: item.category,
     value: item.amount,
     percentage: item.percentage,
+    formatCurrency: (value: number) => formatCurrency(value),
   }));
 
   const onPieEnter = (_: any, index: number) => {
@@ -76,7 +79,7 @@ export function SpendingPieChart() {
         <div className="rounded-lg bg-white p-4 shadow-lg ring-1 ring-black ring-opacity-5">
           <p className="text-lg font-medium text-gray-900">{data.category}</p>
           <p className="text-base text-gray-600">
-            ${data.value.toFixed(2)}
+            {data.formatCurrency(data.value)}
           </p>
           <p className="text-sm text-gray-500">
             {data.percentage.toFixed(1)}% of total
@@ -103,7 +106,7 @@ export function SpendingPieChart() {
             <div className="flex-1">
               <div className="font-medium text-gray-900 text-base">{entry.value}</div>
               <div className="text-gray-500 text-sm">
-                ${data[index].value.toFixed(2)}
+                {data[index].formatCurrency(data[index].value)}
               </div>
             </div>
           </div>

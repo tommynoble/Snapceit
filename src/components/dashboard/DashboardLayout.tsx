@@ -13,15 +13,15 @@ import { UserProfileModal } from './user/UserProfileModal';
 import { TaxDetailsCard } from './tax/TaxDetailsCard';
 import { PriceMatchModal } from './pricematch/PriceMatchModal';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAuth } from '../../firebase/AuthContext';
+import { useAuth } from '../../auth/CognitoAuthContext';
 import { Sidebar } from './Sidebar';
+import { DashboardNavbar } from './DashboardNavbar';
 import logo from '../../../images/logo.svg';
-import SpendingHabits from './spending/SpendingHabits';
 import { TaxCalculator } from './tax/TaxCalculator';
 import { Profile } from '../../pages/dashboard/Profile';
 import { Settings } from '../../pages/dashboard/Settings';
-import { DeductionsPage } from '../../pages/dashboard/DeductionsPage';
 import { PriceMatchPage } from '../../pages/dashboard/PriceMatchPage';
+import { TemplatePreview } from '../../pages/dashboard/TemplatePreview';
 
 export function DashboardLayout() {
   const [isUserProfileOpen, setIsUserProfileOpen] = useState(false);
@@ -38,11 +38,9 @@ export function DashboardLayout() {
     }
   };
 
-  const handleSpendingHabitsClick = () => navigate('/dashboard/spending-habits');
   const handlePriceMatchClick = () => navigate('/dashboard/price-match');
   const handleTaxPageClick = () => navigate('/dashboard/tax-calculator');
   const handleSettingsClick = () => navigate('/dashboard/settings');
-  const handleDeductionsClick = () => navigate('/dashboard/deductions');
 
   const handleProfileClick = () => {
     setIsUserProfileOpen(true);
@@ -86,11 +84,9 @@ export function DashboardLayout() {
       {/* Desktop Sidebar */}
       <div className="hidden lg:block">
         <Sidebar
-          onSpendingHabitsClick={handleSpendingHabitsClick}
           onPriceMatchClick={handlePriceMatchClick}
           onTaxPageClick={handleTaxPageClick}
           onSettingsClick={handleSettingsClick}
-          onDeductionsClick={handleDeductionsClick}
           onLogout={handleLogout}
         />
       </div>
@@ -116,10 +112,6 @@ export function DashboardLayout() {
             className="lg:hidden fixed inset-y-0 right-0 w-64 bg-black/40 backdrop-blur-xl shadow-lg z-40"
           >
             <Sidebar
-              onSpendingHabitsClick={() => {
-                navigate('/dashboard/spending-habits');
-                setIsMobileMenuOpen(false);
-              }}
               onPriceMatchClick={() => {
                 navigate('/dashboard/price-match');
                 setIsMobileMenuOpen(false);
@@ -129,35 +121,48 @@ export function DashboardLayout() {
                 setIsMobileMenuOpen(false);
               }}
               onSettingsClick={() => setIsMobileMenuOpen(false)}
-              onDeductionsClick={() => {
-                navigate('/dashboard/deductions');
-                setIsMobileMenuOpen(false);
-              }}
               onLogout={handleLogout}
             />
           </motion.div>
         )}
       </AnimatePresence>
 
-      <main className="lg:pl-64">
-        <nav className="flex items-center justify-between px-4 py-3 lg:hidden">
-          <img src={logo} alt="Snapceit" className="h-14 md:h-14 h-10 w-auto" />
-        </nav>
-        <div className="px-4 py-2 sm:py-6">
-          <div className="max-w-7xl mx-auto px-0 sm:px-4 lg:px-6">
+      <main className="lg:pl-64 flex flex-col flex-1 min-h-screen">
+        {/* Top navigation */}
+        <div className="px-4 sm:px-6">
+          <div className="max-w-7xl mx-auto px-0 sm:px-6 lg:px-6">
+            <div className="flex items-center justify-between py-3">
+              <div className="lg:hidden -ml-2">
+                <img src={logo} alt="Logo" className="h-16 w-auto" />
+              </div>
+              <DashboardNavbar 
+                onProfileClick={handleProfileClick}
+                onSettingsClick={handleSettingsClick}
+                onLogout={handleLogout}
+              />
+            </div>
+          </div>
+        </div>
+        <div className="px-4 sm:px-6">
+          <div className="max-w-7xl mx-auto px-0 sm:px-6 lg:px-6">
             <div className="flex-1 overflow-auto">
-              <div className="container mx-auto p-2 sm:p-6">
+              <div className="container mx-auto p-2 sm:px-6">
                 <Routes>
-                  <Route index element={<DashboardContent />} />
-                  <Route 
-                    path="spending-habits" 
-                    element={<SpendingHabits onProfileClick={handleProfileClick} />} 
+                  <Route
+                    path="/"
+                    element={<DashboardContent />}
                   />
-                  <Route path="price-match" element={<PriceMatchPage />} />
+                  <Route
+                    path="/template-preview"
+                    element={<TemplatePreview />}
+                  />
+                  <Route
+                    path="/price-match"
+                    element={<PriceMatchPage />}
+                  />
                   <Route path="tax-calculator" element={<TaxCalculator />} />
                   <Route path="profile" element={<Profile />} />
                   <Route path="settings" element={<Settings />} />
-                  <Route path="deductions" element={<DeductionsPage />} />
                 </Routes>
               </div>
             </div>

@@ -1,143 +1,215 @@
 import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
-import { ErrorResponse, SuccessResponse, SpendingAnalytics, MerchantAnalytics, MonthlyReport } from '../types';
+import { pool } from '../db/config';
+import { ErrorResponse, SuccessResponse } from '../types';
 
 const router = Router();
-const prisma = new PrismaClient();
+
+// Get dashboard summary (Recent receipts, Total receipts, Total spending, Tax summary)
+router.get('/dashboard', async (req, res) => {
+  try {
+    // Get recent receipts
+    const recentReceipts = await pool.query(`
+      SELECT 
+        id, merchant, amount, date, category, image_url
+      FROM receipts 
+      ORDER BY date DESC 
+      LIMIT 5
+    `);
+
+    // Get total counts and sums
+    const summary = await pool.query(`
+      SELECT 
+        COUNT(*) as total_receipts,
+        SUM(amount) as total_spending,
+        SUM(tax) as total_tax,
+        AVG(amount) as average_spending
+      FROM receipts
+    `);
+
+    // Get category breakdown
+    const categories = await pool.query(`
+      SELECT 
+        category,
+        COUNT(*) as receipt_count,
+        SUM(amount) as total_amount
+      FROM receipts
+      WHERE category IS NOT NULL
+      GROUP BY category
+      ORDER BY total_amount DESC
+    `);
+
+    // Calculate monthly spending trend
+    const monthlyTrend = await pool.query(`
+      SELECT 
+        DATE_TRUNC('month', date) as month,
+        COUNT(*) as receipt_count,
+        SUM(amount) as total_amount,
+        SUM(tax) as total_tax
+      FROM receipts
+      GROUP BY DATE_TRUNC('month', date)
+      ORDER BY month DESC
+      LIMIT 12
+    `);
+
+    res.json({
+      success: true,
+      data: {
+        recentReceipts: recentReceipts.rows,
+        summary: {
+          totalReceipts: parseInt(summary.rows[0].total_receipts),
+          totalSpending: parseFloat(summary.rows[0].total_spending) || 0,
+          totalTax: parseFloat(summary.rows[0].total_tax) || 0,
+          averageSpending: parseFloat(summary.rows[0].average_spending) || 0
+        },
+        categories: categories.rows.map(cat => ({
+          name: cat.category,
+          count: parseInt(cat.receipt_count),
+          total: parseFloat(cat.total_amount)
+        })),
+        monthlyTrend: monthlyTrend.rows.map(month => ({
+          month: month.month,
+          count: parseInt(month.receipt_count),
+          amount: parseFloat(month.total_amount),
+          tax: parseFloat(month.total_tax)
+        }))
+      }
+    } as SuccessResponse);
+  } catch (error) {
+    console.error('Error getting dashboard analytics:', error);
+    res.status(500).json({
+      error: 'Failed to get dashboard analytics',
+      statusCode: 500
+    } as ErrorResponse);
+  }
+});
 
 // Get spending analytics
 router.get('/spending', async (req, res) => {
   try {
-    const userId = req.user?.id;
+    const result = await pool.query(`
+      SELECT 
+        COALESCE(category, 'Uncategorized') as category,
+        COUNT(*) as count,
+        SUM(amount) as total,
+        SUM(tax) as total_tax,
+        AVG(amount) as average_amount
+      FROM receipts 
+      GROUP BY category
+      ORDER BY total DESC
+    `);
     
-    const receipts = await prisma.receipt.findMany({
-      where: { userId },
-      orderBy: { date: 'desc' },
-    });
+    // If no data, return empty analytics
+    if (result.rows.length === 0) {
+      return res.json({ 
+        success: true, 
+        data: {
+          totalSpending: 0,
+          totalTax: 0,
+          averageSpending: 0,
+          categories: [],
+          monthlyTrend: []
+        }
+      } as SuccessResponse);
+    }
+
+    const totalSpending = result.rows.reduce((sum, row) => sum + parseFloat(row.total), 0);
+    const totalTax = result.rows.reduce((sum, row) => sum + parseFloat(row.total_tax), 0);
     
-    // Calculate analytics
-    const totalSpent = receipts.reduce((sum, receipt) => sum + receipt.total, 0);
-    const averagePerTransaction = totalSpent / receipts.length;
-    
-    // Calculate category breakdown
-    const categoryTotals = receipts.reduce((acc, receipt) => {
-      const category = receipt.category || 'Uncategorized';
-      acc[category] = (acc[category] || 0) + receipt.total;
-      return acc;
-    }, {} as Record<string, number>);
-    
-    const topCategories = Object.entries(categoryTotals)
-      .map(([category, amount]) => ({
-        category,
-        amount,
-        percentage: (amount / totalSpent) * 100,
-      }))
-      .sort((a, b) => b.amount - a.amount)
-      .slice(0, 5);
-    
-    // Calculate monthly trend
-    const monthlyTrend = await prisma.$queryRaw`
-      SELECT DATE_TRUNC('month', date) as month, SUM(total) as amount
-      FROM "Receipt"
-      WHERE "userId" = ${userId}
+    const categories = result.rows.map(row => ({
+      name: row.category,
+      count: parseInt(row.count),
+      total: parseFloat(row.total),
+      average: parseFloat(row.average_amount),
+      percentage: (parseFloat(row.total) / totalSpending) * 100
+    }));
+
+    const monthlyTrend = await pool.query(`
+      SELECT 
+        DATE_TRUNC('month', date) as month,
+        COUNT(*) as count,
+        SUM(amount) as total,
+        SUM(tax) as tax
+      FROM receipts 
       GROUP BY DATE_TRUNC('month', date)
       ORDER BY month DESC
       LIMIT 12
-    `;
-    
-    const analytics: SpendingAnalytics = {
-      totalSpent,
-      averagePerTransaction,
-      topCategories,
-      monthlyTrend,
-    };
-    
-    res.json({ success: true, data: analytics } as SuccessResponse);
+    `);
+
+    res.json({ 
+      success: true, 
+      data: {
+        totalSpending,
+        totalTax,
+        averageSpending: totalSpending / result.rows.reduce((sum, row) => sum + parseInt(row.count), 0),
+        categories,
+        monthlyTrend: monthlyTrend.rows.map(row => ({
+          month: row.month,
+          count: parseInt(row.count),
+          total: parseFloat(row.total),
+          tax: parseFloat(row.tax)
+        }))
+      }
+    } as SuccessResponse);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch spending analytics', statusCode: 500 } as ErrorResponse);
+    console.error('Error getting spending analytics:', error);
+    res.status(500).json({ 
+      error: 'Failed to get spending analytics', 
+      statusCode: 500 
+    } as ErrorResponse);
   }
 });
 
-// Get category-based analytics
-router.get('/categories', async (req, res) => {
+// Get tax summary
+router.get('/tax', async (req, res) => {
   try {
-    const userId = req.user?.id;
-    
-    const categoryAnalytics = await prisma.$queryRaw`
+    const result = await pool.query(`
       SELECT 
-        category,
-        COUNT(*) as count,
-        SUM(total) as total_spent,
-        AVG(total) as average_transaction
-      FROM "Receipt"
-      WHERE "userId" = ${userId}
-      GROUP BY category
-      ORDER BY total_spent DESC
-    `;
-    
-    res.json({ success: true, data: categoryAnalytics } as SuccessResponse);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch category analytics', statusCode: 500 } as ErrorResponse);
-  }
-});
+        DATE_TRUNC('month', date) as month,
+        COUNT(*) as receipt_count,
+        SUM(tax) as total_tax,
+        AVG(tax) as average_tax,
+        MIN(tax) as min_tax,
+        MAX(tax) as max_tax
+      FROM receipts 
+      WHERE tax > 0
+      GROUP BY DATE_TRUNC('month', date)
+      ORDER BY month DESC
+      LIMIT 12
+    `);
 
-// Get merchant analytics
-router.get('/merchants', async (req, res) => {
-  try {
-    const userId = req.user?.id;
-    
-    const merchantAnalytics: MerchantAnalytics = {
-      topMerchants: await prisma.$queryRaw`
-        SELECT 
-          merchant,
-          SUM(total) as total_spent,
-          COUNT(*) as transaction_count,
-          AVG(total) as average_transaction
-        FROM "Receipt"
-        WHERE "userId" = ${userId}
-        GROUP BY merchant
-        ORDER BY total_spent DESC
-        LIMIT 10
-      `,
-    };
-    
-    res.json({ success: true, data: merchantAnalytics } as SuccessResponse);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch merchant analytics', statusCode: 500 } as ErrorResponse);
-  }
-});
+    const summary = await pool.query(`
+      SELECT 
+        SUM(tax) as total_tax,
+        AVG(tax) as average_tax,
+        COUNT(*) as taxed_receipts
+      FROM receipts 
+      WHERE tax > 0
+    `);
 
-// Generate monthly report
-router.get('/reports/monthly', async (req, res) => {
-  try {
-    const userId = req.user?.id;
-    const { month, year } = req.query;
-    
-    const startDate = new Date(Number(year), Number(month) - 1, 1);
-    const endDate = new Date(Number(year), Number(month), 0);
-    
-    const receipts = await prisma.receipt.findMany({
-      where: {
-        userId,
-        date: {
-          gte: startDate,
-          lte: endDate,
+    res.json({
+      success: true,
+      data: {
+        summary: {
+          totalTax: parseFloat(summary.rows[0].total_tax) || 0,
+          averageTax: parseFloat(summary.rows[0].average_tax) || 0,
+          taxedReceipts: parseInt(summary.rows[0].taxed_receipts)
         },
-      },
-    });
-    
-    const report: MonthlyReport = {
-      month: startDate.toLocaleString('default', { month: 'long' }),
-      year: Number(year),
-      totalSpent: receipts.reduce((sum, receipt) => sum + receipt.total, 0),
-      receiptCount: receipts.length,
-      categoryBreakdown: [], // Calculate category breakdown
-      merchantBreakdown: [], // Calculate merchant breakdown
-    };
-    
-    res.json({ success: true, data: report } as SuccessResponse);
+        monthlyTrend: result.rows.map(row => ({
+          month: row.month,
+          count: parseInt(row.receipt_count),
+          total: parseFloat(row.total_tax),
+          average: parseFloat(row.average_tax),
+          min: parseFloat(row.min_tax),
+          max: parseFloat(row.max_tax)
+        }))
+      }
+    } as SuccessResponse);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to generate monthly report', statusCode: 500 } as ErrorResponse);
+    console.error('Error getting tax summary:', error);
+    res.status(500).json({ 
+      error: 'Failed to get tax summary', 
+      statusCode: 500 
+    } as ErrorResponse);
   }
 });
 

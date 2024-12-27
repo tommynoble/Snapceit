@@ -1,13 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from './useAuth';
-import { UserProfile } from '../types/UserProfile';
-import { UserProfileService } from '../services/firebase/UserProfileService';
-
-const userProfileService = new UserProfileService();
+import { CompleteUserProfile } from '../types/UserProfile';
+import { userProfileService } from '../services/rds/UserProfileService';
 
 export function useUserProfile() {
   const { user } = useAuth();
-  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [profile, setProfile] = useState<CompleteUserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
@@ -25,26 +23,32 @@ export function useUserProfile() {
         setLoading(true);
         setError(null);
         
-        let userProfile = await userProfileService.getProfile(user.uid);
+        let userProfile = await userProfileService.getUserById(user.uid);
         
         // If profile doesn't exist, create it
         if (!userProfile && user.email) {
-          await userProfileService.createProfile(user.uid, {
+          userProfile = await userProfileService.createUser({
             email: user.email,
             firstName: user.displayName?.split(' ')[0] || '',
             lastName: user.displayName?.split(' ').slice(1).join(' ') || '',
+            phoneNumber: user.phoneNumber || undefined,
             profileImageUrl: user.photoURL || undefined,
+            accountStatus: 'active',
+            emailVerified: user.emailVerified
           });
-          userProfile = await userProfileService.getProfile(user.uid);
         }
 
         if (mounted) {
           setProfile(userProfile);
-          setLoading(false);
+          setError(null);
         }
       } catch (err) {
         if (mounted) {
           setError(err instanceof Error ? err : new Error('Failed to load profile'));
+          setProfile(null);
+        }
+      } finally {
+        if (mounted) {
           setLoading(false);
         }
       }
@@ -57,27 +61,36 @@ export function useUserProfile() {
     };
   }, [user]);
 
-  const updateProfile = async (updates: Partial<UserProfile>) => {
-    if (!user) throw new Error('No user logged in');
-    
-    try {
-      await userProfileService.updateProfile(user.uid, updates);
-      const updatedProfile = await userProfileService.getProfile(user.uid);
-      setProfile(updatedProfile);
-    } catch (err) {
-      throw err instanceof Error ? err : new Error('Failed to update profile');
-    }
-  };
+  const updateProfile = async (updates: Partial<CompleteUserProfile>) => {
+    if (!user || !profile) return;
 
-  const updateProfileImage = async (imageUrl: string) => {
-    if (!user) throw new Error('No user logged in');
-    
     try {
-      await userProfileService.updateProfileImage(user.uid, imageUrl);
-      const updatedProfile = await userProfileService.getProfile(user.uid);
+      setLoading(true);
+      setError(null);
+
+      // Update user data if present
+      if (updates.user) {
+        await userProfileService.updateUser(user.uid, updates.user);
+      }
+
+      // Update settings if present
+      if (updates.settings) {
+        // Add settings update logic
+      }
+
+      // Update subscription if present
+      if (updates.subscription) {
+        await userProfileService.updateSubscription(user.uid, updates.subscription);
+      }
+
+      // Reload the complete profile
+      const updatedProfile = await userProfileService.getUserById(user.uid);
       setProfile(updatedProfile);
+      setError(null);
     } catch (err) {
-      throw err instanceof Error ? err : new Error('Failed to update profile image');
+      setError(err instanceof Error ? err : new Error('Failed to update profile'));
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -85,7 +98,6 @@ export function useUserProfile() {
     profile,
     loading,
     error,
-    updateProfile,
-    updateProfileImage,
+    updateProfile
   };
 }

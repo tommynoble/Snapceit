@@ -1,15 +1,15 @@
 import { Search, Bell, HelpCircle, Sun, X, User, Settings, LogOut } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { useAuth } from '../../firebase/AuthContext';
+import { useAuth } from '../../auth/CognitoAuthContext';
 
-interface TopNavbarProps {
+interface DashboardNavbarProps {
   onProfileClick: () => void;
   onSettingsClick: () => void;
   onLogout: () => void;
 }
 
-export const TopNavbar = ({ onProfileClick, onSettingsClick, onLogout }: TopNavbarProps) => {
+export const DashboardNavbar = ({ onProfileClick, onSettingsClick, onLogout }: DashboardNavbarProps) => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -64,7 +64,7 @@ export const TopNavbar = ({ onProfileClick, onSettingsClick, onLogout }: TopNavb
 
   return (
     <div className="w-full">
-      <div className="flex items-center justify-end gap-4 px-6 py-4 border-b border-white/10">
+      <div className="flex items-center justify-end gap-4 px-6 py-1.5 border-b border-white/10">
         <div className="flex items-center gap-4 relative">
           <div className="relative">
             <button 
@@ -125,7 +125,7 @@ export const TopNavbar = ({ onProfileClick, onSettingsClick, onLogout }: TopNavb
             <Sun className="h-[18px] w-[18px] text-white/70" />
           </button>
           
-          <div className="relative" ref={dropdownRef}>
+          <div className="relative pr-8">
             <button 
               onClick={handleAvatarClick}
               className="relative p-1.5 rounded-full transition-all hover:scale-105 focus:outline-none focus:ring-2 focus:ring-[#4FDDE6]/50"

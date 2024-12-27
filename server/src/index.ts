@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
-import { prisma, testConnection } from './db/config';
+import helmet from 'helmet';
+import { pool, testConnection } from './db/config';
 import receiptsRouter from './routes/receipts';
 import usersRouter from './routes/users';
 import analyticsRouter from './routes/analytics';
@@ -8,8 +9,16 @@ import categoriesRouter from './routes/categories';
 
 const app = express();
 
-// Middleware
-app.use(cors());
+// Security middleware
+app.use(helmet()); 
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production' 
+    ? ['https://snapceit.com', 'https://app.snapceit.com'] 
+    : ['http://localhost:5173'], 
+  credentials: true, 
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
 
 // Test database connection
@@ -25,7 +34,7 @@ app.use('/api/categories', categoriesRouter);
 app.get('/', async (req, res) => {
   try {
     // Test database connection
-    await prisma.$queryRaw`SELECT 1`;
+    await pool.query('SELECT 1');
     res.json({ 
       status: 'healthy',
       database: 'connected'
@@ -48,8 +57,8 @@ app.use((err: Error, req: express.Request, res: express.Response, next: express.
   });
 });
 
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`Server is running on port ${PORT}`);
 });

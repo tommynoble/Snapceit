@@ -1,32 +1,26 @@
+import React from 'react';
 import { Routes, Route } from 'react-router-dom';
-import { ProtectedRoute } from '../components/auth/ProtectedRoute';
-import { PageTransition } from '../components/transitions/PageTransition';
+import { Home } from '../pages/Home';
+import { Onboarding } from '../pages/Onboarding';
 import { DashboardLayout } from '../components/dashboard/DashboardLayout';
-import { TopNavbar } from '../components/dashboard/TopNavbar';
-import { ReceiptProvider } from '../components/dashboard/receipts/ReceiptContext';
-import Home from '../pages/Home';
+import { Register } from '../pages/auth/Register';
+import { Login } from '../pages/auth/Login';
+import { ForgotPassword } from '../pages/auth/ForgotPassword';
+import { ResetPassword } from '../pages/auth/ResetPassword';
+import { ProtectedRoute } from '../components/auth/ProtectedRoute';
 
 export const AppRoutes = () => {
   return (
     <Routes>
-      {/* Landing page with built-in auth */}
-      <Route path="/" element={
-        <PageTransition>
-          <Home />
-        </PageTransition>
-      } />
-
-      {/* Top Navigation */}
-      <Route path="/nav" element={<TopNavbar onProfileClick={() => {}} />} />
-
-      {/* Protected Dashboard Routes */}
+      <Route path="/" element={<Home />} />
+      <Route path="/onboarding" element={<Onboarding />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/dashboard/*" element={
         <ProtectedRoute>
-          <PageTransition>
-            <ReceiptProvider>
-              <DashboardLayout />
-            </ReceiptProvider>
-          </PageTransition>
+          <DashboardLayout />
         </ProtectedRoute>
       } />
     </Routes>
