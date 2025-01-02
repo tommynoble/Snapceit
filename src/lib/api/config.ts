@@ -1,9 +1,8 @@
 import axios from 'axios';
-import * as AxiosLogger from 'axios-logger';
-import { getAuth } from 'firebase/auth';
+import { Auth } from '@aws-amplify/auth';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api',
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json'
@@ -46,22 +45,18 @@ if (import.meta.env.DEV) {
   );
 }
 
-// Add auth token to requests
+// Add a request interceptor to add Cognito auth token
 api.interceptors.request.use(async (config) => {
   try {
-    const auth = getAuth();
-    const user = auth.currentUser;
-    if (user) {
-      const token = await user.getIdToken();
-      config.headers.Authorization = `Bearer ${token}`;
-      console.log('Added auth token to request');
-    } else {
-      console.warn('No user logged in');
-    }
+    const session = await Auth.currentSession();
+    const token = session.getIdToken().getJwtToken();
+    config.headers.Authorization = `Bearer ${token}`;
+    console.log('Added auth token to request');
     return config;
   } catch (error) {
-    console.error('Error adding auth token:', error);
-    return Promise.reject(error);
+    // If there's no session, proceed without token
+    console.warn('No user logged in');
+    return config;
   }
 });
 

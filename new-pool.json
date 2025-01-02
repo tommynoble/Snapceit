@@ -1,0 +1,36 @@
+{
+    "PoolName": "SnapceitPool",
+    "Policies": {
+        "PasswordPolicy": {
+            "MinimumLength": 8,
+            "RequireUppercase": true,
+            "RequireLowercase": true,
+            "RequireNumbers": true,
+            "RequireSymbols": true
+        }
+    },
+    "Schema": [
+        {
+            "Name": "email",
+            "AttributeDataType": "String",
+            "Required": true,
+            "Mutable": true
+        }
+    ],
+    "AutoVerifiedAttributes": ["email"],
+    "UsernameAttributes": ["email"],
+    "EmailConfiguration": {
+        "EmailSendingAccount": "COGNITO_DEFAULT"
+    },
+    "AdminCreateUserConfig": {
+        "AllowAdminCreateUserOnly": false
+    },
+    "AccountRecoverySetting": {
+        "RecoveryMechanisms": [
+            {
+                "Priority": 1,
+                "Name": "verified_email"
+            }
+        ]
+    }
+}

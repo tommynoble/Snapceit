@@ -1,0 +1,11 @@
+{
+    "UsernameAttributes": ["email"],
+    "AutoVerifiedAttributes": ["email"],
+    "EmailConfiguration": {
+        "EmailSendingAccount": "COGNITO_DEFAULT"
+    },
+    "MfaConfiguration": "OFF",
+    "AdminCreateUserConfig": {
+        "AllowAdminCreateUserOnly": false
+    }
+}

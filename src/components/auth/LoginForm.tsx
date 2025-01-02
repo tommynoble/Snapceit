@@ -6,21 +6,25 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import LoadingSpinner from '../common/LoadingSpinner';
 
 const getErrorMessage = (error: any) => {
-  switch (error.name) {
-    case 'UserNotFoundException':
+  if (error.message) {
+    if (error.message.includes('User does not exist')) {
       return 'No account found with this email. Please check your email or sign up.';
-    case 'NotAuthorizedException':
+    }
+    if (error.message.includes('Incorrect username or password')) {
       return 'Invalid email or password. Please check your credentials and try again.';
-    case 'UserNotConfirmedException':
+    }
+    if (error.message.includes('User is not confirmed')) {
       return 'Please verify your email first.';
-    case 'NetworkError':
+    }
+    if (error.message.includes('Network error')) {
       return 'Network error. Please check your internet connection.';
-    case 'LimitExceededException':
+    }
+    if (error.message.includes('Password attempts exceeded')) {
       return 'Too many failed attempts. Please try again later or reset your password.';
-    default:
-      console.error('Unhandled Cognito error:', error);
-      return 'We encountered an issue signing you in. Please try again.';
+    }
+    return error.message;
   }
+  return 'We encountered an issue signing you in. Please try again.';
 };
 
 export function LoginForm() {
@@ -46,7 +50,6 @@ export function LoginForm() {
     }
     if (location.state?.message) {
       setSuccessMessage(location.state.message);
-      // Clear message after 5 seconds
       setTimeout(() => setSuccessMessage(''), 5000);
     }
   }, [location.state]);
@@ -57,12 +60,18 @@ export function LoginForm() {
     setError('');
 
     try {
-      console.log('Attempting login...');
-      await login(formData.email, formData.password);
-      console.log('Login successful, redirecting to dashboard...');
-      navigate('/dashboard');
+      console.log('[DEBUG] Attempting login...');
+      const result = await login(formData.email, formData.password);
+      console.log('[DEBUG] Login result:', result);
+      
+      if (result.success) {
+        console.log('[DEBUG] Login successful, redirecting to dashboard...');
+        navigate('/dashboard');
+      } else if (result.nextStep) {
+        console.log('[DEBUG] Additional step required:', result.nextStep);
+      }
     } catch (err: any) {
-      console.error('Login error:', err);
+      console.error('[DEBUG] Login error:', err);
       setError(getErrorMessage(err));
     } finally {
       setIsLoading(false);
@@ -90,7 +99,7 @@ export function LoginForm() {
       setSuccessMessage('Password reset instructions sent! Please check your inbox and spam folder.');
     } catch (err: any) {
       setError(getErrorMessage(err));
-      console.error('Password reset error:', err);
+      console.error('[DEBUG] Password reset error:', err);
     } finally {
       setLoading(false);
     }
@@ -150,11 +159,11 @@ export function LoginForm() {
                 </label>
                 <div className="relative">
                   <input
-                    type={showPassword ? 'text' : 'password'}
+                    type={showPassword ? "text" : "password"}
                     name="password"
                     value={formData.password}
                     onChange={handleChange}
-                    className="w-full px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/40 focus:border-transparent backdrop-blur-sm text-sm"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/40 focus:border-transparent backdrop-blur-sm text-sm pr-10"
                     placeholder="Enter your password"
                     required
                     disabled={loading}

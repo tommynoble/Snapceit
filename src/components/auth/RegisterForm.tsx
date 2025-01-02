@@ -4,8 +4,6 @@ import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../../auth/CognitoAuthContext';
 import { useNavigate } from 'react-router-dom';
 import LoadingSpinner from '../common/LoadingSpinner';
-import PhoneInput from 'react-phone-number-input';
-import 'react-phone-number-input/style.css';
 
 interface RegisterFormProps {
   onBack: () => void;
@@ -19,25 +17,16 @@ const getErrorMessage = (error: any) => {
   return error.message || 'An error occurred during registration. Please try again.';
 };
 
-const isValidPhoneNumber = (phoneNumber: string) => {
-  // Basic phone number validation using E.164 format
-  // This regex allows for:
-  // - Optional + at the start
-  // - Country code (1-3 digits)
-  // - Actual phone number (6-12 digits)
-  const phoneRegex = /^\+?[1-9]\d{1,14}$/;
-  return phoneRegex.test(phoneNumber.replace(/\D/g, ''));
-};
-
 export function RegisterForm({ onBack, heading = "Get started with Snapceit" }: RegisterFormProps) {
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
-    name: '',
     email: '',
-    phoneNumber: '',
-    password: ''
+    password: '',
+    confirmPassword: ''
   });
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const { signup } = useAuth();
   const navigate = useNavigate();
@@ -45,88 +34,56 @@ export function RegisterForm({ onBack, heading = "Get started with Snapceit" }: 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuccessMessage('');
+
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+
     setLoading(true);
 
     try {
       console.log('Starting registration process...');
       console.log('Form data:', {
         email: formData.email,
-        name: formData.name,
-        phone_number: formData.phoneNumber,
         hasPassword: !!formData.password
       });
 
-      const { deliveryMedium, destination } = await signup(formData.email, formData.password, {
-        name: formData.name,
-        phone_number: formData.phoneNumber
-      });
+      const { username, deliveryMedium, destination, resent } = await signup(formData.email, formData.password, {});
+      
+      setSuccessMessage(resent 
+        ? 'A new verification code has been sent to your email'
+        : 'Registration successful! Please check your email for verification code');
       
       console.log('Registration successful!', {
+        username,
         deliveryMedium,
         destination: destination.replace(/[^@]+@/, '***@') // Mask email for privacy
       });
       
-      navigate('/verify-email', { 
-        state: { 
-          email: formData.email,
-          phoneNumber: formData.phoneNumber,
-          deliveryMedium,
-          destination
-        } 
-      });
+      // Short delay to show success message
+      setTimeout(() => {
+        navigate('/verify-email', { 
+          state: { 
+            email: formData.email,
+            username,
+            deliveryMedium,
+            destination
+          } 
+        });
+      }, 2000);
     } catch (err: any) {
       console.error('Registration error:', err);
-      setError(getErrorMessage(err));
+      if (err.name === 'UsernameExistsException') {
+        setError('This email is already registered and verified. Please try logging in instead.');
+      } else {
+        setError(getErrorMessage(err));
+      }
     } finally {
       setLoading(false);
     }
   };
-
-  // Add custom styles for the phone input to match our theme
-  useEffect(() => {
-    const style = document.createElement('style');
-    style.textContent = `
-      .PhoneInput {
-        margin-top: 0.25rem;
-      }
-      .PhoneInputInput {
-        width: 100%;
-        padding: 0.5rem 0.75rem;
-        border-radius: 0.5rem;
-        background-color: rgba(255, 255, 255, 0.1);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        color: white;
-        font-size: 0.875rem;
-      }
-      .PhoneInputInput::placeholder {
-        color: rgba(255, 255, 255, 0.6);
-      }
-      .PhoneInputInput:focus {
-        outline: none;
-        ring: 2px;
-        ring-color: rgba(255, 255, 255, 0.4);
-        border-color: transparent;
-      }
-      .PhoneInputCountry {
-        margin-right: 0.5rem;
-      }
-      .PhoneInputCountrySelect {
-        background-color: rgba(255, 255, 255, 0.1);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        border-radius: 0.5rem;
-        color: white;
-        padding: 0.25rem;
-      }
-      .PhoneInputCountrySelect option {
-        background-color: #1a1a1a;
-        color: white;
-      }
-    `;
-    document.head.appendChild(style);
-    return () => {
-      document.head.removeChild(style);
-    };
-  }, []);
 
   return (
     <>
@@ -146,23 +103,13 @@ export function RegisterForm({ onBack, heading = "Get started with Snapceit" }: 
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-white/80 mb-1.5">
-                  Full Name
-                </label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/40 focus:border-transparent backdrop-blur-sm text-sm"
-                  placeholder="Enter your full name"
-                  required
-                  disabled={loading}
-                />
+            {successMessage && (
+              <div className="mb-4 bg-green-500/10 border border-green-500/20 text-green-200 px-4 py-3 rounded-lg text-sm sm:text-base">
+                {successMessage}
               </div>
+            )}
 
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-white/80 mb-1.5">
                   Email Address
@@ -177,24 +124,6 @@ export function RegisterForm({ onBack, heading = "Get started with Snapceit" }: 
                   required
                   disabled={loading}
                 />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-white/80 mb-1.5">
-                  Phone Number (optional)
-                </label>
-                <PhoneInput
-                  international
-                  countryCallingCodeEditable={false}
-                  defaultCountry="US"
-                  value={formData.phoneNumber}
-                  onChange={(value) => setFormData({ ...formData, phoneNumber: value || '' })}
-                  placeholder="Enter phone number"
-                  disabled={loading}
-                />
-                <p className="mt-1 text-xs text-white/60">
-                  Format: +1 (555) 123-4567 for US, or select your country code
-                </p>
               </div>
 
               <div>
@@ -218,6 +147,31 @@ export function RegisterForm({ onBack, heading = "Get started with Snapceit" }: 
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white"
                   >
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-white/80 mb-1.5">
+                  Confirm Password
+                </label>
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    name="confirmPassword"
+                    value={formData.confirmPassword}
+                    onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                    className="w-full px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/40 focus:border-transparent backdrop-blur-sm text-sm"
+                    placeholder="Confirm your password"
+                    required
+                    disabled={loading}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white"
+                  >
+                    {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
               </div>

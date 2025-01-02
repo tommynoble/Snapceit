@@ -12,10 +12,19 @@ export function VerifyEmail() {
   const navigate = useNavigate();
   const location = useLocation();
   const { confirmSignUp, resendConfirmationCode } = useAuth();
+  
+  // Get both email and username from location state
   const email = location.state?.email;
+  const username = location.state?.username;
   const phoneNumber = location.state?.phoneNumber;
   const deliveryMedium = location.state?.deliveryMedium || 'EMAIL';
   const destination = location.state?.destination;
+
+  if (!username || !email) {
+    console.error('Missing required state:', { username, email });
+    navigate('/register');
+    return null;
+  }
 
   const handleVerifyCode = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,13 +34,13 @@ export function VerifyEmail() {
       return;
     }
 
-    console.log('Verifying code...');
+    console.log('Verifying code...', { username });
     setError('');
     setSuccessMessage('');
     setLoading(true);
 
     try {
-      await confirmSignUp(email, verificationCode);
+      await confirmSignUp(username, verificationCode);
       console.log('Verification successful, redirecting to login...');
       setSuccessMessage('Email verified successfully! Redirecting to login...');
       
@@ -71,16 +80,13 @@ export function VerifyEmail() {
     setSuccessMessage('');
     
     try {
-      console.log('Attempting to resend code to:', email);
-      const { deliveryMedium, destination } = await resendConfirmationCode(email);
+      console.log('Attempting to resend code for username:', username);
+      const { deliveryMedium, destination } = await resendConfirmationCode(username);
       
-      // Mask the email/phone for privacy in the UI
-      const maskedDestination = destination.includes('@') 
-        ? destination.replace(/([^@]{3})[^@]+@/, '$1***@')
-        : destination.replace(/(\d{3})\d+(\d{4})/, '$1****$2');
-      
-      setSuccessMessage(`Verification code resent to ${maskedDestination}`);
-      console.log('Code resent successfully:', { deliveryMedium, maskedDestination });
+      // Mask the email for privacy in the UI
+      const maskedEmail = email.replace(/([^@]{3})[^@]+@/, '$1***@');
+      setSuccessMessage(`Verification code resent to ${maskedEmail}`);
+      console.log('Code resent successfully:', { deliveryMedium, destination: maskedEmail });
       
       // Clear success message after 5 seconds
       setTimeout(() => setSuccessMessage(''), 5000);
@@ -91,21 +97,6 @@ export function VerifyEmail() {
       setLoading(false);
     }
   };
-
-  const getErrorMessage = (err: any) => {
-    if (err.name === 'CodeMismatchException') {
-      return 'Invalid verification code. Please try again.';
-    } else if (err.name === 'ExpiredCodeException') {
-      return 'Verification code has expired. Please request a new one.';
-    } else {
-      return 'Failed to verify code. Please try again.';
-    }
-  };
-
-  if (!email) {
-    navigate('/register');
-    return null;
-  }
 
   const getVerificationMessage = () => {
     return `We sent a verification code to ${destination}`;

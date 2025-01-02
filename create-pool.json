@@ -1,0 +1,25 @@
+{
+    "PoolName": "SnapcietPool",
+    "Policies": {
+        "PasswordPolicy": {
+            "MinimumLength": 8,
+            "RequireUppercase": true,
+            "RequireLowercase": true,
+            "RequireNumbers": true,
+            "RequireSymbols": true
+        }
+    },
+    "AutoVerifiedAttributes": ["email"],
+    "UsernameAttributes": ["email"],
+    "Schema": [
+        {
+            "Name": "email",
+            "AttributeDataType": "String",
+            "Required": true,
+            "Mutable": true
+        }
+    ],
+    "EmailConfiguration": {
+        "EmailSendingAccount": "COGNITO_DEFAULT"
+    }
+}

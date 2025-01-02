@@ -6,7 +6,7 @@ import { RegisterForm } from './components/auth/RegisterForm';
 import { VerifyEmail } from './components/auth/VerifyEmail';
 import { DashboardLayout } from './components/dashboard/DashboardLayout';
 import { ReceiptProvider } from './components/dashboard/receipts/ReceiptContext';
-import { AuthProvider, useAuth } from './auth/CognitoAuthContext';
+import { useAuth } from './auth/CognitoAuthContext';
 import { Onboarding } from './components/onboarding/OnboardingQuestionnaire';
 import { AnimatePresence } from 'framer-motion';
 import { PageTransition } from './components/transitions/PageTransition';
@@ -96,9 +96,7 @@ function AppContent() {
         {/* Protected Routes */}
         <Route path="/dashboard/*" element={
           <ProtectedRoute>
-            <ReceiptProvider>
-              <DashboardLayout />
-            </ReceiptProvider>
+            <DashboardLayout />
           </ProtectedRoute>
         } />
         <Route path="/onboarding" element={
@@ -114,7 +112,7 @@ function AppContent() {
 function App() {
   return (
     <Router>
-      <AuthProvider>
+      <ReceiptProvider>
         <div className="min-h-screen bg-gradient-to-br from-fuchsia-500 via-purple-600 to-purple-800">
           <AppContent />
           <Toaster
@@ -127,7 +125,7 @@ function App() {
             }}
           />
         </div>
-      </AuthProvider>
+      </ReceiptProvider>
     </Router>
   );
 }

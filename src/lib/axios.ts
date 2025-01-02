@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { getAuth } from 'firebase/auth';
+import { Auth } from '@aws-amplify/auth';
 
 // Create axios instance with custom config
 const api = axios.create({
@@ -9,20 +9,16 @@ const api = axios.create({
   },
 });
 
-// Add a request interceptor to add Firebase auth token
+// Add a request interceptor to add Cognito auth token
 api.interceptors.request.use(async (config) => {
   try {
-    const auth = getAuth();
-    const user = auth.currentUser;
-    
-    if (user) {
-      const token = await user.getIdToken();
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    
+    const session = await Auth.currentSession();
+    const token = session.getIdToken().getJwtToken();
+    config.headers.Authorization = `Bearer ${token}`;
     return config;
   } catch (error) {
-    return Promise.reject(error);
+    // If there's no session, proceed without token
+    return config;
   }
 });
 

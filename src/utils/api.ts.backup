@@ -1,5 +1,4 @@
-import { Amplify } from '@aws-amplify/core';
-import { getCurrentUser, fetchUserAttributes } from '@aws-amplify/auth';
+import { Auth } from 'aws-amplify';
 
 const API_BASE_URL = import.meta.env.VITE_API_GATEWAY_URL;
 
@@ -10,13 +9,11 @@ interface ApiOptions {
 
 async function getAuthToken(): Promise<string> {
   try {
-    const currentUser = await getCurrentUser();
-    const userAttributes = await fetchUserAttributes();
-    // You might need to adjust this depending on how you're handling tokens
-    return userAttributes.token || '';
+    const session = await Auth.currentSession();
+    return session.getIdToken().getJwtToken();
   } catch (error) {
     console.error('Error getting auth token:', error);
-    throw error;
+    throw new Error('Not authenticated');
   }
 }
 
