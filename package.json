@@ -12,8 +12,7 @@
     "setup-db": "tsx scripts/setup-dynamodb.ts"
   },
   "dependencies": {
-    "@aws-amplify/auth": "^6.9.0",
-    "@aws-amplify/core": "^6.8.0",
+    "@aws-sdk/client-cognito-identity-provider": "^3.716.0",
     "@aws-sdk/client-dynamodb": "^3.716.0",
     "@aws-sdk/client-s3": "^3.709.0",
     "@aws-sdk/client-textract": "^3.709.0",
@@ -28,7 +27,6 @@
     "axios-logger": "^2.8.1",
     "chart.js": "^4.4.7",
     "date-fns": "^4.1.0",
-    "firebase": "^11.0.2",
     "framer-motion": "^11.13.5",
     "jspdf": "^2.5.2",
     "jspdf-autotable": "^3.8.4",

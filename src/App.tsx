@@ -21,9 +21,10 @@ import StyleGuide from './components/StyleGuide';
 // Protected Route Component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { currentUser } = useAuth();
+  const location = useLocation();
   
   if (!currentUser) {
-    return <Navigate to="/login" />;
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   return <>{children}</>;
@@ -32,9 +33,11 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 // Public Route Component (redirects to dashboard if already logged in)
 const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { currentUser } = useAuth();
+  const location = useLocation();
   
-  if (currentUser) {
-    return <Navigate to="/dashboard" />;
+  // Only redirect if we're not coming from a loading state
+  if (currentUser && !location.state?.loading) {
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <>{children}</>;
@@ -96,14 +99,14 @@ function AppContent() {
         {/* Protected Routes */}
         <Route path="/dashboard/*" element={
           <ProtectedRoute>
-            <DashboardLayout />
+            <ReceiptProvider>
+              <DashboardLayout />
+            </ReceiptProvider>
           </ProtectedRoute>
         } />
-        <Route path="/onboarding" element={
-          <ProtectedRoute>
-            <OnboardingWrapper />
-          </ProtectedRoute>
-        } />
+        
+        {/* Fallback route */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </AnimatePresence>
   );
@@ -112,20 +115,18 @@ function AppContent() {
 function App() {
   return (
     <Router>
-      <ReceiptProvider>
-        <div className="min-h-screen bg-gradient-to-br from-fuchsia-500 via-purple-600 to-purple-800">
-          <AppContent />
-          <Toaster
-            position="top-right"
-            toastOptions={{
-              style: {
-                background: '#4A5568',
-                color: '#fff',
-              },
-            }}
-          />
-        </div>
-      </ReceiptProvider>
+      <div className="min-h-screen bg-gradient-to-br from-fuchsia-500 via-purple-600 to-purple-800">
+        <AppContent />
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            style: {
+              background: '#4A5568',
+              color: '#fff',
+            },
+          }}
+        />
+      </div>
     </Router>
   );
 }

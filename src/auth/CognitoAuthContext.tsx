@@ -1,14 +1,12 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { signIn, signUp, signOut, getCurrentUser, fetchAuthSession, AuthUser, confirmSignUp as amplifyConfirmSignUp, resendSignUpCode } from '@aws-amplify/auth';
-import { configureCognito } from '../config/cognito';
+import React, { createContext, useContext, useState } from 'react';
+import { CognitoIdentityProviderClient, InitiateAuthCommand, SignUpCommand, ConfirmSignUpCommand, ResendConfirmationCodeCommand } from "@aws-sdk/client-cognito-identity-provider";
 
 interface AuthContextType {
-  currentUser: AuthUser | null;
-  loading: boolean;
+  currentUser: any | null;
   error: string | null;
   login: (email: string, password: string) => Promise<any>;
   logout: () => Promise<void>;
-  signup: (email: string, password: string, attributes?: Record<string, string>) => Promise<any>;
+  signup: (email: string, password: string, options?: { resend?: boolean }) => Promise<any>;
   confirmSignUp: (username: string, code: string) => Promise<any>;
   resendConfirmationCode: (username: string) => Promise<any>;
 }
@@ -24,120 +22,119 @@ export const useAuth = () => {
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState<any | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const init = async () => {
-      try {
-        try {
-          const user = await getCurrentUser();
-          const session = await fetchAuthSession();
-          console.log('[DEBUG] Initial user:', user);
-          console.log('[DEBUG] Initial session:', session);
-          setCurrentUser(user);
-        } catch (userError: any) {
-          console.log('[DEBUG] No authenticated user found:', userError);
-          setCurrentUser(null);
-        }
-      } catch (error: any) {
-        console.error('[DEBUG] Failed to initialize auth:', error);
-        setError(error.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-    init();
-  }, []);
+  const client = new CognitoIdentityProviderClient({
+    region: import.meta.env.VITE_AWS_REGION
+  });
 
-  const signup = async (email: string, password: string, attributes: Record<string, string> = {}) => {
-    try {
-      // First try to sign up normally
-      const { userId, userSub, isSignUpComplete } = await signUp({
-        username: email.toLowerCase(),
-        password,
-        options: {
-          userAttributes: {
-            email: email.toLowerCase(),
-            ...attributes
-          },
-          autoSignIn: true
-        }
-      });
-
-      return {
-        username: userId || userSub,
-        deliveryMedium: 'EMAIL',
-        destination: email
-      };
-    } catch (error: any) {
-      // If the user exists but isn't confirmed, we can try to resend the code
-      if (error.name === 'UsernameExistsException') {
-        try {
-          // Try to resend the confirmation code
-          await resendSignUpCode({
-            username: email.toLowerCase()
-          });
-          
-          return {
-            username: email.toLowerCase(),
-            deliveryMedium: 'EMAIL',
-            destination: email,
-            resent: true
-          };
-        } catch (resendError: any) {
-          // If resending fails, the user might be in a different state
-          console.error('Error resending code:', resendError);
-          throw error; // Throw the original error
-        }
-      }
-      throw error;
-    }
-  };
+  const clientId = import.meta.env.VITE_COGNITO_CLIENT_ID;
 
   const login = async (email: string, password: string) => {
     try {
       setError(null);
-      console.log('[DEBUG] Attempting login for:', email);
-      
-      const signInResult = await signIn({
-        username: email.toLowerCase(),
-        password
+      const command = new InitiateAuthCommand({
+        AuthFlow: 'USER_PASSWORD_AUTH',
+        ClientId: clientId,
+        AuthParameters: {
+          USERNAME: email.toLowerCase(),
+          PASSWORD: password
+        }
       });
+
+      const response = await client.send(command);
+      const accessToken = response.AuthenticationResult?.AccessToken;
+      const idToken = response.AuthenticationResult?.IdToken;
+
+      if (!accessToken || !idToken) {
+        throw new Error('Failed to get authentication tokens');
+      }
+
+      setCurrentUser({
+        username: email.toLowerCase(),
+        accessToken,
+        idToken
+      });
+
+      return response;
+    } catch (error: any) {
+      console.error('Login error:', error);
       
-      console.log('[DEBUG] Sign in response:', signInResult);
-      
-      if (signInResult?.isSignedIn) {
+      // Handle unverified users
+      if (error.name === 'UserNotConfirmedException') {
+        // Automatically resend verification code
         try {
-          const currentUser = await getCurrentUser();
-          const session = await fetchAuthSession();
-          console.log('[DEBUG] Login successful');
-          console.log('[DEBUG] User:', currentUser);
-          console.log('[DEBUG] Session:', session);
-          setCurrentUser(currentUser);
-          return { success: true, user: currentUser };
-        } catch (error) {
-          console.error('[DEBUG] Failed to get user/session after login:', error);
-          throw error;
+          await resendConfirmationCode(email);
+          
+          // Instead of setting an error, throw a special error that our login form can handle
+          throw {
+            name: 'UnverifiedUserError',
+            message: 'Please verify your email first. A new verification code has been sent.',
+            email: email.toLowerCase()
+          };
+        } catch (resendError: any) {
+          console.error('Error resending verification code:', resendError);
+          // If the user doesn't exist or other errors, let them try signing up
+          if (resendError.name === 'UserNotFoundException') {
+            throw new Error('No account found with this email. Please sign up.');
+          }
+          // For other errors during resend, let them try the verification page anyway
+          throw {
+            name: 'UnverifiedUserError',
+            message: 'Please verify your email to continue.',
+            email: email.toLowerCase()
+          };
         }
       }
       
-      return signInResult;
-    } catch (error: any) {
-      console.error('[DEBUG] Login failed:', error);
-      setError(error.message);
+      // Handle other common errors
+      if (error.name === 'NotAuthorizedException') {
+        throw new Error('Incorrect email or password');
+      }
+      if (error.name === 'UserNotFoundException') {
+        throw new Error('No account found with this email. Please sign up.');
+      }
+      
       throw error;
     }
   };
 
   const logout = async () => {
+    setCurrentUser(null);
+  };
+
+  const signup = async (email: string, password: string, options: { resend?: boolean } = {}) => {
     try {
-      await signOut();
-      setCurrentUser(null);
-    } catch (error: any) {
-      console.error('[DEBUG] Logout failed:', error);
-      setError(error.message);
+      if (options.resend) {
+        const command = new ResendConfirmationCodeCommand({
+          ClientId: clientId,
+          Username: email,
+        });
+        const response = await client.send(command);
+        return response;
+      }
+
+      const command = new SignUpCommand({
+        ClientId: clientId,
+        Username: email,
+        Password: password,
+        UserAttributes: [
+          {
+            Name: 'email',
+            Value: email,
+          },
+        ],
+      });
+
+      const response = await client.send(command);
+      
+      // Store password temporarily in sessionStorage for auto-login after verification
+      sessionStorage.setItem(`temp_password_${email.toLowerCase()}`, password);
+      
+      return response;
+    } catch (error) {
+      console.error('Signup error:', error);
       throw error;
     }
   };
@@ -145,20 +142,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const confirmSignUp = async (username: string, code: string) => {
     try {
       setError(null);
-      console.log('[DEBUG] Confirming sign up for username:', username);
-      
-      const result = await amplifyConfirmSignUp({
-        username,
-        confirmationCode: code,
+      const command = new ConfirmSignUpCommand({
+        ClientId: clientId,
+        Username: username.toLowerCase(),
+        ConfirmationCode: code
       });
-      
-      console.log('[DEBUG] Confirm sign up response:', result);
-      return {
-        success: true,
-      };
+
+      const response = await client.send(command);
+
+      // After successful verification, automatically log them in
+      try {
+        // Get the password from sessionStorage (temporarily stored during signup)
+        const tempPassword = sessionStorage.getItem(`temp_password_${username.toLowerCase()}`);
+        if (tempPassword) {
+          await login(username, tempPassword);
+          // Clear the temporary password
+          sessionStorage.removeItem(`temp_password_${username.toLowerCase()}`);
+        }
+      } catch (loginError) {
+        console.error('Auto-login after verification failed:', loginError);
+        // Don't throw here, let them log in manually if auto-login fails
+      }
+
+      return response;
     } catch (error: any) {
-      console.error('[DEBUG] Confirm sign up failed:', error);
-      setError(error.message);
+      console.error('Confirm signup error:', error);
       throw error;
     }
   };
@@ -166,34 +174,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const resendConfirmationCode = async (username: string) => {
     try {
       setError(null);
-      console.log('[DEBUG] Resending confirmation code for username:', username);
-      
-      const result = await resendSignUpCode({
-        username,
+      const command = new ResendConfirmationCodeCommand({
+        ClientId: clientId,
+        Username: username.toLowerCase()
       });
-      
-      console.log('[DEBUG] Resend code response:', result);
-      return {
-        deliveryMedium: 'EMAIL',
-        destination: username
-      };
+
+      const response = await client.send(command);
+      return response;
     } catch (error: any) {
-      console.error('[DEBUG] Failed to resend code:', error);
-      setError(error.message);
+      console.error('Resend confirmation code error:', error);
       throw error;
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gray-900"></div>
-      </div>
-    );
-  }
+  const value = {
+    currentUser,
+    error,
+    login,
+    logout,
+    signup,
+    confirmSignUp,
+    resendConfirmationCode
+  };
 
   return (
-    <AuthContext.Provider value={{ currentUser, loading, error, login, logout, signup, confirmSignUp, resendConfirmationCode }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );

@@ -7,7 +7,7 @@ interface PublicRouteProps {
 }
 
 export const PublicRoute: React.FC<PublicRouteProps> = ({ children }) => {
-  const { user, loading } = useAuth();
+  const { currentUser, loading } = useAuth();
 
   if (loading) {
     return <div>Loading...</div>; // You can replace this with a proper loading component
@@ -15,7 +15,7 @@ export const PublicRoute: React.FC<PublicRouteProps> = ({ children }) => {
 
   // If user is logged in and tries to access public routes like login/register,
   // redirect them to dashboard
-  if (user && window.location.pathname.startsWith('/auth')) {
+  if (currentUser && ['/login', '/register', '/auth'].some(path => window.location.pathname.startsWith(path))) {
     return <Navigate to="/dashboard" replace />;
   }
 

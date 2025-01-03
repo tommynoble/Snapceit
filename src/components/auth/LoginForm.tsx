@@ -35,7 +35,7 @@ export function LoginForm() {
   });
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [showLoading, setShowLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { login, resetPassword } = useAuth();
   const navigate = useNavigate();
@@ -56,25 +56,37 @@ export function LoginForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     setError('');
+    setSuccessMessage('');
+    setShowLoading(true);
 
     try {
-      console.log('[DEBUG] Attempting login...');
-      const result = await login(formData.email, formData.password);
-      console.log('[DEBUG] Login result:', result);
+      // Login but don't navigate yet
+      await login(formData.email, formData.password);
       
-      if (result.success) {
-        console.log('[DEBUG] Login successful, redirecting to dashboard...');
-        navigate('/dashboard');
-      } else if (result.nextStep) {
-        console.log('[DEBUG] Additional step required:', result.nextStep);
-      }
+      // Show loading screen for longer (20 seconds)
+      await new Promise(resolve => setTimeout(resolve, 20000));
+      
+      // Then navigate with loading state to prevent auto-redirect
+      navigate('/dashboard', { state: { loading: true } });
     } catch (err: any) {
-      console.error('[DEBUG] Login error:', err);
-      setError(getErrorMessage(err));
-    } finally {
-      setIsLoading(false);
+      console.error('Login error:', err);
+      
+      if (err.name === 'UnverifiedUserError') {
+        // Show success message and redirect to verification
+        setSuccessMessage(err.message);
+        setTimeout(() => {
+          navigate('/verify-email', { 
+            state: { 
+              email: err.email,
+            } 
+          });
+        }, 2000);
+        return;
+      }
+      
+      setError(err.message || 'Failed to login. Please try again.');
+      setShowLoading(false);
     }
   };
 
@@ -94,20 +106,20 @@ export function LoginForm() {
     try {
       setError('');
       setSuccessMessage('');
-      setLoading(true);
+      setIsLoading(true);
       await resetPassword(formData.email);
       setSuccessMessage('Password reset instructions sent! Please check your inbox and spam folder.');
     } catch (err: any) {
       setError(getErrorMessage(err));
       console.error('[DEBUG] Password reset error:', err);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
   return (
     <>
-      {isLoading && <LoadingSpinner />}
+      {showLoading && <LoadingSpinner />}
       <div className="w-full">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -149,7 +161,7 @@ export function LoginForm() {
                   className="w-full px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/40 focus:border-transparent backdrop-blur-sm text-sm"
                   placeholder="Enter your email"
                   required
-                  disabled={loading}
+                  disabled={showLoading}
                 />
               </div>
 
@@ -166,7 +178,7 @@ export function LoginForm() {
                     className="w-full px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/40 focus:border-transparent backdrop-blur-sm text-sm pr-10"
                     placeholder="Enter your password"
                     required
-                    disabled={loading}
+                    disabled={showLoading}
                   />
                   <button
                     type="button"
@@ -181,16 +193,16 @@ export function LoginForm() {
               <div className="space-y-3 pt-2">
                 <motion.button
                   type="submit"
-                  disabled={isLoading}
+                  disabled={showLoading}
                   className={`w-full py-3 px-4 rounded-lg text-white font-semibold transition-all duration-200 ${
-                    isLoading
+                    showLoading
                       ? 'bg-purple-400 cursor-not-allowed'
                       : 'bg-purple-600 hover:bg-purple-700'
                   }`}
-                  whileHover={{ scale: isLoading ? 1 : 1.02 }}
-                  whileTap={{ scale: isLoading ? 1 : 0.98 }}
+                  whileHover={{ scale: showLoading ? 1 : 1.02 }}
+                  whileTap={{ scale: showLoading ? 1 : 0.98 }}
                 >
-                  {isLoading ? 'Signing in...' : 'Sign in'}
+                  {showLoading ? 'Signing in...' : 'Sign in'}
                 </motion.button>
                 
                 <div className="flex flex-col space-y-2 text-center">

@@ -12,7 +12,11 @@ interface RegisterFormProps {
 
 const getErrorMessage = (error: any) => {
   if (error.name === 'UsernameExistsException') {
-    return 'An account with this email already exists. Please try logging in instead.';
+    // Check if the user is unverified
+    if (error.message.toLowerCase().includes('not confirmed')) {
+      return 'This email is registered but not verified. We\'ll send you a new verification code.';
+    }
+    return 'This email is already registered and verified. Please try logging in instead.';
   }
   return error.message || 'An error occurred during registration. Please try again.';
 };
@@ -50,39 +54,56 @@ export function RegisterForm({ onBack, heading = "Get started with Snapceit" }: 
         hasPassword: !!formData.password
       });
 
-      const { username, deliveryMedium, destination, resent } = await signup(formData.email, formData.password, {});
+      const response = await signup(formData.email, formData.password, {});
+      console.log('Registration response:', response);
       
-      setSuccessMessage(resent 
-        ? 'A new verification code has been sent to your email'
-        : 'Registration successful! Please check your email for verification code');
-      
-      console.log('Registration successful!', {
-        username,
-        deliveryMedium,
-        destination: destination.replace(/[^@]+@/, '***@') // Mask email for privacy
-      });
+      setSuccessMessage('Registration successful! Please check your email for verification code');
       
       // Short delay to show success message
       setTimeout(() => {
         navigate('/verify-email', { 
           state: { 
             email: formData.email,
-            username,
-            deliveryMedium,
-            destination
           } 
         });
       }, 2000);
     } catch (err: any) {
       console.error('Registration error:', err);
       if (err.name === 'UsernameExistsException') {
-        setError('This email is already registered and verified. Please try logging in instead.');
+        if (err.message.toLowerCase().includes('not confirmed')) {
+          // If user exists but is not confirmed, resend the verification code
+          try {
+            await signup(formData.email, formData.password, { resend: true });
+            setSuccessMessage('A new verification code has been sent to your email');
+            setTimeout(() => {
+              navigate('/verify-email', { 
+                state: { 
+                  email: formData.email,
+                } 
+              });
+            }, 2000);
+            return;
+          } catch (resendError) {
+            console.error('Error resending verification code:', resendError);
+            setError('Failed to resend verification code. Please try again.');
+          }
+        } else {
+          setError('This email is already registered and verified. Please try logging in instead.');
+        }
       } else {
         setError(getErrorMessage(err));
       }
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
   return (
@@ -118,7 +139,7 @@ export function RegisterForm({ onBack, heading = "Get started with Snapceit" }: 
                   type="email"
                   name="email"
                   value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  onChange={handleInputChange}
                   className="w-full px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/40 focus:border-transparent backdrop-blur-sm text-sm"
                   placeholder="Enter your email"
                   required
@@ -135,7 +156,7 @@ export function RegisterForm({ onBack, heading = "Get started with Snapceit" }: 
                     type={showPassword ? 'text' : 'password'}
                     name="password"
                     value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    onChange={handleInputChange}
                     className="w-full px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/40 focus:border-transparent backdrop-blur-sm text-sm"
                     placeholder="Create a password"
                     required
@@ -160,7 +181,7 @@ export function RegisterForm({ onBack, heading = "Get started with Snapceit" }: 
                     type={showConfirmPassword ? 'text' : 'password'}
                     name="confirmPassword"
                     value={formData.confirmPassword}
-                    onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                    onChange={handleInputChange}
                     className="w-full px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/40 focus:border-transparent backdrop-blur-sm text-sm"
                     placeholder="Confirm your password"
                     required
