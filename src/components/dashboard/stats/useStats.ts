@@ -39,8 +39,17 @@ export function useStats() {
   const { totalSpending, totalTax } = receipts.reduce((acc, receipt) => {
     try {
       // Calculate total amount
-      const amount = typeof receipt.total === 'number' ? receipt.total : 
-                    typeof receipt.total === 'string' ? parseFloat(receipt.total) : 0;
+      let amount = 0;
+      if (receipt.total !== undefined && receipt.total !== null) {
+        amount = typeof receipt.total === 'number' ? receipt.total : 
+                typeof receipt.total === 'string' ? parseFloat(receipt.total.replace(/[^0-9.-]+/g, '')) : 0;
+      } else if (receipt.items && Array.isArray(receipt.items)) {
+        // Calculate from items if total is not available
+        amount = receipt.items.reduce((sum, item) => {
+          const itemTotal = (item.price || 0) * (item.quantity || 1);
+          return sum + (isNaN(itemTotal) ? 0 : itemTotal);
+        }, 0);
+      }
       
       // Calculate tax
       const tax = receipt.tax?.total || 0;
@@ -52,17 +61,17 @@ export function useStats() {
       return {
         totalSpending: acc.totalSpending + (isNaN(amount) ? 0 : amount),
         totalTax: {
-          value: acc.totalTax.value + tax,
+          value: acc.totalTax.value + (isNaN(tax) ? 0 : tax),
           breakdown: {
-            salesTax: acc.totalTax.breakdown.salesTax + salesTax,
-            stateTax: acc.totalTax.breakdown.stateTax + stateTax,
-            localTax: acc.totalTax.breakdown.localTax + localTax,
+            salesTax: acc.totalTax.breakdown.salesTax + (isNaN(salesTax) ? 0 : salesTax),
+            stateTax: acc.totalTax.breakdown.stateTax + (isNaN(stateTax) ? 0 : stateTax),
+            localTax: acc.totalTax.breakdown.localTax + (isNaN(localTax) ? 0 : localTax),
             otherTaxes: [...acc.totalTax.breakdown.otherTaxes, ...otherTaxes]
           }
         }
       };
     } catch (error) {
-      console.error('Error calculating totals:', error);
+      console.error('Error calculating totals for receipt:', receipt, error);
       return acc;
     }
   }, {
@@ -86,24 +95,37 @@ export function useStats() {
         acc[category] = {
           total: 0,
           tax: 0,
-          count: 0
+          count: 0,
+          items: []
         };
       }
       
-      const amount = typeof receipt.total === 'number' ? receipt.total : 
-                    typeof receipt.total === 'string' ? parseFloat(receipt.total) : 0;
+      let amount = 0;
+      if (receipt.total !== undefined && receipt.total !== null) {
+        amount = typeof receipt.total === 'number' ? receipt.total : 
+                typeof receipt.total === 'string' ? parseFloat(receipt.total.replace(/[^0-9.-]+/g, '')) : 0;
+      } else if (receipt.items && Array.isArray(receipt.items)) {
+        amount = receipt.items.reduce((sum, item) => {
+          const itemTotal = (item.price || 0) * (item.quantity || 1);
+          return sum + (isNaN(itemTotal) ? 0 : itemTotal);
+        }, 0);
+      }
+
       const tax = receipt.tax?.total || 0;
 
       acc[category].total += isNaN(amount) ? 0 : amount;
       acc[category].tax += isNaN(tax) ? 0 : tax;
       acc[category].count += 1;
+      if (receipt.items) {
+        acc[category].items.push(...receipt.items);
+      }
 
       return acc;
     } catch (error) {
-      console.error('Error calculating category breakdown:', error);
+      console.error('Error calculating category breakdown for receipt:', receipt, error);
       return acc;
     }
-  }, {} as Record<string, { total: number; tax: number; count: number }>);
+  }, {} as Record<string, { total: number; tax: number; count: number; items: any[] }>);
 
   // Calculate category counts
   const categoryCounts = receipts.reduce((acc, receipt) => {
@@ -158,8 +180,17 @@ export function useStats() {
 
   // Calculate monthly totals including tax
   const currentMonthTotals = currentMonthReceipts.reduce((acc, receipt) => {
-    const amount = typeof receipt.total === 'number' ? receipt.total : 
-                  typeof receipt.total === 'string' ? parseFloat(receipt.total) : 0;
+    let amount = 0;
+    if (receipt.total !== undefined && receipt.total !== null) {
+      amount = typeof receipt.total === 'number' ? receipt.total : 
+              typeof receipt.total === 'string' ? parseFloat(receipt.total.replace(/[^0-9.-]+/g, '')) : 0;
+    } else if (receipt.items && Array.isArray(receipt.items)) {
+      amount = receipt.items.reduce((sum, item) => {
+        const itemTotal = (item.price || 0) * (item.quantity || 1);
+        return sum + (isNaN(itemTotal) ? 0 : itemTotal);
+      }, 0);
+    }
+
     const tax = receipt.tax?.total || 0;
     
     return {
@@ -169,8 +200,17 @@ export function useStats() {
   }, { spending: 0, tax: 0 });
 
   const lastMonthTotals = lastMonthReceipts.reduce((acc, receipt) => {
-    const amount = typeof receipt.total === 'number' ? receipt.total : 
-                  typeof receipt.total === 'string' ? parseFloat(receipt.total) : 0;
+    let amount = 0;
+    if (receipt.total !== undefined && receipt.total !== null) {
+      amount = typeof receipt.total === 'number' ? receipt.total : 
+              typeof receipt.total === 'string' ? parseFloat(receipt.total.replace(/[^0-9.-]+/g, '')) : 0;
+    } else if (receipt.items && Array.isArray(receipt.items)) {
+      amount = receipt.items.reduce((sum, item) => {
+        const itemTotal = (item.price || 0) * (item.quantity || 1);
+        return sum + (isNaN(itemTotal) ? 0 : itemTotal);
+      }, 0);
+    }
+
     const tax = receipt.tax?.total || 0;
     
     return {
@@ -198,7 +238,7 @@ export function useStats() {
     ? lastMonthTotals.spending / lastMonthReceipts.length
     : 0;
 
-  const averageTransactionTrend = lastMonthAverageTransaction > 0
+  const avgTransactionTrend = lastMonthAverageTransaction > 0
     ? ((averageTransaction - lastMonthAverageTransaction) / lastMonthAverageTransaction) * 100 
     : 0;
 
@@ -207,6 +247,7 @@ export function useStats() {
     ? ((currentMonthReceipts.length - lastMonthReceipts.length) / lastMonthReceipts.length) * 100
     : 0;
 
+  // Return the stats object
   return {
     totalReceipts: {
       value: totalReceipts,
@@ -216,26 +257,24 @@ export function useStats() {
       }
     },
     monthlySpending: {
-      value: Math.round(currentMonthTotals.spending * 100) / 100,
-      tax: Math.round(currentMonthTotals.tax * 100) / 100,
+      value: currentMonthTotals.spending,
       trend: {
         value: Math.round(spendingTrend * 100) / 100,
         isPositive: spendingTrend >= 0
       }
     },
     totalSpending: {
-      value: Math.round(totalSpending * 100) / 100,
-      tax: Math.round(totalTax.value * 100) / 100
+      value: totalSpending
     },
     totalTax: {
-      value: Math.round(totalTax.value * 100) / 100,
+      value: totalTax.value,
       breakdown: totalTax.breakdown
     },
     averageTransaction: {
-      value: Math.round(averageTransaction * 100) / 100,
+      value: receipts.length ? totalSpending / receipts.length : 0,
       trend: {
-        value: Math.round(averageTransactionTrend * 100) / 100,
-        isPositive: averageTransactionTrend >= 0
+        value: avgTransactionTrend,
+        isPositive: avgTransactionTrend >= 0
       }
     },
     categoryBreakdown,

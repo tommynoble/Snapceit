@@ -28,7 +28,7 @@ import { EditReceiptModal } from './EditReceiptModal';
 import { toast } from 'react-hot-toast';
 
 export function RecentReceiptsCard() {
-  const { receipts, deleteReceipt, updateReceipt } = useReceipts();
+  const { receipts, deleteReceipt, updateReceipt, refreshReceipts } = useReceipts();
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -86,13 +86,17 @@ export function RecentReceiptsCard() {
     };
   }, []);
 
+  useEffect(() => {
+    console.log('Current receipts:', receipts); // Debug log
+  }, [receipts]);
+
   const handleReceiptClick = (receipt: any) => {
     if (isMultiSelectMode) {
       const newSelected = new Set(selectedReceipts);
-      if (newSelected.has(receipt.id)) {
-        newSelected.delete(receipt.id);
+      if (newSelected.has(receipt.receiptId)) {
+        newSelected.delete(receipt.receiptId);
       } else {
-        newSelected.add(receipt.id);
+        newSelected.add(receipt.receiptId);
       }
       setSelectedReceipts(newSelected);
     } else {
@@ -106,32 +110,41 @@ export function RecentReceiptsCard() {
     setActiveMenu(null);
   };
 
-  const handleDeleteClick = (receipt: any) => {
-    if (selectedReceipts.size > 0) {
-      setDeleteModalOpen(true);
-    } else {
-      setSelectedReceipt(receipt);
-      setDeleteModalOpen(true);
+  const handleDeleteClick = (receipt: any, e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
     }
+    console.log('Delete clicked for receipt:', receipt); // Debug full receipt object
+    
+    // Check for both id and receiptId
+    const id = receipt?.receiptId || receipt?.id;
+    if (!receipt || !id) {
+      console.error('Invalid receipt:', receipt);
+      toast.error('Invalid receipt');
+      return;
+    }
+    setSelectedReceipt(receipt);
+    setDeleteModalOpen(true);
     setActiveMenu(null);
   };
 
   const handleDeleteConfirm = async () => {
     try {
-      if (selectedReceipts.size > 0) {
-        // Delete multiple receipts
-        const promises = Array.from(selectedReceipts).map(id => deleteReceipt(id));
-        await Promise.all(promises);
-        toast.success(`${selectedReceipts.size} receipts deleted successfully`);
-        setSelectedReceipts(new Set());
-      } else if (selectedReceipt) {
-        // Delete single receipt
-        await deleteReceipt(selectedReceipt.id);
-        toast.success('Receipt deleted successfully');
+      // Check for both id and receiptId
+      const id = selectedReceipt?.receiptId || selectedReceipt?.id;
+      if (!selectedReceipt || !id) {
+        console.error('No receipt selected:', selectedReceipt);
+        toast.error('No receipt selected');
+        return;
       }
+
+      console.log('Deleting receipt with ID:', id); // Debug log
+      await deleteReceipt(id);
+      await refreshReceipts(); // Refresh the receipts list after deletion
+      toast.success('Receipt deleted successfully');
     } catch (error) {
-      console.error('Error deleting receipt(s):', error);
-      toast.error('Failed to delete receipt(s)');
+      console.error('Error deleting receipt:', error);
+      toast.error('Failed to delete receipt');
     } finally {
       setDeleteModalOpen(false);
       setSelectedReceipt(null);
@@ -142,7 +155,7 @@ export function RecentReceiptsCard() {
     if (selectedReceipts.size === 0) return;
 
     const selectedReceiptsData = receipts
-      .filter(receipt => selectedReceipts.has(receipt.id))
+      .filter(receipt => selectedReceipts.has(receipt.receiptId))
       .map(receipt => ({
         merchant: receipt.merchant,
         total: receipt.total,
@@ -163,7 +176,12 @@ export function RecentReceiptsCard() {
   const handleSave = async (formData: any) => {
     try {
       if (selectedReceipt) {
-        await updateReceipt(selectedReceipt.id, formData);
+        const id = selectedReceipt.receiptId || selectedReceipt.id;
+        if (!id) {
+          throw new Error('No valid receipt ID found');
+        }
+        await updateReceipt(id, formData);
+        await refreshReceipts(); // Refresh to get updated data
         toast.success('Receipt updated successfully');
         setEditModalOpen(false);
         setSelectedReceipt(null);
@@ -205,13 +223,13 @@ export function RecentReceiptsCard() {
       <div className="h-[400px] overflow-y-auto pr-2 space-y-4 scrollbar-thin scrollbar-thumb-purple-200 scrollbar-track-transparent">
         {receipts.map((receipt, index) => (
           <motion.div
-            key={receipt.id || index}
+            key={receipt.receiptId || index}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
             onClick={() => isMultiSelectMode ? handleReceiptClick(receipt) : handleEdit(receipt)}
             className={`group relative flex items-center justify-between rounded-lg border p-4 hover:bg-gray-50 cursor-pointer
-              ${selectedReceipts.has(receipt.id) ? 'border-purple-500 bg-purple-50' : 'border-gray-200'}
+              ${selectedReceipts.has(receipt.receiptId) ? 'border-purple-500 bg-purple-50' : 'border-gray-200'}
               ${isMultiSelectMode ? 'hover:border-purple-500' : ''}`}
           >
             <div className="flex items-center gap-4">
@@ -233,7 +251,7 @@ export function RecentReceiptsCard() {
               <button 
                 onClick={(e) => {
                   e.stopPropagation();
-                  setActiveMenu(activeMenu === receipt.id ? null : receipt.id);
+                  setActiveMenu(activeMenu === receipt.receiptId ? null : receipt.receiptId);
                 }}
                 className="rounded-full p-1.5 hover:bg-gray-100 transition-colors"
               >
@@ -241,7 +259,7 @@ export function RecentReceiptsCard() {
               </button>
 
               <AnimatePresence>
-                {activeMenu === receipt.id && (
+                {activeMenu === receipt.receiptId && (
                   <motion.div 
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
@@ -264,7 +282,7 @@ export function RecentReceiptsCard() {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleDeleteClick(receipt);
+                          handleDeleteClick(receipt, e);
                         }}
                         disabled={receipt.status === 'adding'}
                         className={`w-full text-left px-4 py-2 text-sm flex items-center

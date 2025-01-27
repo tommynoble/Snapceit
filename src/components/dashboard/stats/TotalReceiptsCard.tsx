@@ -13,10 +13,12 @@ import {
 } from 'lucide-react';
 import { useStats } from './useStats';
 import { useCurrency } from '../../../hooks/useCurrency';
+import { useReceipts } from '../receipts/ReceiptContext';
 
 export function TotalReceiptsCard() {
   const stats = useStats();
   const { formatCurrency } = useCurrency();
+  const { receipts } = useReceipts();
 
   // Category icon mapping with the same colors as RecentReceiptsCard
   const categoryIcons: { [key: string]: { 
@@ -31,12 +33,12 @@ export function TotalReceiptsCard() {
     'Meals': { icon: Utensils, color: 'text-orange-500', bgColor: 'bg-orange-100' },
     'Utilities': { icon: Zap, color: 'text-yellow-500', bgColor: 'bg-yellow-100' },
     'Taxes and Licenses': { icon: FileText, color: 'text-emerald-500', bgColor: 'bg-emerald-100' },
-    'Supplies': { icon: ShoppingBag, color: 'text-indigo-500', bgColor: 'bg-indigo-100' }
+    'Supplies': { icon: ShoppingBag, color: 'text-indigo-500', bgColor: 'bg-indigo-100' },
+    'Other': { icon: Receipt, color: 'text-gray-500', bgColor: 'bg-gray-100' }
   };
 
   const getCategoryIcon = (category: string) => {
-    const config = categoryIcons[category];
-    if (!config) return null;
+    const config = categoryIcons[category] || categoryIcons['Other'];
     const Icon = config.icon;
     return (
       <div className={`p-2 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/30 transition-colors`}>
@@ -51,18 +53,20 @@ export function TotalReceiptsCard() {
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ scale: 1.01 }}
       transition={{ duration: 0.2 }}
-      className="relative p-5 rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-lg shadow-md"
+      className="relative p-5 rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-lg shadow-md bg-gradient-to-br from-purple-600/20 to-purple-800/20"
       style={{
-        background: 'rgba(255, 255, 255, 0.1)',
         backdropFilter: 'blur(10px)',
       }}
     >
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm font-medium text-white/80">Total Receipts</p>
+          <p className="text-sm font-medium text-white/80">Total Spending</p>
           <h3 className="mt-2 text-3xl font-bold text-white">
-            {stats.loading ? '-' : formatCurrency(stats.totalReceipts.value)}
+            {stats.loading ? '-' : formatCurrency(stats.totalSpending.value)}
           </h3>
+          <p className="text-sm text-white/60 mt-1">
+            {!stats.loading && `${Object.keys(stats.categoryCounts).length} Categories • ${receipts.length} Receipts`}
+          </p>
         </div>
         <div className="rounded-full bg-gradient-to-r from-purple-500/20 to-purple-600/20 p-3">
           <Receipt className="h-6 w-6 text-white" />
@@ -82,11 +86,17 @@ export function TotalReceiptsCard() {
       {!stats.loading && (
         <div className="mt-4 border-t border-white/10 pt-4">
           <div className="grid grid-cols-5 gap-2">
-            {Object.entries(stats.categoryCounts || {}).map(([category]) => (
-              <div key={category} className="flex items-center justify-center">
-                {getCategoryIcon(category)}
-              </div>
-            ))}
+            {Object.entries(stats.categoryBreakdown || {})
+              .sort((a, b) => b[1].total - a[1].total)
+              .slice(0, 5)
+              .map(([category, data]) => (
+                <div key={category} title={`${category}: ${formatCurrency(data.total)}`} className="flex flex-col items-center">
+                  {getCategoryIcon(category)}
+                  <span className="mt-1 text-xs text-white/60 truncate max-w-full">
+                    {formatCurrency(data.total)}
+                  </span>
+                </div>
+              ))}
           </div>
         </div>
       )}
@@ -96,13 +106,6 @@ export function TotalReceiptsCard() {
           <div className="w-32 h-4 bg-white/10 rounded"></div>
         </div>
       )}
-
-      <div 
-        className="absolute inset-0 rounded-2xl transition-opacity duration-300 hover:opacity-100 opacity-0"
-        style={{
-          background: 'linear-gradient(45deg, rgba(168, 85, 247, 0.1), rgba(236, 72, 153, 0.1))',
-        }}
-      />
     </motion.div>
   );
 }

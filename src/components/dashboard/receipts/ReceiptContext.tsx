@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useAuth } from '../../../auth/CognitoAuthContext';
 import { api } from '../../../utils/api';
+import { toast } from 'react-hot-toast';
+import { useAuth } from '../../../auth/CognitoAuthContext';
 
 export interface Receipt {
   id: string;
@@ -10,25 +11,22 @@ export interface Receipt {
   items: Array<{
     name: string;
     price: number;
+    quantity?: number;
   }>;
   imageUrl?: string;
   status: 'processing' | 'completed';
   category: string;
   tax?: {
     total: number;
-    breakdown?: {
-      salesTax?: number;
-      stateTax?: number;
-      localTax?: number;
-      otherTaxes?: Array<{
-        name: string;
-        amount: number;
-      }>;
-    };
+    type?: string;
   };
+  subtotal?: number;
+  paymentMethod?: string;
+  address?: string;
+  phone?: string;
+  invoiceNumber?: string;
   createdAt?: string;
-  updatedAt?: string;
-  userId: string;
+  receiptId?: string;
 }
 
 interface ReceiptContextType {
@@ -37,23 +35,23 @@ interface ReceiptContextType {
   error: string | null;
   selectedReceipt: Receipt | null;
   setSelectedReceipt: (receipt: Receipt | null) => void;
-  addReceipt: (receipt: Omit<Receipt, 'id' | 'userId'>) => Promise<void>;
-  updateReceipt: (id: string, updates: Partial<Receipt>) => Promise<void>;
+  addReceipt: (receipt: Omit<Receipt, 'id'>) => Promise<Receipt>;
+  updateReceipt: (id: string, updates: Partial<Receipt>) => Promise<Receipt>;
   deleteReceipt: (receiptId: string) => Promise<void>;
-  refreshReceipts: () => void;
+  refreshReceipts: () => Promise<void>;
 }
 
 const ReceiptContext = createContext<ReceiptContextType | undefined>(undefined);
 
-export function useReceipts() {
+export const useReceipts = () => {
   const context = useContext(ReceiptContext);
   if (!context) {
     throw new Error('useReceipts must be used within a ReceiptProvider');
   }
   return context;
-}
+};
 
-export function ReceiptProvider({ children }: { children: React.ReactNode }) {
+export const ReceiptProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [receipts, setReceipts] = useState<Receipt[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -61,99 +59,68 @@ export function ReceiptProvider({ children }: { children: React.ReactNode }) {
   const { currentUser } = useAuth();
 
   const fetchReceipts = async () => {
-    if (!currentUser?.sub) return;
-
     try {
       setLoading(true);
-      const data = await api.receipts.list(currentUser.sub);
-      setReceipts(data.map((r: any) => ({
-        id: r.receiptId,
-        merchant: r.merchantName,
-        total: r.total,
-        date: r.date,
-        items: r.items?.map((item: any) => ({
-          name: item.description,
-          price: item.price
-        })) || [],
-        imageUrl: r.imageUrl,
-        status: r.status,
-        category: r.category,
-        tax: r.tax,
-        createdAt: r.createdAt,
-        updatedAt: r.updatedAt,
-        userId: r.userId
-      })));
-      setError(null);
-    } catch (err) {
-      console.error('Error fetching receipts:', err);
+      if (!currentUser?.idToken) {
+        throw new Error('No ID token available');
+      }
+      const data = await api.receipts.list(currentUser.idToken);
+      setReceipts(data);
+    } catch (error) {
+      console.error('Error fetching receipts:', error);
       setError('Failed to fetch receipts');
     } finally {
       setLoading(false);
     }
   };
 
+  const createReceipt = async (receipt: any) => {
+    try {
+      if (!currentUser?.idToken) {
+        throw new Error('No ID token available');
+      }
+      const data = await api.receipts.create(receipt, currentUser.idToken);
+      setReceipts(prev => [...prev, data]);
+      return data;
+    } catch (error) {
+      console.error('Error creating receipt:', error);
+      throw error;
+    }
+  };
+
+  const updateReceipt = async (id: string, updates: any) => {
+    try {
+      if (!currentUser?.idToken) {
+        throw new Error('No ID token available');
+      }
+      const data = await api.receipts.update(id, updates, currentUser.idToken);
+      setReceipts(prev => prev.map(r => (r.id === id || r.receiptId === id) ? data : r));
+      return data;
+    } catch (error) {
+      console.error('Error updating receipt:', error);
+      throw error;
+    }
+  };
+
+  const deleteReceipt = async (id: string) => {
+    try {
+      if (!currentUser?.idToken) {
+        throw new Error('No ID token available');
+      }
+      await api.receipts.delete(id, currentUser.idToken);
+      setReceipts(prev => prev.filter(r => r.id !== id && r.receiptId !== id));
+    } catch (error) {
+      console.error('Error deleting receipt:', error);
+      throw error;
+    }
+  };
+
+  // Fetch receipts on mount and when user changes
   useEffect(() => {
-    if (currentUser?.sub) {
+    if (currentUser?.idToken) {
       fetchReceipts();
-    } else {
-      setReceipts([]);
-      setLoading(false);
     }
-  }, [currentUser]);
-
-  const addReceipt = async (receipt: Omit<Receipt, 'id' | 'userId'>) => {
-    if (!currentUser?.sub) {
-      throw new Error('User must be logged in to add receipts');
-    }
-
-    try {
-      const newReceipt = await api.receipts.create({
-        ...receipt,
-        merchantName: receipt.merchant,
-        createdAt: new Date().toISOString(),
-      });
-
-      setReceipts(prev => [...prev, {
-        ...receipt,
-        id: newReceipt.receiptId,
-        userId: currentUser.sub
-      } as Receipt]);
-
-    } catch (err) {
-      console.error('Error adding receipt:', err);
-      throw err;
-    }
-  };
-
-  const updateReceipt = async (id: string, updates: Partial<Receipt>) => {
-    if (!currentUser?.sub) return;
-
-    try {
-      const updatedReceipt = await api.receipts.update(currentUser.sub, id, {
-        ...updates,
-        merchantName: updates.merchant,
-      });
-
-      setReceipts(prev => prev.map(r => 
-        r.id === id ? { ...r, ...updates, updatedAt: updatedReceipt.updatedAt } : r
-      ));
-    } catch (err) {
-      console.error('Error updating receipt:', err);
-      throw err;
-    }
-  };
-
-  const deleteReceipt = async (receiptId: string) => {
-    if (!currentUser?.sub) return;
-
-    try {
-      await api.receipts.delete(currentUser.sub, receiptId);
-      setReceipts(prev => prev.filter(r => r.id !== receiptId));
-    } catch (err) {
-      console.error('Error deleting receipt:', err);
-      throw err;
-    }
-  };
+  }, [currentUser?.idToken]); // Fetch when user token changes
 
   return (
     <ReceiptContext.Provider value={{
@@ -162,7 +129,7 @@ export function ReceiptProvider({ children }: { children: React.ReactNode }) {
       error,
       selectedReceipt,
       setSelectedReceipt,
-      addReceipt,
+      addReceipt: createReceipt,
       updateReceipt,
       deleteReceipt,
       refreshReceipts: fetchReceipts
@@ -170,4 +137,4 @@ export function ReceiptProvider({ children }: { children: React.ReactNode }) {
       {children}
     </ReceiptContext.Provider>
   );
-}
+};
