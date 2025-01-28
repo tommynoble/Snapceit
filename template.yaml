@@ -14,100 +14,128 @@ Parameters:
       - prod
     Description: Deployment stage
 
+Globals:
+  Api:
+    Cors:
+      AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
+      AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent'"
+      AllowOrigin: "'http://localhost:5184'"
+      AllowCredentials: true
+      MaxAge: "'600'"
+
 Resources:
+  ReceiptsApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: !Ref Stage
+      Auth:
+        DefaultAuthorizer: CognitoAuthorizer
+        Authorizers:
+          CognitoAuthorizer:
+            UserPoolArn: !Ref CognitoUserPoolArn
+            Identity:
+              Header: Authorization
+            AuthorizationType: COGNITO_USER_POOLS
+        AddDefaultAuthorizerToCorsPreflight: false
+
   ReceiptsFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: lambda/
       Handler: receipts.handler
       Runtime: nodejs18.x
-      Architectures:
-        - x86_64
-      MemorySize: 128
-      Timeout: 30
       Environment:
         Variables:
-          TABLE_NAME: !Ref ReceiptsTable
+          TABLE_NAME: receipts
+          BUCKET_NAME: snapceit-receipts-dev
+          ALLOWED_ORIGIN: http://localhost:5184
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref ReceiptsTable
+            TableName: receipts
+        - S3CrudPolicy:
+            BucketName: snapceit-receipts-dev
       Events:
         GetReceipts:
           Type: Api
           Properties:
-            Path: /receipts/{userId}
-            Method: get
-            Auth:
-              Authorizer: CognitoAuthorizer
-        GetReceipt:
-          Type: Api
-          Properties:
-            Path: /receipts/{userId}/{receiptId}
-            Method: get
+            RestApiId: !Ref ReceiptsApi
+            Path: /receipts
+            Method: GET
             Auth:
               Authorizer: CognitoAuthorizer
         CreateReceipt:
           Type: Api
           Properties:
+            RestApiId: !Ref ReceiptsApi
             Path: /receipts
-            Method: post
+            Method: POST
+            Auth:
+              Authorizer: CognitoAuthorizer
+        GetReceipt:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ReceiptsApi
+            Path: /receipts/{receiptId}
+            Method: GET
             Auth:
               Authorizer: CognitoAuthorizer
         UpdateReceipt:
           Type: Api
           Properties:
-            Path: /receipts/{userId}/{receiptId}
-            Method: put
+            RestApiId: !Ref ReceiptsApi
+            Path: /receipts/{receiptId}
+            Method: PUT
             Auth:
               Authorizer: CognitoAuthorizer
         DeleteReceipt:
           Type: Api
           Properties:
-            Path: /receipts/{userId}/{receiptId}
-            Method: delete
+            RestApiId: !Ref ReceiptsApi
+            Path: /receipts/{receiptId}
+            Method: DELETE
+            Auth:
+              Authorizer: CognitoAuthorizer
+        GetUploadUrl:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ReceiptsApi
+            Path: /upload-url
+            Method: POST
             Auth:
               Authorizer: CognitoAuthorizer
 
-  ReceiptsTable:
-    Type: AWS::DynamoDB::Table
+  ProcessFunction:
+    Type: AWS::Serverless::Function
     Properties:
-      TableName: !Sub receipts-${Stage}
-      AttributeDefinitions:
-        - AttributeName: userId
-          AttributeType: S
-        - AttributeName: receiptId
-          AttributeType: S
-      KeySchema:
-        - AttributeName: userId
-          KeyType: HASH
-        - AttributeName: receiptId
-          KeyType: RANGE
-      BillingMode: PAY_PER_REQUEST
-      SSESpecification:
-        SSEEnabled: true
-
-  ApiGatewayApi:
-    Type: AWS::Serverless::Api
-    Properties:
-      StageName: !Ref Stage
-      Cors:
-        AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
-        AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
-        AllowOrigin: "'*'"
-      Auth:
-        Authorizers:
-          CognitoAuthorizer:
-            UserPoolArn: !Ref CognitoUserPoolArn
-            Identity:
-              Header: Authorization
-              ValidationExpression: Bearer.*
-            AuthorizationScopes:
-              - aws.cognito.signin.user.admin
+      CodeUri: lambda/
+      Handler: process.handler
+      Runtime: nodejs18.x
+      Environment:
+        Variables:
+          BUCKET_NAME: snapceit-receipts-dev
+          ALLOWED_ORIGIN: http://localhost:5184
+      Policies:
+        - S3CrudPolicy:
+            BucketName: snapceit-receipts-dev
+        - Statement:
+            - Effect: Allow
+              Action:
+                - textract:*
+              Resource: '*'
+      Events:
+        Process:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ReceiptsApi
+            Path: /process
+            Method: POST
+            Auth:
+              Authorizer: CognitoAuthorizer
 
 Outputs:
   ApiEndpoint:
     Description: API Gateway endpoint URL
-    Value: !Sub https://${ApiGatewayApi}.execute-api.${AWS::Region}.amazonaws.com/${Stage}
+    Value: !Sub https://${ReceiptsApi}.execute-api.${AWS::Region}.amazonaws.com/${Stage}
   ReceiptsTableName:
     Description: DynamoDB table name
-    Value: !Ref ReceiptsTable
+    Value: receipts

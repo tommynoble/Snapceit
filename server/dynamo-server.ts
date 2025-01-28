@@ -403,6 +403,109 @@ app.post('/process', checkAuth, async (req, res) => {
   }
 });
 
+// Profile image upload endpoint
+app.post('/profile/upload-url', checkAuth, async (req, res) => {
+  try {
+    const { fileName, fileType } = req.body;
+    const userId = req.user.sub;
+    const key = `profiles/${userId}/${fileName}`;
+
+    const uploadUrl = await s3.getSignedUrlPromise('putObject', {
+      Bucket: process.env.BUCKET_NAME,
+      Key: key,
+      ContentType: fileType,
+      Expires: 300 // URL expires in 5 minutes
+    });
+
+    res.json({
+      uploadUrl,
+      key,
+      url: `https://${process.env.BUCKET_NAME}.s3.amazonaws.com/${key}`
+    });
+  } catch (error) {
+    console.error('Error generating profile upload URL:', error);
+    res.status(500).json({ message: 'Error generating upload URL' });
+  }
+});
+
+// Update user profile endpoint
+app.put('/profile', checkAuth, async (req, res) => {
+  try {
+    const userId = req.user.sub;
+    const { photoURL } = req.body;
+
+    // Update user profile in DynamoDB
+    await dynamodb.update({
+      TableName: process.env.USERS_TABLE || 'users',
+      Key: { userId },
+      UpdateExpression: 'set photoURL = :photoURL, updatedAt = :updatedAt',
+      ExpressionAttributeValues: {
+        ':photoURL': photoURL,
+        ':updatedAt': new Date().toISOString()
+      }
+    }).promise();
+
+    res.json({ message: 'Profile updated successfully', photoURL });
+  } catch (error) {
+    console.error('Error updating profile:', error);
+    res.status(500).json({ message: 'Error updating profile' });
+  }
+});
+
+// Update currency preference endpoint
+app.put('/settings/currency', checkAuth, async (req, res) => {
+  try {
+    const userId = req.user.sub;
+    const { currency } = req.body;
+
+    // Validate currency
+    const validCurrencies = ['USD', 'EUR', 'GBP', 'JPY', 'CAD'];
+    if (!validCurrencies.includes(currency)) {
+      return res.status(400).json({ message: 'Invalid currency' });
+    }
+
+    // Update user settings in DynamoDB
+    await dynamodb.update({
+      TableName: process.env.USERS_TABLE || 'users',
+      Key: { userId },
+      UpdateExpression: 'set currency = :currency, updatedAt = :updatedAt',
+      ExpressionAttributeValues: {
+        ':currency': currency,
+        ':updatedAt': new Date().toISOString()
+      }
+    }).promise();
+
+    res.json({ message: 'Currency updated successfully', currency });
+  } catch (error) {
+    console.error('Error updating currency:', error);
+    res.status(500).json({ message: 'Error updating currency' });
+  }
+});
+
+// Get user settings endpoint
+app.get('/settings', checkAuth, async (req, res) => {
+  try {
+    const userId = req.user.sub;
+
+    // Get user settings from DynamoDB
+    const result = await dynamodb.get({
+      TableName: process.env.USERS_TABLE || 'users',
+      Key: { userId }
+    }).promise();
+
+    const settings = result.Item || {
+      currency: 'USD',
+      emailNotifications: true,
+      autoCategories: true
+    };
+
+    res.json(settings);
+  } catch (error) {
+    console.error('Error fetching settings:', error);
+    res.status(500).json({ message: 'Error fetching settings' });
+  }
+});
+
 // Helper functions for extracting data from Textract response
 function extractMerchantName(summaryFields: any[]): string {
   const merchantField = summaryFields.find(field => 

@@ -1,8 +1,7 @@
 import axios from 'axios';
-import { Auth } from '@aws-amplify/auth';
 
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api',
+  baseURL: import.meta.env.VITE_API_GATEWAY_URL,
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json'
@@ -35,29 +34,20 @@ if (import.meta.env.DEV) {
       return response;
     },
     (error) => {
-      console.error('Response Error:', {
-        status: error.response?.status,
-        data: error.response?.data,
-        message: error.message
-      });
+      console.error('Response Error:', error);
       return Promise.reject(error);
     }
   );
 }
 
-// Add a request interceptor to add Cognito auth token
-api.interceptors.request.use(async (config) => {
-  try {
-    const session = await Auth.currentSession();
-    const token = session.getIdToken().getJwtToken();
-    config.headers.Authorization = `Bearer ${token}`;
-    console.log('Added auth token to request');
-    return config;
-  } catch (error) {
-    // If there's no session, proceed without token
-    console.warn('No user logged in');
-    return config;
+// Add auth token to requests
+api.interceptors.request.use((config) => {
+  const user = localStorage.getItem('currentUser');
+  if (user) {
+    const { idToken } = JSON.parse(user);
+    config.headers.Authorization = `Bearer ${idToken}`;
   }
+  return config;
 });
 
 // Add response error handling

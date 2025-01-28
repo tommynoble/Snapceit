@@ -1,0 +1,112 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Receipt Scanner API
+Parameters:
+  CognitoUserPoolArn:
+    Type: String
+    Description: ARN of the Cognito User Pool
+  Stage:
+    Type: String
+    Default: dev
+    AllowedValues:
+    - dev
+    - prod
+    Description: Deployment stage
+Resources:
+  ReceiptsApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName:
+        Ref: Stage
+      Cors:
+        AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
+        AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+        AllowOrigin: "'*'"
+      Auth:
+        DefaultAuthorizer: CognitoAuthorizer
+        Authorizers:
+          CognitoAuthorizer:
+            UserPoolArn:
+              Ref: CognitoUserPoolArn
+            Identity:
+              Header: Authorization
+            AuthorizationType: COGNITO_USER_POOLS
+  ReceiptsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: s3://aws-sam-cli-managed-default-samclisourcebucket-psb3rb6d901w/3665272a33b1b5c0f6f4cb05ff9bb9ab
+      Handler: receipts.handler
+      Runtime: nodejs18.x
+      Architectures:
+      - x86_64
+      MemorySize: 128
+      Timeout: 30
+      Environment:
+        Variables:
+          TABLE_NAME: receipts
+          BUCKET_NAME: snapceit-receipts-dev
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName: receipts
+      - S3CrudPolicy:
+          BucketName: snapceit-receipts-dev
+      - Statement:
+        - Effect: Allow
+          Action:
+          - textract:AnalyzeExpense
+          - textract:AnalyzeDocument
+          Resource: '*'
+      Events:
+        GetReceipts:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: ReceiptsApi
+            Path: /receipts/{userId}
+            Method: get
+            Auth:
+              Authorizer: CognitoAuthorizer
+        GetReceipt:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: ReceiptsApi
+            Path: /receipts/{userId}/{receiptId}
+            Method: get
+            Auth:
+              Authorizer: CognitoAuthorizer
+        CreateReceipt:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: ReceiptsApi
+            Path: /receipts
+            Method: post
+            Auth:
+              Authorizer: CognitoAuthorizer
+        UpdateReceipt:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: ReceiptsApi
+            Path: /receipts/{userId}/{receiptId}
+            Method: put
+            Auth:
+              Authorizer: CognitoAuthorizer
+        DeleteReceipt:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: ReceiptsApi
+            Path: /receipts/{userId}/{receiptId}
+            Method: delete
+            Auth:
+              Authorizer: CognitoAuthorizer
+Outputs:
+  ApiEndpoint:
+    Description: API Gateway endpoint URL
+    Value:
+      Fn::Sub: https://${ReceiptsApi}.execute-api.${AWS::Region}.amazonaws.com/${Stage}
+  ReceiptsTableName:
+    Description: DynamoDB table name
+    Value: receipts

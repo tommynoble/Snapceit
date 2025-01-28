@@ -25,9 +25,38 @@ const verifier = CognitoJwtVerifier.create({
   clientId: process.env.VITE_AWS_CLIENT_ID!,
 });
 
-// Middleware
-app.use(cors());
+// CORS configuration
+const corsOptions = {
+  origin: 'http://localhost:5184',
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  optionsSuccessStatus: 204
+};
+
+// Apply CORS middleware first
+app.use(cors(corsOptions));
+
+// Body parsing middleware
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Request logging middleware
+app.use((req, res, next) => {
+  console.log('Incoming request:', {
+    method: req.method,
+    path: req.path,
+    origin: req.headers.origin,
+    headers: req.headers
+  });
+
+  // Log response headers after they're sent
+  res.on('finish', () => {
+    console.log('Response headers:', res.getHeaders());
+  });
+
+  next();
+});
 
 // Auth middleware
 const authenticateToken = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -54,14 +83,9 @@ const authenticateToken = async (req: express.Request, res: express.Response, ne
 };
 
 // Routes
-app.get('/receipts/:userId', authenticateToken, async (req, res) => {
+app.get('/receipts', authenticateToken, async (req, res) => {
   try {
-    const { userId } = req.params;
-    
-    // Verify user is accessing their own data
-    if (userId !== (req as any).user.sub) {
-      return res.status(403).json({ message: 'Unauthorized access' });
-    }
+    const userId = (req as any).user.sub;
 
     const result = await dynamodb.query({
       TableName: process.env.DYNAMODB_TABLE || 'receipts',
@@ -73,36 +97,8 @@ app.get('/receipts/:userId', authenticateToken, async (req, res) => {
 
     res.json(result.Items);
   } catch (error) {
-    console.error('Error listing receipts:', error);
-    res.status(500).json({ message: 'Error listing receipts' });
-  }
-});
-
-app.get('/receipts/:userId/:receiptId', authenticateToken, async (req, res) => {
-  try {
-    const { userId, receiptId } = req.params;
-    
-    // Verify user is accessing their own data
-    if (userId !== (req as any).user.sub) {
-      return res.status(403).json({ message: 'Unauthorized access' });
-    }
-
-    const result = await dynamodb.get({
-      TableName: process.env.DYNAMODB_TABLE || 'receipts',
-      Key: {
-        userId,
-        receiptId
-      }
-    }).promise();
-
-    if (!result.Item) {
-      return res.status(404).json({ message: 'Receipt not found' });
-    }
-
-    res.json(result.Item);
-  } catch (error) {
-    console.error('Error getting receipt:', error);
-    res.status(500).json({ message: 'Error getting receipt' });
+    console.error('Error fetching receipts:', error);
+    res.status(500).json({ message: 'Error fetching receipts' });
   }
 });
 
@@ -112,8 +108,8 @@ app.post('/receipts', authenticateToken, async (req, res) => {
     const receipt = {
       ...req.body,
       userId,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      receiptId: Date.now().toString(), // Simple ID generation
+      createdAt: new Date().toISOString()
     };
 
     await dynamodb.put({
@@ -128,59 +124,69 @@ app.post('/receipts', authenticateToken, async (req, res) => {
   }
 });
 
-app.put('/receipts/:userId/:receiptId', authenticateToken, async (req, res) => {
+app.put('/receipts/:receiptId', authenticateToken, async (req, res) => {
   try {
-    const { userId, receiptId } = req.params;
-    
-    // Verify user is updating their own data
-    if (userId !== (req as any).user.sub) {
-      return res.status(403).json({ message: 'Unauthorized access' });
+    const userId = (req as any).user.sub;
+    const { receiptId } = req.params;
+
+    // First verify the receipt belongs to the user
+    const existingReceipt = await dynamodb.get({
+      TableName: process.env.DYNAMODB_TABLE || 'receipts',
+      Key: { userId, receiptId }
+    }).promise();
+
+    if (!existingReceipt.Item) {
+      return res.status(404).json({ message: 'Receipt not found' });
     }
 
-    const updates = {
-      ...req.body,
-      updatedAt: new Date().toISOString()
-    };
+    const updates = req.body;
+    const updateExpression = 'set ' + Object.keys(updates)
+      .filter(key => key !== 'userId' && key !== 'receiptId') // Prevent updating keys
+      .map(key => `#${key} = :${key}`)
+      .join(', ');
 
-    const result = await dynamodb.update({
+    const expressionAttributeNames = Object.keys(updates)
+      .filter(key => key !== 'userId' && key !== 'receiptId')
+      .reduce((acc, key) => ({ ...acc, [`#${key}`]: key }), {});
+
+    const expressionAttributeValues = Object.entries(updates)
+      .filter(([key]) => key !== 'userId' && key !== 'receiptId')
+      .reduce((acc, [key, value]) => ({ ...acc, [`:${key}`]: value }), {});
+
+    await dynamodb.update({
       TableName: process.env.DYNAMODB_TABLE || 'receipts',
-      Key: {
-        userId,
-        receiptId
-      },
-      UpdateExpression: 'set updatedAt = :updatedAt, merchantName = :merchantName, total = :total, date = :date, category = :category',
-      ExpressionAttributeValues: {
-        ':updatedAt': updates.updatedAt,
-        ':merchantName': updates.merchantName,
-        ':total': updates.total,
-        ':date': updates.date,
-        ':category': updates.category
-      },
+      Key: { userId, receiptId },
+      UpdateExpression: updateExpression,
+      ExpressionAttributeNames: expressionAttributeNames,
+      ExpressionAttributeValues: expressionAttributeValues,
       ReturnValues: 'ALL_NEW'
     }).promise();
 
-    res.json(result.Attributes);
+    res.json({ message: 'Receipt updated successfully' });
   } catch (error) {
     console.error('Error updating receipt:', error);
     res.status(500).json({ message: 'Error updating receipt' });
   }
 });
 
-app.delete('/receipts/:userId/:receiptId', authenticateToken, async (req, res) => {
+app.delete('/receipts/:receiptId', authenticateToken, async (req, res) => {
   try {
-    const { userId, receiptId } = req.params;
-    
-    // Verify user is deleting their own data
-    if (userId !== (req as any).user.sub) {
-      return res.status(403).json({ message: 'Unauthorized access' });
+    const userId = (req as any).user.sub;
+    const { receiptId } = req.params;
+
+    // First verify the receipt belongs to the user
+    const existingReceipt = await dynamodb.get({
+      TableName: process.env.DYNAMODB_TABLE || 'receipts',
+      Key: { userId, receiptId }
+    }).promise();
+
+    if (!existingReceipt.Item) {
+      return res.status(404).json({ message: 'Receipt not found' });
     }
 
     await dynamodb.delete({
       TableName: process.env.DYNAMODB_TABLE || 'receipts',
-      Key: {
-        userId,
-        receiptId
-      }
+      Key: { userId, receiptId }
     }).promise();
 
     res.status(204).send();

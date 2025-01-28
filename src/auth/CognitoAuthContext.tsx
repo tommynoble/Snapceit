@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { CognitoIdentityProviderClient, InitiateAuthCommand, SignUpCommand, ConfirmSignUpCommand, ResendConfirmationCodeCommand } from "@aws-sdk/client-cognito-identity-provider";
 
 interface AuthContextType {
@@ -31,9 +31,53 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const clientId = import.meta.env.VITE_COGNITO_CLIENT_ID;
 
+  // Try to restore session on mount
+  useEffect(() => {
+    const storedUser = localStorage.getItem('currentUser');
+    console.log('Checking stored user data...');
+    
+    if (storedUser) {
+      try {
+        const userData = JSON.parse(storedUser);
+        console.log('Found stored user data:', {
+          email: userData.email,
+          hasAccessToken: !!userData.accessToken,
+          hasIdToken: !!userData.idToken,
+          tokenTimestamp: userData.tokenTimestamp
+        });
+        
+        // Check if we have both tokens
+        if (userData.idToken && userData.accessToken) {
+          // Check if tokens are expired (1 hour)
+          const tokenAge = Date.now() - (userData.tokenTimestamp || 0);
+          if (tokenAge > 3600000) { // 1 hour in milliseconds
+            console.log('Tokens are expired, clearing user data');
+            localStorage.removeItem('currentUser');
+            setCurrentUser(null);
+          } else {
+            console.log('Setting current user with valid tokens');
+            setCurrentUser(userData);
+          }
+        } else {
+          console.log('Missing required tokens, clearing user data');
+          localStorage.removeItem('currentUser');
+          setCurrentUser(null);
+        }
+      } catch (error) {
+        console.error('Error parsing stored user data:', error);
+        localStorage.removeItem('currentUser');
+        setCurrentUser(null);
+      }
+    } else {
+      console.log('No stored user data found');
+    }
+  }, []);
+
   const login = async (email: string, password: string) => {
     try {
+      console.log('Attempting login for:', email);
       setError(null);
+      
       const command = new InitiateAuthCommand({
         AuthFlow: 'USER_PASSWORD_AUTH',
         ClientId: clientId,
@@ -43,19 +87,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       });
 
+      console.log('Sending auth command...');
       const response = await client.send(command);
+      console.log('Auth response received');
+      
       const accessToken = response.AuthenticationResult?.AccessToken;
       const idToken = response.AuthenticationResult?.IdToken;
 
       if (!accessToken || !idToken) {
+        console.error('Missing tokens in auth response');
         throw new Error('Failed to get authentication tokens');
       }
 
-      setCurrentUser({
-        username: email.toLowerCase(),
-        accessToken,
-        idToken
+      console.log('Got tokens:', {
+        hasAccessToken: !!accessToken,
+        hasIdToken: !!idToken
       });
+
+      const userData = {
+        email: email.toLowerCase(),
+        accessToken,
+        idToken,
+        refreshToken: response.AuthenticationResult?.RefreshToken,
+        tokenTimestamp: Date.now()
+      };
+
+      console.log('Storing user data...');
+      localStorage.setItem('currentUser', JSON.stringify(userData));
+      console.log('Setting current user...');
+      setCurrentUser(userData);
+      console.log('Login complete');
 
       return response;
     } catch (error: any) {
@@ -102,6 +163,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = async () => {
     setCurrentUser(null);
+    localStorage.removeItem('currentUser');
   };
 
   const signup = async (email: string, password: string, options: { resend?: boolean } = {}) => {
@@ -141,7 +203,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const confirmSignUp = async (username: string, code: string) => {
     try {
-      setError(null);
       const command = new ConfirmSignUpCommand({
         ClientId: clientId,
         Username: username.toLowerCase(),
@@ -173,7 +234,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const resendConfirmationCode = async (username: string) => {
     try {
-      setError(null);
       const command = new ResendConfirmationCodeCommand({
         ClientId: clientId,
         Username: username.toLowerCase()
@@ -186,6 +246,52 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw error;
     }
   };
+
+  const refreshToken = async () => {
+    try {
+      const storedUser = localStorage.getItem('currentUser');
+      if (!storedUser) return;
+
+      const user = JSON.parse(storedUser);
+      const command = new InitiateAuthCommand({
+        AuthFlow: 'REFRESH_TOKEN_AUTH',
+        ClientId: clientId,
+        AuthParameters: {
+          REFRESH_TOKEN: user.refreshToken,
+        }
+      });
+
+      const response = await client.send(command);
+      const accessToken = response.AuthenticationResult?.AccessToken;
+      const idToken = response.AuthenticationResult?.IdToken;
+
+      if (!accessToken || !idToken) {
+        throw new Error('Failed to refresh tokens');
+      }
+
+      const userData = {
+        ...user,
+        accessToken,
+        idToken
+      };
+
+      localStorage.setItem('currentUser', JSON.stringify(userData));
+      setCurrentUser(userData);
+    } catch (error) {
+      console.error('Error refreshing token:', error);
+      // If refresh fails, log out the user
+      await logout();
+    }
+  };
+
+  // Add token refresh interval
+  useEffect(() => {
+    if (currentUser) {
+      // Refresh token every 45 minutes (tokens typically expire after 1 hour)
+      const interval = setInterval(refreshToken, 45 * 60 * 1000);
+      return () => clearInterval(interval);
+    }
+  }, [currentUser]);
 
   const value = {
     currentUser,

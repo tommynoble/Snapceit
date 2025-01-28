@@ -1,0 +1,14 @@
+{
+  "httpMethod": "POST",
+  "requestContext": {
+    "authorizer": {
+      "claims": {
+        "sub": "test-user-id"
+      }
+    }
+  },
+  "headers": {
+    "Authorization": "Bearer test-token"
+  },
+  "body": "{\"imageKey\": \"test-receipt.jpg\", \"imageUrl\": \"https://snapceit-receipts-dev.s3.amazonaws.com/test-receipt.jpg\"}"
+}

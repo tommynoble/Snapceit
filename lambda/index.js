@@ -15,12 +15,98 @@ const streamToBuffer = async (stream) => {
     return Buffer.concat(chunks);
 };
 
+// Define category rules
+const categoryRules = {
+    groceries: {
+        keywords: [
+            'grocery', 'supermarket', 'food', 'produce', 'meat', 'dairy',
+            'fruit', 'vegetable', 'bread', 'cereal', 'snack', 'beverage',
+            'sugar', 'oil', 'flour', 'rice', 'pasta', 'milk', 'egg'
+        ],
+        stores: ['walmart', 'kroger', 'safeway', 'costco', 'aldi', 'trader', 'whole foods']
+    },
+    restaurant: {
+        keywords: [
+            'restaurant', 'cafe', 'diner', 'bistro', 'grill', 'burger',
+            'pizza', 'sushi', 'sandwich', 'meal', 'drink', 'appetizer'
+        ]
+    },
+    pharmacy: {
+        keywords: [
+            'pharmacy', 'drug', 'prescription', 'medicine', 'health',
+            'vitamin', 'supplement', 'medical', 'healthcare'
+        ],
+        stores: ['cvs', 'walgreens', 'rite aid']
+    },
+    electronics: {
+        keywords: [
+            'electronics', 'computer', 'phone', 'tablet', 'laptop',
+            'charger', 'cable', 'battery', 'device', 'gadget'
+        ],
+        stores: ['best buy', 'apple', 'microsoft']
+    },
+    clothing: {
+        keywords: [
+            'clothing', 'apparel', 'shirt', 'pants', 'dress', 'shoes',
+            'jacket', 'accessories', 'fashion'
+        ],
+        stores: ['macys', 'nordstrom', 'target', 'tjmaxx', 'marshalls']
+    },
+    office: {
+        keywords: [
+            'office', 'supplies', 'paper', 'pen', 'pencil', 'ink',
+            'printer', 'staples', 'folder', 'notebook'
+        ],
+        stores: ['office depot', 'staples']
+    }
+};
+
+const categorizeReceipt = (merchantName, items) => {
+    const scores = {};
+    const merchantLower = merchantName.toLowerCase();
+    const itemDescriptions = items.map(item => item.description.toLowerCase());
+
+    // Initialize scores for each category
+    Object.keys(categoryRules).forEach(category => {
+        scores[category] = 0;
+    });
+
+    // Score based on merchant name
+    Object.entries(categoryRules).forEach(([category, rules]) => {
+        if (rules.stores?.some(store => merchantLower.includes(store))) {
+            scores[category] += 3; // Higher weight for store match
+        }
+    });
+
+    // Score based on items
+    itemDescriptions.forEach(itemDesc => {
+        Object.entries(categoryRules).forEach(([category, rules]) => {
+            if (rules.keywords.some(keyword => itemDesc.includes(keyword))) {
+                scores[category] += 1;
+            }
+        });
+    });
+
+    // Get category with highest score
+    const topCategory = Object.entries(scores)
+        .sort(([,a], [,b]) => b - a)
+        .filter(([,score]) => score > 0)[0];
+
+    return topCategory ? topCategory[0].charAt(0).toUpperCase() + topCategory[0].slice(1) : 'Uncategorized';
+};
+
 const processTextractResponse = (response) => {
     const data = {
-        merchantName: "",
+        merchantName: "Unknown",
         total: 0,
         date: "",
-        items: []
+        items: [],
+        category: "Uncategorized",
+        subtotal: 0,
+        taxAmount: 0,
+        discounts: [],
+        paymentMethod: "",
+        storeLocation: ""
     };
 
     // Process expense fields
@@ -49,11 +135,29 @@ const processTextractResponse = (response) => {
             data.date = dateField.ValueDetection.Text;
         }
 
+        // Get tax amount
+        const taxField = document.SummaryFields?.find(
+            field => field.Type?.Text === "TAX"
+        );
+        if (taxField?.ValueDetection?.Text) {
+            data.taxAmount = parseFloat(taxField.ValueDetection.Text.replace(/[^0-9.]/g, '')) || 0;
+        }
+
+        // Get subtotal
+        const subtotalField = document.SummaryFields?.find(
+            field => field.Type?.Text === "SUBTOTAL"
+        );
+        if (subtotalField?.ValueDetection?.Text) {
+            data.subtotal = parseFloat(subtotalField.ValueDetection.Text.replace(/[^0-9.]/g, '')) || 0;
+        }
+
         // Get line items
         for (const lineItem of document.LineItemGroups?.[0]?.LineItems || []) {
             const item = {
                 description: "",
-                price: 0
+                price: 0,
+                quantity: 1,
+                unitPrice: 0
             };
 
             for (const field of lineItem.LineItemExpenseFields || []) {
@@ -61,6 +165,10 @@ const processTextractResponse = (response) => {
                     item.description = field.ValueDetection?.Text || "";
                 } else if (field.Type?.Text === "PRICE") {
                     item.price = parseFloat(field.ValueDetection?.Text?.replace(/[^0-9.]/g, '')) || 0;
+                } else if (field.Type?.Text === "QUANTITY") {
+                    item.quantity = parseFloat(field.ValueDetection?.Text?.replace(/[^0-9.]/g, '')) || 1;
+                } else if (field.Type?.Text === "UNIT_PRICE") {
+                    item.unitPrice = parseFloat(field.ValueDetection?.Text?.replace(/[^0-9.]/g, '')) || 0;
                 }
             }
 
@@ -70,80 +178,96 @@ const processTextractResponse = (response) => {
         }
     }
 
+    // Categorize the receipt based on merchant and items
+    data.category = categorizeReceipt(data.merchantName, data.items);
+
     return data;
 };
 
 const handler = async (event) => {
     try {
-        // Get the S3 bucket and key from the event
-        const record = event.Records[0];
-        const bucket = record.s3.bucket.name;
-        const key = decodeURIComponent(record.s3.object.key.replace(/\+/g, ' '));
-        
-        console.info("Processing receipt:", { bucket, key });
+        const records = event.Records;
+        const results = [];
 
-        // Get the image from S3
-        const getObjectResponse = await s3Client.send(
-            new GetObjectCommand({ Bucket: bucket, Key: key })
-        );
+        for (const record of records) {
+            console.log('Processing receipt:', record.s3);
 
-        // Convert stream to buffer
-        const imageBytes = await streamToBuffer(getObjectResponse.Body);
+            // Get the receipt image from S3
+            const s3Object = await s3Client.send(
+                new GetObjectCommand({
+                    Bucket: record.s3.bucket.name,
+                    Key: record.s3.object.key,
+                })
+            );
 
-        // Call Textract
-        const textractResponse = await textractClient.send(
-            new AnalyzeExpenseCommand({
-                Document: {
-                    Bytes: imageBytes
-                }
-            })
-        );
+            // Convert stream to buffer
+            const imageBytes = await streamToBuffer(s3Object.Body);
 
-        // Process Textract response
-        const processedData = processTextractResponse(textractResponse);
+            // Process with Textract
+            const textractResponse = await textractClient.send(
+                new AnalyzeExpenseCommand({
+                    Document: {
+                        Bytes: imageBytes,
+                    },
+                })
+            );
 
-        // Generate a presigned URL for the receipt image
-        const imageUrl = await getSignedUrl(
-            s3Client,
-            new GetObjectCommand({ Bucket: bucket, Key: key }),
-            { expiresIn: 3600 * 24 * 7 } // URL valid for 7 days
-        );
+            // Process Textract response
+            const receiptData = processTextractResponse(textractResponse);
 
-        // Create receipt record
-        const timestamp = Date.now().toString();
-        const receiptId = key.split('/').pop().split('.')[0];
-        const receipt = {
-            receiptId: { S: receiptId },
-            userId: { S: "test-user" }, // Replace with actual user ID
-            merchantName: { S: processedData.merchantName || "Unknown" },
-            total: { N: processedData.total?.toString() || "0" },
-            date: { S: processedData.date || new Date().toISOString() },
-            category: { S: "Uncategorized" },
-            imageUrl: { S: imageUrl },
-            status: { S: "processed" },
-            items: { S: JSON.stringify(processedData.items || []) },
-            createdAt: { S: new Date().toISOString() },
-            updatedAt: { S: new Date().toISOString() }
-        };
+            // Generate a presigned URL for the receipt image
+            const imageUrl = await getSignedUrl(
+                s3Client,
+                new GetObjectCommand({
+                    Bucket: record.s3.bucket.name,
+                    Key: record.s3.object.key,
+                }),
+                { expiresIn: 604800 } // URL expires in 7 days
+            );
 
-        // Save to DynamoDB
-        await dynamoClient.send(
-            new PutItemCommand({
-                TableName: "receipts",
-                Item: receipt
-            })
-        );
+            // Prepare DynamoDB item
+            const receiptId = record.s3.object.key.split('.')[0];
+            const timestamp = new Date().toISOString();
+            
+            const item = {
+                userId: { S: 'test-user' }, // Replace with actual user ID
+                receiptId: { S: receiptId },
+                merchantName: { S: receiptData.merchantName },
+                total: { N: receiptData.total.toString() },
+                date: { S: receiptData.date || timestamp },
+                items: { S: JSON.stringify(receiptData.items) },
+                category: { S: receiptData.category },
+                subtotal: { N: (receiptData.subtotal || receiptData.total).toString() },
+                taxAmount: { N: (receiptData.taxAmount || 0).toString() },
+                discounts: { S: JSON.stringify(receiptData.discounts || []) },
+                paymentMethod: { S: receiptData.paymentMethod || 'Unknown' },
+                storeLocation: { S: receiptData.storeLocation || 'Unknown' },
+                status: { S: 'processed' },
+                imageUrl: { S: imageUrl },
+                createdAt: { S: timestamp },
+                updatedAt: { S: timestamp }
+            };
+
+            // Save to DynamoDB
+            await dynamoClient.send(
+                new PutItemCommand({
+                    TableName: process.env.TABLE_NAME,
+                    Item: item
+                })
+            );
+
+            results.push({
+                receiptId,
+                status: 'success'
+            });
+        }
 
         return {
             statusCode: 200,
-            body: JSON.stringify({
-                message: "Receipt processed successfully",
-                receiptId,
-                data: processedData
-            })
+            body: JSON.stringify(results)
         };
     } catch (error) {
-        console.error("Error processing receipt:", error);
+        console.error('Error processing receipt:', error);
         throw error;
     }
 };

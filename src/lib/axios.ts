@@ -1,25 +1,21 @@
 import axios from 'axios';
-import { Auth } from '@aws-amplify/auth';
 
 // Create axios instance with custom config
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api',
+  baseURL: import.meta.env.VITE_API_GATEWAY_URL,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Add a request interceptor to add Cognito auth token
-api.interceptors.request.use(async (config) => {
-  try {
-    const session = await Auth.currentSession();
-    const token = session.getIdToken().getJwtToken();
-    config.headers.Authorization = `Bearer ${token}`;
-    return config;
-  } catch (error) {
-    // If there's no session, proceed without token
-    return config;
+// Add auth token to requests
+api.interceptors.request.use((config) => {
+  const user = localStorage.getItem('currentUser');
+  if (user) {
+    const { idToken } = JSON.parse(user);
+    config.headers.Authorization = `Bearer ${idToken}`;
   }
+  return config;
 });
 
 // Add a response interceptor for error handling
@@ -29,17 +25,18 @@ api.interceptors.response.use(
     if (error.response) {
       // The request was made and the server responded with a status code
       // that falls out of the range of 2xx
-      console.error('API Error:', error.response.data);
-      return Promise.reject(error.response.data);
+      console.error('Response Error:', {
+        status: error.response.status,
+        data: error.response.data,
+      });
     } else if (error.request) {
       // The request was made but no response was received
-      console.error('Network Error:', error.request);
-      return Promise.reject({ error: 'Network error occurred' });
+      console.error('Request Error:', error.request);
     } else {
       // Something happened in setting up the request that triggered an Error
-      console.error('Request Error:', error.message);
-      return Promise.reject({ error: 'Request failed' });
+      console.error('Error:', error.message);
     }
+    return Promise.reject(error);
   }
 );
 

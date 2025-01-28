@@ -1,0 +1,23 @@
+{
+  "version": "2.0",
+  "routeKey": "POST /receipts",
+  "rawPath": "/receipts",
+  "rawQueryString": "",
+  "headers": {
+    "Authorization": "Bearer test-token"
+  },
+  "requestContext": {
+    "authorizer": {
+      "claims": {
+        "sub": "test-user-id"
+      }
+    },
+    "http": {
+      "method": "POST",
+      "path": "/receipts"
+    }
+  },
+  "httpMethod": "POST",
+  "path": "/receipts",
+  "body": "{\"merchantName\":\"Test Store\",\"total\":99.99,\"date\":\"2025-01-04\",\"category\":\"Groceries\",\"items\":[{\"description\":\"Test Item\",\"price\":99.99}],\"tax\":{\"total\":10.00}}"
+}

@@ -12,12 +12,12 @@ import {
   ShoppingBag
 } from 'lucide-react';
 import { useStats } from './useStats';
-import { useCurrency } from '../../../hooks/useCurrency';
+import { useCurrency } from '../../../contexts/CurrencyContext';
 import { useReceipts } from '../receipts/ReceiptContext';
 
 export function TotalReceiptsCard() {
   const stats = useStats();
-  const { formatCurrency } = useCurrency();
+  const { formatAmount } = useCurrency();
   const { receipts } = useReceipts();
 
   // Category icon mapping with the same colors as RecentReceiptsCard
@@ -47,6 +47,8 @@ export function TotalReceiptsCard() {
     );
   };
 
+  const totalAmount = receipts.reduce((sum, receipt) => sum + (receipt.total || 0), 0);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -61,9 +63,9 @@ export function TotalReceiptsCard() {
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm font-medium text-white/80">Total Spending</p>
-          <h3 className="mt-2 text-3xl font-bold text-white">
-            {stats.loading ? '-' : formatCurrency(stats.totalSpending.value)}
-          </h3>
+          <h2 className="mt-2 text-3xl font-bold text-white">
+            {formatAmount(totalAmount)}
+          </h2>
           <p className="text-sm text-white/60 mt-1">
             {!stats.loading && `${Object.keys(stats.categoryCounts).length} Categories • ${receipts.length} Receipts`}
           </p>
@@ -90,10 +92,10 @@ export function TotalReceiptsCard() {
               .sort((a, b) => b[1].total - a[1].total)
               .slice(0, 5)
               .map(([category, data]) => (
-                <div key={category} title={`${category}: ${formatCurrency(data.total)}`} className="flex flex-col items-center">
+                <div key={category} title={`${category}: ${formatAmount(data.total)}`} className="flex flex-col items-center">
                   {getCategoryIcon(category)}
                   <span className="mt-1 text-xs text-white/60 truncate max-w-full">
-                    {formatCurrency(data.total)}
+                    {formatAmount(data.total)}
                   </span>
                 </div>
               ))}

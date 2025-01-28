@@ -1,0 +1,22 @@
+{
+  "version": "2.0",
+  "routeKey": "GET /categories",
+  "rawPath": "/categories",
+  "rawQueryString": "",
+  "headers": {
+    "Authorization": "Bearer test-token"
+  },
+  "requestContext": {
+    "authorizer": {
+      "claims": {
+        "sub": "test-user-id"
+      }
+    },
+    "http": {
+      "method": "GET",
+      "path": "/categories"
+    }
+  },
+  "httpMethod": "GET",
+  "path": "/categories"
+}

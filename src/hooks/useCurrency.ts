@@ -1,21 +1,10 @@
-import { useCallback } from 'react';
-import { useSettings } from './useSettings';
-
 export function useCurrency() {
-  const { settings, loading } = useSettings();
-  
-  const formatCurrency = useCallback((amount: number) => {
-    // Default values while loading or if settings are not available
-    const currency = settings?.currency || 'USD';
-    const language = settings?.language || 'en-US';
-
-    return new Intl.NumberFormat(language, {
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: currency,
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
+      currency: 'USD'
     }).format(amount);
-  }, [settings?.currency, settings?.language]);
+  };
 
   return { formatCurrency };
 }

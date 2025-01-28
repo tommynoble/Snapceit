@@ -2,6 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { X, Calendar, Building2, DollarSign, Tag, Receipt, Upload, Camera, Percent } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
+import { api } from '../../../utils/api';
 
 interface EditReceiptModalProps {
   isOpen: boolean;
@@ -47,16 +48,26 @@ export function EditReceiptModal({ isOpen, onClose, receipt, onSave, readOnly = 
 
   const [previewImage, setPreviewImage] = useState<string>(receipt.imageUrl || receipt.preview || '');
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
+  const onDrop = useCallback(async (acceptedFiles: File[]) => {
     if (acceptedFiles.length > 0) {
       const file = acceptedFiles[0];
-      const reader = new FileReader();
-      reader.onload = () => {
-        const dataUrl = reader.result as string;
-        setPreviewImage(dataUrl);
-        setFormData(prev => ({ ...prev, imageUrl: dataUrl }));
-      };
-      reader.readAsDataURL(file);
+      try {
+        // Upload to S3
+        const { key } = await api.uploadImage(file);
+        const imageUrl = `${import.meta.env.VITE_S3_URL}/${key}`;
+        
+        // Update form data with new image URL
+        setFormData(prev => ({
+          ...prev,
+          imageUrl
+        }));
+        
+        // Set preview
+        setPreviewImage(URL.createObjectURL(file));
+      } catch (error) {
+        console.error('Error uploading image:', error);
+        // You might want to show an error toast here
+      }
     }
   }, []);
 

@@ -26,9 +26,11 @@ import {
 import { useReceipts } from './ReceiptContext';
 import { EditReceiptModal } from './EditReceiptModal';
 import { toast } from 'react-hot-toast';
+import { useCurrency } from '../../../contexts/CurrencyContext';
 
 export function RecentReceiptsCard() {
   const { receipts, deleteReceipt, updateReceipt, refreshReceipts } = useReceipts();
+  const { formatAmount } = useCurrency();
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -236,7 +238,7 @@ export function RecentReceiptsCard() {
               {getCategoryIcon(receipt.category)}
               <div>
                 <div className="font-medium text-gray-900">
-                  ${(receipt.total || 0).toFixed(2)}
+                  {formatAmount(receipt.total || 0)}
                 </div>
                 <div className="text-sm text-gray-500">
                   {receipt.merchant || 'Unknown Merchant'}

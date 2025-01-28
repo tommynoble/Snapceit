@@ -1,0 +1,10 @@
+version = 0.1
+[default]
+[default.deploy]
+[default.deploy.parameters]
+stack_name = "snapceit-dev"
+region = "us-east-1"
+confirm_changeset = false
+capabilities = ["CAPABILITY_IAM", "CAPABILITY_NAMED_IAM"]
+parameter_overrides = "Environment=\"dev\" CognitoUserPoolArn=\"arn:aws:cognito-idp:us-east-1:256399344626:userpool/us-east-1_Ev1UWo0pS\""
+resolve_s3 = true

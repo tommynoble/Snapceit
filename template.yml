@@ -1,0 +1,227 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Description: Receipt Scanner API
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues:
+      - dev
+      - prod
+
+Resources:
+  ReceiptsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub snapceit-receipts-${Environment}
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders: ['*']
+            AllowedMethods: [GET, PUT, POST, DELETE, HEAD]
+            AllowedOrigins: ['*']
+            MaxAge: 3000
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+
+  ReceiptsBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref ReceiptsBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowLambdaAccess
+            Effect: Allow
+            Principal:
+              AWS: 
+                - !GetAtt ReceiptsFunction.Arn
+                - !GetAtt CategoriesFunction.Arn
+            Action: 
+              - s3:PutObject
+              - s3:GetObject
+              - s3:DeleteObject
+            Resource: !Sub ${ReceiptsBucket.Arn}/*
+          - Sid: AllowAuthenticatedUsers
+            Effect: Allow
+            Principal:
+              AWS: '*'
+            Action: 
+              - s3:PutObject
+              - s3:GetObject
+            Resource: !Sub ${ReceiptsBucket.Arn}/*
+            Condition:
+              StringEquals:
+                'aws:PrincipalArn': !Sub 'arn:aws:iam::${AWS::AccountId}:role/authenticated-cognito-role'
+
+  CognitoUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub receipt-scanner-users-${Environment}
+      AutoVerifiedAttributes:
+        - email
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: true
+          RequireUppercase: true
+
+  CognitoUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      UserPoolId: !Ref CognitoUserPool
+      ClientName: !Sub receipt-scanner-client-${Environment}
+      GenerateSecret: false
+      ExplicitAuthFlows:
+        - ALLOW_USER_SRP_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+      PreventUserExistenceErrors: ENABLED
+
+  ReceiptsApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: !Ref Environment
+      Cors:
+        AllowMethods: "'*'"
+        AllowHeaders: "'*'"
+        AllowOrigin: "'*'"
+      Auth:
+        AddDefaultAuthorizerToCorsPreflight: false
+        DefaultAuthorizer: NONE
+
+  ReceiptsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambda/
+      Handler: receipts.handler
+      Runtime: nodejs18.x
+      Timeout: 30
+      MemorySize: 256
+      Environment:
+        Variables:
+          RECEIPTS_TABLE: !Ref ReceiptsTable
+          RECEIPTS_BUCKET: !Ref ReceiptsBucket
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ReceiptsTable
+        - S3CrudPolicy:
+            BucketName: !Ref ReceiptsBucket
+      Events:
+        ListReceipts:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ReceiptsApi
+            Path: /receipts
+            Method: GET
+        CreateReceipt:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ReceiptsApi
+            Path: /receipts
+            Method: POST
+        GetReceipt:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ReceiptsApi
+            Path: /receipts/{id}
+            Method: GET
+        UpdateReceipt:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ReceiptsApi
+            Path: /receipts/{id}
+            Method: PUT
+        DeleteReceipt:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ReceiptsApi
+            Path: /receipts/{id}
+            Method: DELETE
+
+  CategoriesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambda/
+      Handler: categories.handler
+      Runtime: nodejs18.x
+      Timeout: 30
+      MemorySize: 256
+      Environment:
+        Variables:
+          RECEIPTS_TABLE: !Ref ReceiptsTable
+          RECEIPTS_BUCKET: !Ref ReceiptsBucket
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ReceiptsTable
+        - S3CrudPolicy:
+            BucketName: !Ref ReceiptsBucket
+      Events:
+        ListCategories:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ReceiptsApi
+            Path: /categories
+            Method: GET
+        GetReceiptsByCategory:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ReceiptsApi
+            Path: /categories/{category}/receipts
+            Method: GET
+        UpdateReceiptCategory:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ReceiptsApi
+            Path: /receipts/{id}/category
+            Method: PUT
+
+  ReceiptsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub receipts-${Environment}
+      AttributeDefinitions:
+        - AttributeName: userId
+          AttributeType: S
+        - AttributeName: receiptId
+          AttributeType: S
+        - AttributeName: category
+          AttributeType: S
+      KeySchema:
+        - AttributeName: userId
+          KeyType: HASH
+        - AttributeName: receiptId
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: userCategory
+          KeySchema:
+            - AttributeName: userId
+              KeyType: HASH
+            - AttributeName: category
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      BillingMode: PAY_PER_REQUEST
+
+Outputs:
+  ApiEndpoint:
+    Description: API Gateway endpoint URL
+    Value: !Sub https://${ReceiptsApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}
+  UserPoolId:
+    Description: Cognito User Pool ID
+    Value: !Ref CognitoUserPool
+  UserPoolClientId:
+    Description: Cognito User Pool Client ID
+    Value: !Ref CognitoUserPoolClient
+  ReceiptsBucketName:
+    Description: Name of the S3 bucket storing receipts
+    Value: !Ref ReceiptsBucket

@@ -1,0 +1,147 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Receipt Scanner API
+Parameters:
+  CognitoUserPoolArn:
+    Type: String
+    Description: ARN of the Cognito User Pool
+  Stage:
+    Type: String
+    Default: dev
+    AllowedValues:
+    - dev
+    - prod
+    Description: Deployment stage
+Globals:
+  Api:
+    Cors:
+      AllowMethods: '''GET,POST,PUT,DELETE,OPTIONS'''
+      AllowHeaders: '''Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'''
+      AllowOrigin: '''http://localhost:5184'''
+      AllowCredentials: true
+Resources:
+  ReceiptsApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName:
+        Ref: Stage
+      Auth:
+        DefaultAuthorizer: CognitoAuthorizer
+        Authorizers:
+          CognitoAuthorizer:
+            UserPoolArn:
+              Ref: CognitoUserPoolArn
+            Identity:
+              Header: Authorization
+            AuthorizationType: COGNITO_USER_POOLS
+  ReceiptsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ReceiptsFunction
+      Handler: receipts.handler
+      Runtime: nodejs18.x
+      Environment:
+        Variables:
+          TABLE_NAME: receipts
+          BUCKET_NAME: snapceit-receipts-dev
+          ALLOWED_ORIGIN: http://localhost:5184
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName: receipts
+      - S3CrudPolicy:
+          BucketName: snapceit-receipts-dev
+      Events:
+        GetReceipts:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: ReceiptsApi
+            Path: /receipts
+            Method: GET
+            Auth:
+              Authorizer: CognitoAuthorizer
+        CreateReceipt:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: ReceiptsApi
+            Path: /receipts
+            Method: POST
+            Auth:
+              Authorizer: CognitoAuthorizer
+        GetReceipt:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: ReceiptsApi
+            Path: /receipts/{receiptId}
+            Method: GET
+            Auth:
+              Authorizer: CognitoAuthorizer
+        UpdateReceipt:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: ReceiptsApi
+            Path: /receipts/{receiptId}
+            Method: PUT
+            Auth:
+              Authorizer: CognitoAuthorizer
+        DeleteReceipt:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: ReceiptsApi
+            Path: /receipts/{receiptId}
+            Method: DELETE
+            Auth:
+              Authorizer: CognitoAuthorizer
+        GetUploadUrl:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: ReceiptsApi
+            Path: /upload-url
+            Method: POST
+            Auth:
+              Authorizer: CognitoAuthorizer
+    Metadata:
+      SamResourceId: ReceiptsFunction
+  ProcessFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ProcessFunction
+      Handler: process.handler
+      Runtime: nodejs18.x
+      Environment:
+        Variables:
+          BUCKET_NAME: snapceit-receipts-dev
+          ALLOWED_ORIGIN: http://localhost:5184
+      Policies:
+      - S3CrudPolicy:
+          BucketName: snapceit-receipts-dev
+      - Statement:
+        - Effect: Allow
+          Action:
+          - textract:*
+          Resource: '*'
+      Events:
+        Process:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: ReceiptsApi
+            Path: /process
+            Method: POST
+            Auth:
+              Authorizer: CognitoAuthorizer
+    Metadata:
+      SamResourceId: ProcessFunction
+Outputs:
+  ApiEndpoint:
+    Description: API Gateway endpoint URL
+    Value:
+      Fn::Sub: https://${ReceiptsApi}.execute-api.${AWS::Region}.amazonaws.com/${Stage}
+  ReceiptsTableName:
+    Description: DynamoDB table name
+    Value: receipts

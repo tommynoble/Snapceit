@@ -2,7 +2,10 @@ import React, { useState, useCallback } from 'react';
 import { Camera, Upload, X, Scan, Edit2, Download } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useReceipts } from './ReceiptContext';
+import { useAuth } from '../../../auth/CognitoAuthContext';
 import { Calendar } from 'lucide-react';
+import { api } from '../../../utils/api';
+import { toast } from 'react-hot-toast';
 
 interface UploadedReceipt {
   preview: string;
@@ -30,68 +33,54 @@ interface UploadedReceipt {
   phone?: string;
   invoiceNumber?: string;
   isEditing?: boolean;
+  imageUrl?: string;
+  status?: string;
+  receiptId?: string;
 }
 
 export function ReceiptUploader() {
   const { addReceipt } = useReceipts();
+  const { currentUser } = useAuth();
   const [isDragging, setIsDragging] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadedReceipt, setUploadedReceipt] = useState<UploadedReceipt | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const processReceipt = useCallback(async (file: File) => {
-    setIsProcessing(true);
-    
     try {
-      // Create form data for the file
-      const formData = new FormData();
-      formData.append('receipt', file);
+      setIsProcessing(true);
+      setError(null);
 
-      // Send to backend for Textract processing
-      const response = await fetch('http://localhost:3000/api/scan-receipt', {
-        method: 'POST',
-        body: formData,
-      });
+      // Step 1: Get upload URL
+      const { uploadUrl, key } = await api.upload.getUploadUrl(file.name, file.type);
 
-      if (!response.ok) {
-        throw new Error('Failed to process receipt');
-      }
+      // Step 2: Upload to S3
+      await api.upload.uploadToS3(uploadUrl, file);
 
-      const receiptData = await response.json();
-      console.log('Receipt data:', receiptData);
+      // Step 3: Process with Textract
+      const result = await api.upload.processReceipt(key);
 
-      // Create preview URL for the image
-      const previewUrl = URL.createObjectURL(file);
-
-      const newReceipt = {
-        preview: previewUrl,
-        amount: receiptData.total || 0,
-        merchant: receiptData.merchant || 'Unknown Merchant',
-        date: receiptData.date || new Date().toLocaleDateString(),
-        items: receiptData.items || [],
-        tax: receiptData.tax || undefined,
-        subtotal: receiptData.subtotal || undefined,
-        category: 'Food & Dining', // Default value
-        paymentMethod: receiptData.paymentMethod || undefined,
-        address: receiptData.address || undefined,
-        phone: receiptData.phone || undefined,
-        invoiceNumber: receiptData.invoiceNumber || undefined,
+      // Step 4: Update UI with processed receipt
+      const processedReceipt = {
+        ...result.receipt,
+        preview: URL.createObjectURL(file),
+        status: 'completed',
+        category: result.receipt.category || 'Other',
+        receiptId: result.receipt.receiptId // Use the server-generated ID
       };
 
-      console.log('New receipt:', newReceipt);
-      setUploadedReceipt(newReceipt);
-
-      // Add to receipts list
-      addReceipt({
-        ...newReceipt,
-        status: 'completed',
-      });
-    } catch (error) {
-      console.error('Error processing receipt:', error);
-      // You might want to show an error message to the user here
+      await addReceipt(processedReceipt); // Add to recent receipts first
+      setUploadedReceipt(processedReceipt);
+      toast.success('Receipt uploaded and processed successfully!');
+    } catch (err) {
+      console.error('Receipt processing failed:', err);
+      const errorMsg = err instanceof Error ? err.message : 'Failed to process receipt';
+      setError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setIsProcessing(false);
     }
-  }, [addReceipt]);
+  }, []);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -133,14 +122,15 @@ export function ReceiptUploader() {
     input.click();
   };
 
+  const handleCancelUpload = () => {
+    setUploadedReceipt(null);
+    setError(null);
+  };
+
   const handleConfirmUpload = () => {
-    // Add uploaded receipt to receipts list
     if (uploadedReceipt) {
-      addReceipt({
-        ...uploadedReceipt,
-        status: 'completed',
-      });
-      setUploadedReceipt(null);
+      setUploadedReceipt(null); // Just clear the preview
+      toast.success('Receipt saved successfully!');
     }
   };
 
@@ -271,12 +261,13 @@ export function ReceiptUploader() {
             <option value="Healthcare">Healthcare</option>
             <option value="Utilities">Utilities</option>
             <option value="Other">Other</option>
+            <option value="Supplies">Supplies</option>
           </select>
 
           {receipt.isEditing && (
             <div className="flex justify-end gap-2 mt-4">
               <button
-                onClick={handleEditToggle}
+                onClick={handleCancelUpload}
                 className="px-4 py-2 text-sm border rounded-lg hover:bg-gray-50"
               >
                 Cancel
@@ -335,6 +326,15 @@ export function ReceiptUploader() {
               className="relative"
             >
               <ReceiptPreview receipt={uploadedReceipt} />
+            </motion.div>
+          ) : error ? (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex flex-col items-center justify-center py-8"
+            >
+              <div className="text-sm font-medium text-red-600">{error}</div>
             </motion.div>
           ) : (
             <motion.div
