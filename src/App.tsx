@@ -6,7 +6,7 @@ import { RegisterForm } from './components/auth/RegisterForm';
 import { VerifyEmail } from './components/auth/VerifyEmail';
 import { DashboardLayout } from './components/dashboard/DashboardLayout';
 import { ReceiptProvider } from './components/dashboard/receipts/ReceiptContext';
-import { useAuth } from './auth/CognitoAuthContext';
+import { useAuth, AuthProvider } from './auth/CognitoAuthContext';
 import { Onboarding } from './components/onboarding/OnboardingQuestionnaire';
 import { AnimatePresence } from 'framer-motion';
 import { PageTransition } from './components/transitions/PageTransition';
@@ -17,6 +17,9 @@ import SpendingHabits from './components/dashboard/spending/SpendingHabits';
 import Features from './components/Features';
 import Features2 from './components/Features2';
 import StyleGuide from './components/StyleGuide';
+import { api } from './utils/api';
+import { SettingsPage } from './pages/dashboard/SettingsPage';
+import { CurrencyProvider } from './contexts/CurrencyContext';
 
 // Protected Route Component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -62,61 +65,12 @@ const OnboardingWrapper: React.FC = () => {
   );
 };
 
-function AppContent() {
+const AppContent: React.FC = () => {
   const location = useLocation();
 
   return (
-    <AnimatePresence mode="wait">
-      <Routes location={location} key={location.pathname}>
-        <Route path="/" element={<Home />} />
-        <Route path="/features" element={<Features />} />
-        <Route path="/features2" element={<Features2 />} />
-        <Route path="/style-guide" element={<StyleGuide />} />
-        
-        {/* Auth Routes */}
-        <Route path="/login" element={
-          <PublicRoute>
-            <AuthLayout>
-              <LoginForm />
-            </AuthLayout>
-          </PublicRoute>
-        } />
-        <Route path="/register" element={
-          <PublicRoute>
-            <AuthLayout>
-              <RegisterFormWrapper />
-            </AuthLayout>
-          </PublicRoute>
-        } />
-        <Route path="/verify-email" element={
-          <PublicRoute>
-            <AuthLayout>
-              <VerifyEmail />
-            </AuthLayout>
-          </PublicRoute>
-        } />
-        
-        {/* Protected Routes */}
-        <Route path="/dashboard/*" element={
-          <ProtectedRoute>
-            <ReceiptProvider>
-              <DashboardLayout />
-            </ReceiptProvider>
-          </ProtectedRoute>
-        } />
-        
-        {/* Fallback route */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </AnimatePresence>
-  );
-}
-
-function App() {
-  return (
-    <Router>
-      <div className="min-h-screen bg-gradient-to-br from-fuchsia-500 via-purple-600 to-purple-800">
-        <AppContent />
+    <>
+      <AnimatePresence mode="wait">
         <Toaster
           position="top-right"
           toastOptions={{
@@ -126,9 +80,62 @@ function App() {
             },
           }}
         />
+        <Routes location={location} key={location.pathname}>
+          <Route path="/" element={<Home />} />
+          <Route path="/features" element={<Features />} />
+          <Route path="/features2" element={<Features2 />} />
+          <Route path="/style-guide" element={<StyleGuide />} />
+          
+          {/* Auth Routes */}
+          <Route path="/login" element={
+            <PublicRoute>
+              <AuthLayout>
+                <LoginForm />
+              </AuthLayout>
+            </PublicRoute>
+          } />
+          <Route path="/register" element={
+            <PublicRoute>
+              <AuthLayout>
+                <RegisterFormWrapper />
+              </AuthLayout>
+            </PublicRoute>
+          } />
+          <Route path="/verify-email" element={
+            <PublicRoute>
+              <AuthLayout>
+                <VerifyEmail />
+              </AuthLayout>
+            </PublicRoute>
+          } />
+          
+          {/* Protected Routes */}
+          <Route path="/dashboard/*" element={
+            <ProtectedRoute>
+              <ReceiptProvider>
+                <DashboardLayout />
+              </ReceiptProvider>
+            </ProtectedRoute>
+          } />
+          
+          {/* Fallback route */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </AnimatePresence>
+    </>
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <Router>
+      <div className="min-h-screen bg-gradient-to-br from-fuchsia-500 via-purple-600 to-purple-800">
+        <CurrencyProvider>
+          <AppContent />
+        </CurrencyProvider>
       </div>
     </Router>
   );
-}
+};
 
 export default App;

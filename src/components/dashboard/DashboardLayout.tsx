@@ -18,10 +18,9 @@ import { Sidebar } from './Sidebar';
 import { DashboardNavbar } from './DashboardNavbar';
 import logo from '../../../images/logo.svg';
 import { TaxCalculator } from './tax/TaxCalculator';
-import { Profile } from '../../pages/dashboard/Profile';
-import { Settings } from '../../pages/dashboard/Settings';
 import { PriceMatchPage } from '../../pages/dashboard/PriceMatchPage';
 import { TemplatePreview } from '../../pages/dashboard/TemplatePreview';
+import { SettingsPage } from '../../pages/dashboard/SettingsPage';
 
 export function DashboardLayout() {
   const [isUserProfileOpen, setIsUserProfileOpen] = useState(false);
@@ -40,7 +39,6 @@ export function DashboardLayout() {
 
   const handlePriceMatchClick = () => navigate('/dashboard/price-match');
   const handleTaxPageClick = () => navigate('/dashboard/tax-calculator');
-  const handleSettingsClick = () => navigate('/dashboard/settings');
 
   const handleProfileClick = () => {
     setIsUserProfileOpen(true);
@@ -52,7 +50,7 @@ export function DashboardLayout() {
         <DashboardHeader 
           userName="Thomas"
           onProfileClick={handleProfileClick}
-          onSettingsClick={handleSettingsClick}
+          onSettingsClick={() => navigate('/dashboard/settings')}
           onLogout={handleLogout}
         />
       </div>
@@ -86,7 +84,7 @@ export function DashboardLayout() {
         <Sidebar
           onPriceMatchClick={handlePriceMatchClick}
           onTaxPageClick={handleTaxPageClick}
-          onSettingsClick={handleSettingsClick}
+          onSettingsClick={() => navigate('/dashboard/settings')}
           onLogout={handleLogout}
         />
       </div>
@@ -120,7 +118,10 @@ export function DashboardLayout() {
                 navigate('/dashboard/tax-calculator');
                 setIsMobileMenuOpen(false);
               }}
-              onSettingsClick={() => setIsMobileMenuOpen(false)}
+              onSettingsClick={() => {
+                navigate('/dashboard/settings');
+                setIsMobileMenuOpen(false);
+              }}
               onLogout={handleLogout}
             />
           </motion.div>
@@ -137,7 +138,7 @@ export function DashboardLayout() {
               </div>
               <DashboardNavbar 
                 onProfileClick={handleProfileClick}
-                onSettingsClick={handleSettingsClick}
+                onSettingsClick={() => navigate('/dashboard/settings')}
                 onLogout={handleLogout}
               />
             </div>
@@ -153,16 +154,15 @@ export function DashboardLayout() {
                     element={<DashboardContent />}
                   />
                   <Route
-                    path="/template-preview"
+                    path="template-preview"
                     element={<TemplatePreview />}
                   />
                   <Route
-                    path="/price-match"
+                    path="price-match"
                     element={<PriceMatchPage />}
                   />
                   <Route path="tax-calculator" element={<TaxCalculator />} />
-                  <Route path="profile" element={<Profile />} />
-                  <Route path="settings" element={<Settings />} />
+                  <Route path="settings" element={<SettingsPage />} />
                 </Routes>
               </div>
             </div>
