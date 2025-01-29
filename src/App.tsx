@@ -20,6 +20,7 @@ import StyleGuide from './components/StyleGuide';
 import { api } from './utils/api';
 import { SettingsPage } from './pages/dashboard/SettingsPage';
 import { CurrencyProvider } from './contexts/CurrencyContext';
+import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 
 // Protected Route Component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -66,74 +67,79 @@ const OnboardingWrapper: React.FC = () => {
 };
 
 const AppContent: React.FC = () => {
+  const { theme } = useTheme();
   const location = useLocation();
 
   return (
-    <>
-      <AnimatePresence mode="wait">
-        <Toaster
-          position="top-right"
-          toastOptions={{
-            style: {
-              background: '#4A5568',
-              color: '#fff',
-            },
-          }}
-        />
-        <Routes location={location} key={location.pathname}>
-          <Route path="/" element={<Home />} />
-          <Route path="/features" element={<Features />} />
-          <Route path="/features2" element={<Features2 />} />
-          <Route path="/style-guide" element={<StyleGuide />} />
-          
-          {/* Auth Routes */}
-          <Route path="/login" element={
-            <PublicRoute>
-              <AuthLayout>
-                <LoginForm />
-              </AuthLayout>
-            </PublicRoute>
-          } />
-          <Route path="/register" element={
-            <PublicRoute>
-              <AuthLayout>
-                <RegisterFormWrapper />
-              </AuthLayout>
-            </PublicRoute>
-          } />
-          <Route path="/verify-email" element={
-            <PublicRoute>
-              <AuthLayout>
-                <VerifyEmail />
-              </AuthLayout>
-            </PublicRoute>
-          } />
-          
-          {/* Protected Routes */}
-          <Route path="/dashboard/*" element={
-            <ProtectedRoute>
-              <ReceiptProvider>
-                <DashboardLayout />
-              </ReceiptProvider>
-            </ProtectedRoute>
-          } />
-          
-          {/* Fallback route */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+    <div className={`min-h-screen ${
+      theme === 'light' 
+        ? 'bg-gradient-to-br from-fuchsia-500 via-purple-600 to-purple-800' 
+        : 'bg-gradient-to-br from-gray-900 to-gray-800'
+    }`}>
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          style: {
+            background: '#4A5568',
+            color: '#fff',
+          },
+        }}
+      />
+      <AnimatePresence>
+        <CurrencyProvider>
+          <Routes location={location} key={location.pathname}>
+            <Route path="/" element={<Home />} />
+            <Route path="/features" element={<Features />} />
+            <Route path="/features2" element={<Features2 />} />
+            <Route path="/style-guide" element={<StyleGuide />} />
+            
+            {/* Auth Routes */}
+            <Route path="/login" element={
+              <PublicRoute>
+                <AuthLayout>
+                  <LoginForm />
+                </AuthLayout>
+              </PublicRoute>
+            } />
+            <Route path="/register" element={
+              <PublicRoute>
+                <AuthLayout>
+                  <RegisterFormWrapper />
+                </AuthLayout>
+              </PublicRoute>
+            } />
+            <Route path="/verify-email" element={
+              <PublicRoute>
+                <AuthLayout>
+                  <VerifyEmail />
+                </AuthLayout>
+              </PublicRoute>
+            } />
+            
+            {/* Protected Routes */}
+            <Route path="/dashboard/*" element={
+              <ProtectedRoute>
+                <ReceiptProvider>
+                  <DashboardLayout />
+                </ReceiptProvider>
+              </ProtectedRoute>
+            } />
+            
+            {/* Fallback route */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </CurrencyProvider>
       </AnimatePresence>
-    </>
+    </div>
   );
 };
 
 const App: React.FC = () => {
   return (
     <Router>
-      <div className="min-h-screen bg-gradient-to-br from-fuchsia-500 via-purple-600 to-purple-800">
-        <CurrencyProvider>
-          <AppContent />
-        </CurrencyProvider>
-      </div>
+      <ThemeProvider>
+        <AppContent />
+      </ThemeProvider>
     </Router>
   );
 };

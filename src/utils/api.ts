@@ -156,6 +156,14 @@ export const api = {
         body: { currency },
         token
       });
+    },
+
+    updateState(state: string | undefined, token: string) {
+      return apiRequest('/settings/state', {
+        method: 'PUT',
+        body: { state },
+        token
+      });
     }
   }
 };

@@ -1,4 +1,4 @@
-import { Settings, LineChart, Calculator, CircleDollarSign, LogOut, Home, User, FileText, Percent, ChevronDown, ChevronRight, Layout } from 'lucide-react';
+import { Settings, LineChart, Calculator, CircleDollarSign, LogOut, Home, FileText, Percent, ChevronDown, ChevronRight, Layout, FileSpreadsheet, PlayCircle } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useMemo, useState } from 'react';
 
@@ -29,8 +29,9 @@ export function Sidebar({
     { icon: Home, label: 'Dashboard', onClick: () => navigate('/dashboard'), path: '/dashboard' },
     { icon: FileText, label: 'Expenses', onClick: () => navigate('/dashboard/files'), path: '/dashboard/files' },
     { icon: CircleDollarSign, label: 'Price Match', onClick: onPriceMatchClick, path: '/dashboard/price-match' },
+    { icon: FileSpreadsheet, label: 'Schedule C', onClick: () => navigate('/dashboard/schedule-c'), path: '/dashboard/schedule-c' },
+    { icon: PlayCircle, label: 'Watch Video', onClick: () => navigate('/dashboard/watch-video'), path: '/dashboard/watch-video' },
     { icon: Layout, label: 'Template Preview', onClick: () => navigate('/dashboard/template-preview'), path: '/dashboard/template-preview' },
-    { icon: User, label: 'Profile', onClick: () => navigate('/dashboard/profile'), path: '/dashboard/profile' },
     { icon: Settings, label: 'Settings', onClick: onSettingsClick, path: '/dashboard/settings' },
   ], [navigate, onPriceMatchClick, onSettingsClick]);
 
@@ -84,25 +85,6 @@ export function Sidebar({
                   <ChevronDown size={18} className="text-white/60 transition-transform" />
                 )}
               </button>
-              
-              {/* Dropdown Content */}
-              {isTaxesOpen && (
-                <div className="ml-6 mt-1">
-                  <button
-                    onClick={onDeductionsClick}
-                    className={`w-full flex items-center gap-3 px-4 py-2.5 text-white/90 rounded-lg transition-colors group text-[15px]
-                      ${currentPath === '/dashboard/deductions' 
-                        ? 'bg-white/20' 
-                        : 'bg-white/5 hover:bg-white/15'}`}
-                  >
-                    <Percent 
-                      size={18} 
-                      className="text-transparent bg-gradient-to-r from-[#00E5FF] to-[#2979FF] bg-clip-text stroke-[#00E5FF] group-hover:stroke-[#597FFB] transition-all" 
-                    />
-                    <span>Deductions</span>
-                  </button>
-                </div>
-              )}
             </div>
           </li>
         </ul>

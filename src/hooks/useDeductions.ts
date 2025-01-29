@@ -1,5 +1,6 @@
-import { useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useReceipts } from '../components/dashboard/receipts/ReceiptContext';
+import { taxApi } from '../utils/tax-api';
 import type { Receipt } from '../components/dashboard/receipts/ReceiptContext';
 
 interface DeductionCategory {
@@ -17,110 +18,137 @@ interface DeductionSuggestion {
 
 export function useDeductions() {
   const { receipts } = useReceipts();
+  const [deductionsByCategory, setDeductionsByCategory] = useState<Record<string, DeductionCategory>>({});
+  const [taxRules, setTaxRules] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Tax categories and their typical deduction rates
-  const DEDUCTION_RATES = {
-    advertising: 1.0, // 100% deductible
-    car_and_truck: 0.575, // 57.5 cents per mile for 2023
-    office: 1.0,
-    taxes_and_licenses: 1.0,
-    supplies: 1.0,
-    travel_and_meals: 0.50, // 50% for meals
-  };
-
-  // Calculate deductions by category
-  const deductionsByCategory = useMemo(() => {
-    const categories: { [key: string]: DeductionCategory } = {};
-    let totalAmount = 0;
-
-    receipts.forEach(receipt => {
-      if (receipt.taxDeductible && receipt.taxCategory) {
-        const categoryName = receipt.taxCategory.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  // Fetch tax rules and categories
+  useEffect(() => {
+    const fetchTaxRules = async () => {
+      try {
+        const year = new Date().getFullYear();
+        const [categories, rates] = await Promise.all([
+          taxApi.getTaxCategories(year),
+          taxApi.getTaxRates(year)
+        ]);
         
-        if (!categories[categoryName]) {
-          categories[categoryName] = {
-            name: categoryName,
-            amount: 0,
-            percentage: 0,
-            receipts: []
-          };
-        }
-
-        const deductibleAmount = receipt.total * (DEDUCTION_RATES[receipt.taxCategory] || 1.0);
-        categories[categoryName].amount += deductibleAmount;
-        categories[categoryName].receipts.push(receipt);
-        totalAmount += deductibleAmount;
+        setTaxRules({ categories, rates });
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching tax rules:', err);
+        setError('Failed to load tax rules');
       }
-    });
+    };
 
-    // Calculate percentages
-    Object.values(categories).forEach(category => {
-      category.percentage = totalAmount > 0 ? (category.amount / totalAmount) * 100 : 0;
-    });
+    fetchTaxRules();
+  }, []);
 
-    return Object.values(categories).sort((a, b) => b.amount - a.amount);
-  }, [receipts]);
+  // Calculate deductions when receipts or tax rules change
+  useEffect(() => {
+    const calculateDeductions = async () => {
+      if (!taxRules) return;
+      
+      try {
+        setLoading(true);
+        const deductible = receipts.filter(r => r.taxDeductible);
+        
+        // Calculate deductions for each receipt
+        const deductions = await Promise.all(
+          deductible.map(async receipt => {
+            if (!receipt.businessCategory) return null;
+            
+            const { deductibleAmount } = await taxApi.calculateDeduction({
+              category: receipt.businessCategory,
+              amount: receipt.total,
+              date: receipt.date,
+              items: receipt.items
+            });
 
-  // Calculate total deductions
-  const totalDeductions = useMemo(() => {
-    return deductionsByCategory.reduce((sum, category) => sum + category.amount, 0);
-  }, [deductionsByCategory]);
+            return {
+              receipt,
+              category: receipt.businessCategory,
+              deductibleAmount
+            };
+          })
+        );
 
-  // Get deductible receipts count
-  const deductibleReceiptsCount = useMemo(() => {
-    return receipts.filter(r => r.taxDeductible).length;
-  }, [receipts]);
+        // Group by category
+        const categories: Record<string, DeductionCategory> = {};
+        deductions.forEach(d => {
+          if (!d) return;
+          
+          const categoryName = d.category.replace(/_/g, ' ')
+            .replace(/\b\w/g, l => l.toUpperCase());
+          
+          if (!categories[categoryName]) {
+            categories[categoryName] = {
+              name: categoryName,
+              amount: 0,
+              percentage: 0,
+              receipts: []
+            };
+          }
+          
+          categories[categoryName].amount += d.deductibleAmount;
+          categories[categoryName].receipts.push(d.receipt);
+        });
 
-  // Generate deduction suggestions
-  const deductionSuggestions = useMemo(() => {
-    const suggestions: DeductionSuggestion[] = [];
-    
-    receipts.forEach(receipt => {
-      if (!receipt.taxDeductible) {
-        // Check for potential business expenses
-        if (receipt.category === 'Office Expenses' || 
-            receipt.category === 'Supplies' ||
-            receipt.category === 'Travel') {
-          suggestions.push({
-            receipt,
-            reason: `This ${receipt.category.toLowerCase()} expense might be tax deductible for your business`,
-            potentialSaving: receipt.total * 0.25 // Assuming 25% tax bracket
-          });
-        }
+        // Calculate percentages
+        const totalDeductions = Object.values(categories)
+          .reduce((sum, cat) => sum + cat.amount, 0);
+          
+        Object.values(categories).forEach(cat => {
+          cat.percentage = totalDeductions ? (cat.amount / totalDeductions) * 100 : 0;
+        });
 
-        // Check for large purchases
-        if (receipt.total >= 500) {
-          suggestions.push({
-            receipt,
-            reason: 'Large purchases may qualify for business expense deduction',
-            potentialSaving: receipt.total * 0.25
-          });
-        }
-
-        // Check for travel and meals
-        if (receipt.category === 'Meals' && receipt.total >= 20) {
-          suggestions.push({
-            receipt,
-            reason: 'Business meals are 50% tax deductible',
-            potentialSaving: receipt.total * 0.5 * 0.25
-          });
-        }
+        setDeductionsByCategory(categories);
+        setError(null);
+      } catch (err) {
+        console.error('Error calculating deductions:', err);
+        setError('Failed to calculate deductions');
+      } finally {
+        setLoading(false);
       }
-    });
+    };
 
-    return suggestions.sort((a, b) => b.potentialSaving - a.potentialSaving);
-  }, [receipts]);
+    calculateDeductions();
+  }, [receipts, taxRules]);
 
-  // Calculate potential savings
-  const potentialSavings = useMemo(() => {
-    return deductionSuggestions.reduce((sum, suggestion) => sum + suggestion.potentialSaving, 0);
-  }, [deductionSuggestions]);
+  // Get deduction suggestions
+  const getDeductionSuggestions = (): DeductionSuggestion[] => {
+    if (!taxRules) return [];
+
+    return receipts
+      .filter(receipt => !receipt.taxDeductible)
+      .map(receipt => {
+        const category = taxRules.categories.find(c => 
+          c.keywords?.some((k: string) => 
+            receipt.merchant.toLowerCase().includes(k.toLowerCase()) ||
+            receipt.items?.some(item => 
+              item.name.toLowerCase().includes(k.toLowerCase())
+            )
+          )
+        );
+
+        if (!category) return null;
+
+        return {
+          receipt,
+          reason: `This might be a ${category.name} expense`,
+          potentialSaving: receipt.total * (category.deductiblePercentage / 100)
+        };
+      })
+      .filter((s): s is DeductionSuggestion => s !== null);
+  };
 
   return {
     deductionsByCategory,
-    totalDeductions,
-    deductibleReceiptsCount,
-    deductionSuggestions,
-    potentialSavings
+    loading,
+    error,
+    deductibleReceiptsCount: receipts.filter(r => r.taxDeductible).length,
+    deductionSuggestions: getDeductionSuggestions(),
+    totalDeductions: Object.values(deductionsByCategory)
+      .reduce((sum, cat) => sum + cat.amount, 0)
   };
 }

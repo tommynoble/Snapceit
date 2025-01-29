@@ -21,6 +21,8 @@ import { TaxCalculator } from './tax/TaxCalculator';
 import { PriceMatchPage } from '../../pages/dashboard/PriceMatchPage';
 import { TemplatePreview } from '../../pages/dashboard/TemplatePreview';
 import { SettingsPage } from '../../pages/dashboard/SettingsPage';
+import { ScheduleCPage } from '../../pages/dashboard/ScheduleCPage';
+import { WatchVideoPage } from '../../pages/dashboard/WatchVideoPage';
 
 export function DashboardLayout() {
   const [isUserProfileOpen, setIsUserProfileOpen] = useState(false);
@@ -163,6 +165,8 @@ export function DashboardLayout() {
                   />
                   <Route path="tax-calculator" element={<TaxCalculator />} />
                   <Route path="settings" element={<SettingsPage />} />
+                  <Route path="schedule-c" element={<ScheduleCPage />} />
+                  <Route path="watch-video" element={<WatchVideoPage />} />
                 </Routes>
               </div>
             </div>

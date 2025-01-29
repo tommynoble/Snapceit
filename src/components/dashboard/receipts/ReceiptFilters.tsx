@@ -1,5 +1,6 @@
 import React from 'react';
 import { Calendar, Filter } from 'lucide-react';
+import { RECEIPT_CATEGORIES } from '../../../constants/categories';
 
 export function ReceiptFilters() {
   return (
@@ -18,14 +19,9 @@ export function ReceiptFilters() {
         <Filter className="h-4 w-4 text-gray-500" />
         <select className="bg-transparent text-sm text-gray-600 focus:outline-none">
           <option>All Categories</option>
-          <option>Advertising</option>
-          <option>Car and Truck Expenses</option>
-          <option>Office Expenses</option>
-          <option>Travel</option>
-          <option>Meals</option>
-          <option>Utilities</option>
-          <option>Taxes and Licenses</option>
-          <option>Supplies</option>
+          {RECEIPT_CATEGORIES.map(category => (
+            <option key={category.id}>{category.name}</option>
+          ))}
         </select>
       </div>
     </div>

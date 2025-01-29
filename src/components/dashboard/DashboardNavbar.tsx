@@ -1,7 +1,8 @@
-import { Search, Bell, HelpCircle, Sun, X, User, Settings, LogOut } from 'lucide-react';
+import { Search, Bell, HelpCircle, Sun, X, User, Settings, LogOut, Moon } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useAuth } from '../../auth/CognitoAuthContext';
+import { useTheme } from '../../contexts/ThemeContext';
 
 interface DashboardNavbarProps {
   onProfileClick: () => void;
@@ -15,6 +16,7 @@ export const DashboardNavbar = ({ onProfileClick, onSettingsClick, onLogout }: D
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { currentUser } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
   useEffect(() => {
     const checkMobile = () => {
@@ -121,8 +123,17 @@ export const DashboardNavbar = ({ onProfileClick, onSettingsClick, onLogout }: D
             <span className="absolute top-1 right-1 h-1.5 w-1.5 bg-[#4FDDE6] rounded-full"></span>
           </button>
           
-          <button className="p-2 hover:bg-white/5 rounded-full transition-colors">
-            <Sun className="h-[18px] w-[18px] text-white/70" />
+          {/* Theme Toggle */}
+          <button
+            onClick={toggleTheme}
+            className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+            aria-label="Toggle theme"
+          >
+            {theme === 'light' ? (
+              <Sun className="h-5 w-5 text-white" />
+            ) : (
+              <Moon className="h-5 w-5 text-white" />
+            )}
           </button>
           
           <div className="relative pr-8">

@@ -28,3 +28,11 @@ dist-ssr
 .env.local
 .env.development
 .env.production
+env.json
+
+# AWS
+lambda/*.zip
+aws-policy.json
+bucket-policy.json
+trust-policy.json
+*-policy.json

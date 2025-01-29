@@ -1,30 +1,123 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DashboardHeader } from '../../components/dashboard/DashboardHeader';
-import { User, Bell, Database, FileText, Trash2, Download, DollarSign } from 'lucide-react';
+import { User, Bell, Database, FileText, Trash2, Download, DollarSign, MapPin } from 'lucide-react';
 import { useAuth } from '../../auth/CognitoAuthContext';
-import { useCurrency } from '../../contexts/CurrencyContext';
+import { useCurrency, currencySymbols } from '../../contexts/CurrencyContext';
 import { api } from '../../utils/api';
 import toast from 'react-hot-toast';
 import defaultAvatar from '../../assets/default-avatar.svg';
+import { US_STATES } from '../../constants/us-tax';
+
+const getCurrencyName = (code: string): string => {
+  const names: Record<string, string> = {
+    USD: 'United States Dollar',
+    EUR: 'Euro',
+    GBP: 'British Pound Sterling',
+    JPY: 'Japanese Yen',
+    AUD: 'Australian Dollar',
+    CAD: 'Canadian Dollar',
+    CHF: 'Swiss Franc',
+    CNY: 'Chinese Yuan',
+    HKD: 'Hong Kong Dollar',
+    NZD: 'New Zealand Dollar',
+    SEK: 'Swedish Krona',
+    KRW: 'South Korean Won',
+    SGD: 'Singapore Dollar',
+    NOK: 'Norwegian Krone',
+    MXN: 'Mexican Peso',
+    INR: 'Indian Rupee',
+    GHS: 'Ghanaian Cedi',
+    NGN: 'Nigerian Naira',
+    // Add more as needed
+  };
+  return names[code] || code;
+};
+
+const getCurrencyCountry = (code: string): string => {
+  const countries: Record<string, string> = {
+    USD: 'United States',
+    EUR: 'European Union',
+    GBP: 'United Kingdom',
+    JPY: 'Japan',
+    AUD: 'Australia',
+    CAD: 'Canada',
+    CHF: 'Switzerland',
+    CNY: 'China',
+    HKD: 'Hong Kong',
+    NZD: 'New Zealand',
+    SEK: 'Sweden',
+    KRW: 'South Korea',
+    SGD: 'Singapore',
+    NOK: 'Norway',
+    MXN: 'Mexico',
+    INR: 'India',
+    GHS: 'Ghana',
+    NGN: 'Nigeria',
+    // Add more as needed
+  };
+  return countries[code] || 'International';
+};
 
 export function SettingsPage() {
   const { currentUser } = useAuth();
-  const { currency, setCurrency, loading } = useCurrency();
+  const { currency, setCurrency, loading, state, setState } = useCurrency();
   const [settings, setSettings] = useState({
     emailNotifications: true,
     autoCategories: true
   });
   const [uploading, setUploading] = useState(false);
+  const [currencySearch, setCurrencySearch] = useState('');
+  const [showStateSelection, setShowStateSelection] = useState(!!state);
+
+  useEffect(() => {
+    setShowStateSelection(currency === 'USD' && !!state);
+  }, [currency, state]);
 
   const handleSettingChange = (setting: string) => {
     setSettings(prev => ({ ...prev, [setting]: !prev[setting] }));
   };
 
+  const handleCurrencySearch = async (searchTerm: string) => {
+    setCurrencySearch(searchTerm);
+    
+    // If search is empty, don't auto-select
+    if (!searchTerm) return;
+
+    // Find matching currency
+    const matchingCurrency = Object.entries(currencySymbols)
+      .find(([code]) => {
+        const search = searchTerm.toLowerCase();
+        return (
+          code.toLowerCase() === search ||
+          getCurrencyName(code).toLowerCase() === search ||
+          code.toLowerCase().includes(search) ||
+          getCurrencyName(code).toLowerCase().includes(search)
+        );
+      });
+
+    // If we found an exact match or a single partial match, update the currency
+    if (matchingCurrency) {
+      const [code] = matchingCurrency;
+      if (code !== currency) { // Only update if it's different from current
+        await handleCurrencyChange(code);
+      }
+    }
+  };
+
   const handleCurrencyChange = async (newCurrency: string) => {
     try {
       await setCurrency(newCurrency);
+      // Reset state selection when changing currency
+      if (newCurrency !== 'USD') {
+        setShowStateSelection(false);
+        await setState('');
+      } else {
+        setShowStateSelection(true);
+      }
+      toast.success(`Currency updated to ${getCurrencyName(newCurrency)} (${newCurrency})`);
     } catch (error) {
       console.error('Error updating currency:', error);
+      toast.error('Failed to update currency');
     }
   };
 
@@ -54,6 +147,43 @@ export function SettingsPage() {
       setUploading(false);
     }
   };
+
+  const handleStateToggle = async () => {
+    try {
+      if (!showStateSelection) {
+        setShowStateSelection(true);
+      } else {
+        setShowStateSelection(false);
+        await setState('');
+      }
+    } catch (error) {
+      console.error('Error toggling state selection:', error);
+      toast.error('Failed to update state preferences');
+    }
+  };
+
+  const handleStateChange = async (newState: string) => {
+    try {
+      await setState(newState);
+      toast.success(`State updated to ${US_STATES.find(s => s.code === newState)?.name}`);
+    } catch (error) {
+      console.error('Error updating state:', error);
+      toast.error('Failed to update state');
+    }
+  };
+
+  const filteredCurrencies = Object.entries(currencySymbols)
+    .filter(([code, symbol]) => {
+      const searchTerm = currencySearch.toLowerCase();
+      return (
+        code.toLowerCase().includes(searchTerm) ||
+        getCurrencyName(code).toLowerCase().includes(searchTerm)
+      );
+    })
+    .sort((a, b) => {
+      // Sort by currency code
+      return a[0].localeCompare(b[0]);
+    });
 
   return (
     <div className="space-y-6">
@@ -154,25 +284,119 @@ export function SettingsPage() {
               </button>
             </div>
 
-            <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg">
-              <div>
-                <h3 className="text-white font-medium">Currency</h3>
-                <p className="text-white/60 text-sm">Select your preferred currency</p>
+            <div className="mb-8">
+              <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg mb-4">
+                <div>
+                  <h3 className="text-white font-medium flex items-center gap-2">
+                    <DollarSign className="w-5 h-5" />
+                    Currency Settings
+                  </h3>
+                  <p className="text-white/60 text-sm">Select your preferred currency for displaying amounts</p>
+                </div>
               </div>
-              <select
-                value={currency}
-                onChange={(e) => handleCurrencyChange(e.target.value)}
-                disabled={loading}
-                className={`bg-gray-700 text-white border border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-[#00E5FF] ${
-                  loading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
-                }`}
-              >
-                <option value="USD">USD ($)</option>
-                <option value="EUR">EUR (€)</option>
-                <option value="GBP">GBP (£)</option>
-                <option value="JPY">JPY (¥)</option>
-                <option value="CAD">CAD ($)</option>
-              </select>
+
+              <div className="bg-white/5 backdrop-blur-lg rounded-lg p-4">
+                {/* Search Input */}
+                <div className="relative mb-4">
+                  <input
+                    type="text"
+                    id="currency-search"
+                    value={currencySearch}
+                    onChange={(e) => handleCurrencySearch(e.target.value)}
+                    placeholder="Search by currency code or name (e.g., Ghana, GHS)..."
+                    className="w-full px-4 py-2 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00E5FF] focus:border-transparent"
+                  />
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </div>
+                </div>
+
+                {/* Currency Selection */}
+                <div className="relative mb-4">
+                  <select
+                    id="currency"
+                    value={currency}
+                    onChange={(e) => handleCurrencyChange(e.target.value)}
+                    className="w-full px-4 py-2 bg-gray-800/50 border border-gray-700 rounded-lg text-white appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#00E5FF] focus:border-transparent"
+                    disabled={loading}
+                  >
+                    {filteredCurrencies.map(([code, symbol]) => (
+                      <option key={code} value={code} className="bg-gray-800 text-white">
+                        {code} ({symbol}) - {getCurrencyName(code)}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                </div>
+
+                {/* Country Display */}
+                <div className="flex items-center space-x-2 mb-4 text-gray-400">
+                  <MapPin className="w-4 h-4" />
+                  <span>{getCurrencyCountry(currency)}</span>
+                </div>
+
+                {/* State Selection for US */}
+                {currency === 'USD' && (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-white font-medium">Enable State Tax Rules</h3>
+                        <p className="text-white/60 text-sm">
+                          Turn this on to apply state-specific tax rates and rules
+                        </p>
+                      </div>
+                      <button
+                        onClick={handleStateToggle}
+                        className={`w-12 h-6 rounded-full transition-colors duration-200 ease-in-out ${
+                          showStateSelection ? 'bg-[#00E5FF]' : 'bg-gray-600'
+                        }`}
+                      >
+                        <div
+                          className={`w-5 h-5 bg-white rounded-full transition-transform duration-200 ease-in-out ${
+                            showStateSelection ? 'translate-x-6' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
+                    </div>
+
+                    {showStateSelection && (
+                      <div className="mt-4">
+                        <select
+                          value={state || ''}
+                          onChange={(e) => handleStateChange(e.target.value)}
+                          className="w-full px-4 py-2 bg-gray-800/50 border border-gray-700 rounded-lg text-white appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#00E5FF] focus:border-transparent"
+                        >
+                          <option value="">Select a state</option>
+                          {US_STATES.map((s) => (
+                            <option key={s.code} value={s.code}>
+                              {s.name} ({s.salesTax}% tax)
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Loading State */}
+                {loading && (
+                  <div className="mt-2 flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-[#00E5FF]"></div>
+                    <span className="ml-2 text-sm text-gray-400">Loading...</span>
+                  </div>
+                )}
+
+                {/* Helper Text */}
+                <p className="mt-2 text-sm text-gray-400">
+                  Your selected currency will be used to display all amounts across the app
+                </p>
+              </div>
             </div>
           </div>
         </div>

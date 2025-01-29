@@ -1,10 +1,12 @@
+import { useCurrency as useContextCurrency } from '../contexts/CurrencyContext';
+
 export function useCurrency() {
+  const { currency, formatAmount } = useContextCurrency();
+
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount);
+    if (amount === undefined || amount === null) return '-';
+    return formatAmount(amount);
   };
 
-  return { formatCurrency };
+  return { formatCurrency, currency };
 }

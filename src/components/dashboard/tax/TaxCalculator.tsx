@@ -1,26 +1,30 @@
 import React, { useMemo, useState } from 'react';
 import { useReceipts } from '../receipts/ReceiptContext';
-import { Calculator, Filter, Download, FileSpreadsheet, FileText, File } from 'lucide-react';
+import { Calculator, Filter, Download, FileSpreadsheet, FileText, File, Info } from 'lucide-react';
 import { Receipt } from '../receipts/ReceiptContext';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { BUSINESS_EXPENSE_CATEGORIES, BusinessExpenseCategoryId } from '../../../constants/us-tax';
+import { useCurrency } from '../../../contexts/CurrencyContext';
 
 type TaxCategory = 'business' | 'personal' | 'medical' | 'charity' | 'education';
 type ExportFormat = 'pdf' | 'excel' | 'csv';
 
 interface TaxSummary {
   totalDeductible: number;
-  byCategory: Record<TaxCategory, number>;
-  taxesPaid: Record<TaxCategory, number>;
+  byCategory: Record<BusinessExpenseCategoryId, number>;
+  deductibleByCategory: Record<BusinessExpenseCategoryId, number>;
+  taxesPaid: Record<BusinessExpenseCategoryId, number>;
   totalTax: number;
   totalSpent: number;
 }
 
 export function TaxCalculator() {
   const { receipts } = useReceipts();
+  const { formatAmount } = useCurrency();
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-  const [selectedCategories, setSelectedCategories] = useState<TaxCategory[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<BusinessExpenseCategoryId[]>([]);
   const [showExportOptions, setShowExportOptions] = useState(false);
 
   const years = useMemo(() => {
@@ -35,39 +39,63 @@ export function TaxCalculator() {
       const receiptYear = new Date(receipt.date).getFullYear();
       return receiptYear === selectedYear &&
         (selectedCategories.length === 0 || 
-         (receipt.taxCategory && selectedCategories.includes(receipt.taxCategory)));
+         (receipt.businessCategory && selectedCategories.includes(receipt.businessCategory)));
     });
   }, [receipts, selectedYear, selectedCategories]);
+
+  const calculateDeductibleAmount = (receipt: Receipt): number => {
+    if (!receipt.businessCategory || !receipt.taxDeductible) return 0;
+    
+    const category = BUSINESS_EXPENSE_CATEGORIES[receipt.businessCategory];
+    if (!category?.deductible) return 0;
+
+    // Special handling for meals
+    if (receipt.businessCategory === 'meals') {
+      const receiptDate = new Date(receipt.date);
+      // COVID relief period (100% deductible)
+      if (receiptDate >= new Date('2021-01-01') && receiptDate <= new Date('2022-12-31')) {
+        return receipt.total;
+      }
+      // Regular business meals (50% deductible)
+      return receipt.total * 0.5;
+    }
+
+    // Use category's deductible percentage
+    return receipt.total * ((category.deductiblePercentage || 100) / 100);
+  };
 
   const taxSummary = useMemo((): TaxSummary => {
     const initialSummary = {
       totalDeductible: 0,
-      byCategory: {} as Record<TaxCategory, number>,
-      taxesPaid: {} as Record<TaxCategory, number>,
+      byCategory: {} as Record<BusinessExpenseCategoryId, number>,
+      deductibleByCategory: {} as Record<BusinessExpenseCategoryId, number>,
+      taxesPaid: {} as Record<BusinessExpenseCategoryId, number>,
       totalTax: 0,
       totalSpent: 0
     };
 
     // Initialize all categories with 0
-    const categories: TaxCategory[] = ['business', 'personal', 'medical', 'charity', 'education'];
-    categories.forEach(category => {
-      initialSummary.byCategory[category] = 0;
-      initialSummary.taxesPaid[category] = 0;
+    Object.keys(BUSINESS_EXPENSE_CATEGORIES).forEach(category => {
+      initialSummary.byCategory[category as BusinessExpenseCategoryId] = 0;
+      initialSummary.deductibleByCategory[category as BusinessExpenseCategoryId] = 0;
+      initialSummary.taxesPaid[category as BusinessExpenseCategoryId] = 0;
     });
 
     return filteredReceipts.reduce((summary, receipt) => {
       const amount = receipt.total || 0;
       const taxAmount = receipt.tax?.total || 0;
+      const deductibleAmount = calculateDeductibleAmount(receipt);
 
       summary.totalSpent += amount;
       summary.totalTax += taxAmount;
 
-      if (receipt.taxCategory) {
-        summary.byCategory[receipt.taxCategory] += amount;
-        summary.taxesPaid[receipt.taxCategory] += taxAmount;
+      if (receipt.businessCategory) {
+        summary.byCategory[receipt.businessCategory] += amount;
+        summary.taxesPaid[receipt.businessCategory] += taxAmount;
+        summary.deductibleByCategory[receipt.businessCategory] += deductibleAmount;
         
         if (receipt.taxDeductible) {
-          summary.totalDeductible += amount;
+          summary.totalDeductible += deductibleAmount;
         }
       }
 
@@ -75,7 +103,7 @@ export function TaxCalculator() {
     }, initialSummary);
   }, [filteredReceipts]);
 
-  const handleCategoryToggle = (category: TaxCategory) => {
+  const handleCategoryToggle = (category: BusinessExpenseCategoryId) => {
     setSelectedCategories(prev => 
       prev.includes(category)
         ? prev.filter(c => c !== category)
@@ -86,17 +114,18 @@ export function TaxCalculator() {
   const generateReportData = () => {
     const summaryData = [
       ['Tax Year', selectedYear],
-      ['Total Spent', `$${taxSummary.totalSpent.toFixed(2)}`],
-      ['Total Tax', `$${taxSummary.totalTax.toFixed(2)}`],
-      ['Total Deductible', `$${taxSummary.totalDeductible.toFixed(2)}`],
+      ['Total Spent', formatAmount(taxSummary.totalSpent)],
+      ['Total Tax', formatAmount(taxSummary.totalTax)],
+      ['Total Deductible', formatAmount(taxSummary.totalDeductible)],
       [''],
       ['Category Breakdown'],
     ];
 
     Object.entries(taxSummary.byCategory).forEach(([category, amount]) => {
+      const categoryData = BUSINESS_EXPENSE_CATEGORIES[category as BusinessExpenseCategoryId];
       summaryData.push([
-        category.charAt(0).toUpperCase() + category.slice(1),
-        `$${amount.toFixed(2)}`
+        categoryData.name,
+        formatAmount(amount)
       ]);
     });
 
@@ -104,12 +133,12 @@ export function TaxCalculator() {
       Date: new Date(receipt.date).toLocaleDateString(),
       Merchant: receipt.merchant,
       Category: receipt.category || 'Uncategorized',
-      TaxCategory: receipt.taxCategory 
-        ? receipt.taxCategory.charAt(0).toUpperCase() + receipt.taxCategory.slice(1)
+      BusinessCategory: receipt.businessCategory 
+        ? BUSINESS_EXPENSE_CATEGORIES[receipt.businessCategory].name
         : 'Uncategorized',
-      Amount: `$${receipt.total.toFixed(2)}`,
-      Tax: `$${(receipt.tax?.total || 0).toFixed(2)}`,
-      Deductible: receipt.taxDeductible ? 'Yes' : 'No'
+      Amount: formatAmount(receipt.total),
+      Tax: formatAmount(receipt.tax?.total || 0),
+      DeductibleAmount: receipt.taxDeductible ? formatAmount(calculateDeductibleAmount(receipt)) : '-'
     }));
 
     return { summaryData, receiptData };
@@ -142,7 +171,7 @@ export function TaxCalculator() {
     
     autoTable(doc, {
       startY: doc.lastAutoTable.finalY + 20,
-      head: [['Date', 'Merchant', 'Category', 'Tax Category', 'Amount', 'Tax', 'Deductible']],
+      head: [['Date', 'Merchant', 'Category', 'Business Category', 'Amount', 'Tax', 'Deductible Amount']],
       body: receiptData.map(Object.values),
       theme: 'striped',
       styles: { fontSize: 10 },
@@ -271,20 +300,20 @@ export function TaxCalculator() {
 
             <div>
               <label className="block text-sm font-medium text-white mb-2">
-                Categories
+                Business Categories
               </label>
               <div className="grid grid-cols-2 gap-2">
-                {['business', 'personal', 'medical', 'charity', 'education'].map((category) => (
+                {Object.entries(BUSINESS_EXPENSE_CATEGORIES).map(([id, category]) => (
                   <button
-                    key={category}
-                    onClick={() => handleCategoryToggle(category as TaxCategory)}
+                    key={id}
+                    onClick={() => handleCategoryToggle(id as BusinessExpenseCategoryId)}
                     className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors
-                      ${selectedCategories.includes(category as TaxCategory)
+                      ${selectedCategories.includes(id as BusinessExpenseCategoryId)
                         ? 'bg-blue-500 text-white'
                         : 'bg-white/5 text-white hover:bg-white/10'
                       }`}
                   >
-                    {category.charAt(0).toUpperCase() + category.slice(1)}
+                    {category.name}
                   </button>
                 ))}
               </div>
@@ -300,13 +329,13 @@ export function TaxCalculator() {
               <div className="bg-white/5 rounded-lg p-4">
                 <p className="text-sm text-white/70">Total Spent</p>
                 <p className="text-2xl font-bold text-white">
-                  ${taxSummary.totalSpent.toFixed(2)}
+                  {formatAmount(taxSummary.totalSpent)}
                 </p>
               </div>
               <div className="bg-white/5 rounded-lg p-4">
                 <p className="text-sm text-white/70">Total Tax</p>
                 <p className="text-2xl font-bold text-white">
-                  ${taxSummary.totalTax.toFixed(2)}
+                  {formatAmount(taxSummary.totalTax)}
                 </p>
               </div>
             </div>
@@ -314,43 +343,39 @@ export function TaxCalculator() {
             <div className="bg-white/5 rounded-lg p-4">
               <p className="text-sm text-white/70">Total Deductible</p>
               <p className="text-2xl font-bold text-white mb-4">
-                ${taxSummary.totalDeductible.toFixed(2)}
+                {formatAmount(taxSummary.totalDeductible)}
               </p>
               
               <div className="mt-2">
-                <p className="text-sm text-white/70 mb-2">Taxes Paid</p>
+                <p className="text-sm text-white/70 mb-2">Deductible By Category</p>
                 <div className="space-y-2">
-                  {Object.entries(taxSummary.taxesPaid).map(([category, tax]) => (
-                    <div key={category} className="flex justify-between items-center text-sm">
-                      <span className="text-white/80">
-                        {category.charAt(0).toUpperCase() + category.slice(1)}
-                      </span>
-                      <span className="text-white/80">
-                        ${tax.toFixed(2)}
-                      </span>
-                    </div>
-                  ))}
+                  {Object.entries(taxSummary.deductibleByCategory)
+                    .filter(([_, amount]) => amount > 0)
+                    .map(([categoryId, amount]) => {
+                      const category = BUSINESS_EXPENSE_CATEGORIES[categoryId as BusinessExpenseCategoryId];
+                      return (
+                        <div key={categoryId} className="flex justify-between items-center text-sm group">
+                          <div className="flex items-center gap-1">
+                            <span className="text-white/80">{category.name}</span>
+                            <div className="relative group">
+                              <Info className="h-4 w-4 text-white/40 hover:text-white/60 cursor-help" />
+                              <div className="hidden group-hover:block absolute left-full ml-2 p-2 bg-gray-800 rounded-lg text-xs text-white w-48 z-10">
+                                {category.description}
+                                {category.limitations && (
+                                  <p className="mt-1 text-white/70">{category.limitations}</p>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          <span className="text-white/80">
+                            {formatAmount(amount)}
+                          </span>
+                        </div>
+                      );
+                  })}
                 </div>
               </div>
             </div>
-
-            {Object.entries(taxSummary.byCategory).length > 0 && (
-              <div className="bg-white/5 rounded-lg p-4">
-                <p className="text-sm text-white/70 mb-2">By Category</p>
-                <div className="space-y-2">
-                  {Object.entries(taxSummary.byCategory).map(([category, amount]) => (
-                    <div key={category} className="flex justify-between items-center">
-                      <span className="text-white">
-                        {category.charAt(0).toUpperCase() + category.slice(1)}
-                      </span>
-                      <span className="text-white font-medium">
-                        ${amount.toFixed(2)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </div>
@@ -364,39 +389,53 @@ export function TaxCalculator() {
               <tr className="text-white/70 text-sm">
                 <th className="text-left py-2 px-4">Date</th>
                 <th className="text-left py-2 px-4">Merchant</th>
-                <th className="text-left py-2 px-4">Category</th>
-                <th className="text-left py-2 px-4">Tax Category</th>
+                <th className="text-left py-2 px-4">Business Category</th>
                 <th className="text-right py-2 px-4">Amount</th>
                 <th className="text-right py-2 px-4">Tax</th>
-                <th className="text-center py-2 px-4">Deductible</th>
+                <th className="text-right py-2 px-4">Deductible Amount</th>
+                <th className="text-center py-2 px-4">Notes</th>
               </tr>
             </thead>
             <tbody>
-              {filteredReceipts.map((receipt) => (
-                <tr key={receipt.id} className="text-white border-t border-white/5">
-                  <td className="py-2 px-4">
-                    {new Date(receipt.date).toLocaleDateString()}
-                  </td>
-                  <td className="py-2 px-4">{receipt.merchant}</td>
-                  <td className="py-2 px-4">
-                    {receipt.category || 'Uncategorized'}
-                  </td>
-                  <td className="py-2 px-4">
-                    {receipt.taxCategory
-                      ? receipt.taxCategory.charAt(0).toUpperCase() + receipt.taxCategory.slice(1)
-                      : 'Uncategorized'}
-                  </td>
-                  <td className="py-2 px-4 text-right">
-                    ${receipt.total.toFixed(2)}
-                  </td>
-                  <td className="py-2 px-4 text-right">
-                    ${(receipt.tax?.total || 0).toFixed(2)}
-                  </td>
-                  <td className="py-2 px-4 text-center">
-                    {receipt.taxDeductible ? '✓' : '-'}
-                  </td>
-                </tr>
-              ))}
+              {filteredReceipts.map((receipt) => {
+                const deductibleAmount = calculateDeductibleAmount(receipt);
+                const category = receipt.businessCategory ? 
+                  BUSINESS_EXPENSE_CATEGORIES[receipt.businessCategory] : undefined;
+                
+                return (
+                  <tr key={receipt.id} className="text-white border-t border-white/5">
+                    <td className="py-2 px-4">
+                      {new Date(receipt.date).toLocaleDateString()}
+                    </td>
+                    <td className="py-2 px-4">{receipt.merchant}</td>
+                    <td className="py-2 px-4">
+                      {category?.name || 'Uncategorized'}
+                    </td>
+                    <td className="py-2 px-4 text-right">
+                      {formatAmount(receipt.total)}
+                    </td>
+                    <td className="py-2 px-4 text-right">
+                      {formatAmount(receipt.tax?.total || 0)}
+                    </td>
+                    <td className="py-2 px-4 text-right">
+                      {receipt.taxDeductible ? formatAmount(deductibleAmount) : '-'}
+                    </td>
+                    <td className="py-2 px-4 text-center">
+                      {receipt.businessCategory === 'meals' && (
+                        <div className="group relative">
+                          <Info className="h-4 w-4 text-white/40 hover:text-white/60 cursor-help inline" />
+                          <div className="hidden group-hover:block absolute right-0 mt-1 p-2 bg-gray-800 rounded-lg text-xs text-white w-48 z-10">
+                            {new Date(receipt.date) >= new Date('2021-01-01') && 
+                             new Date(receipt.date) <= new Date('2022-12-31')
+                              ? '100% deductible (COVID relief period)'
+                              : '50% deductible (standard business meal)'}
+                          </div>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
