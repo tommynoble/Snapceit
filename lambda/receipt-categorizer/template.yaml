@@ -1,0 +1,67 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Parameters:
+  ReceiptsTableName:
+    Type: String
+    Default: receipts
+    Description: Name of the DynamoDB table storing receipts
+
+Resources:
+  ReceiptCategorizerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: index.handler
+      Runtime: nodejs18.x
+      Timeout: 30
+      MemorySize: 256
+      Environment:
+        Variables:
+          RECEIPTS_TABLE: !Ref ReceiptsTableName
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ReceiptsTableName
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - comprehend:DetectEntities
+                - comprehend:DetectKeyPhrases
+              Resource: '*'
+      Events:
+        Stream:
+          Type: DynamoDB
+          Properties:
+            Stream: !GetAtt ReceiptsTable.StreamArn
+            StartingPosition: LATEST
+            BatchSize: 1
+
+  ReceiptsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref ReceiptsTableName
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: userId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: userId
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      StreamSpecification:
+        StreamViewType: NEW_IMAGE
+
+Outputs:
+  ReceiptCategorizerFunction:
+    Description: Receipt Categorizer Lambda Function ARN
+    Value: !GetAtt ReceiptCategorizerFunction.Arn
+  ReceiptsTableArn:
+    Description: ARN of the Receipts DynamoDB table
+    Value: !GetAtt ReceiptsTable.Arn
+  ReceiptsTableStreamArn:
+    Description: ARN of the Receipts DynamoDB table stream
+    Value: !GetAtt ReceiptsTable.StreamArn
