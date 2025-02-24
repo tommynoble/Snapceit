@@ -1,0 +1,159 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Parameters:
+  ReceiptsTableName:
+    Type: String
+    Default: receipts
+    Description: Name of the DynamoDB table storing receipts
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues:
+    - dev
+    - prod
+    Description: Environment name
+Resources:
+  ReceiptCategorizerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: lambda.amazonaws.com
+          Action: sts:AssumeRole
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+      - PolicyName: ComprehendAccess
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - comprehend:DetectEntities
+            - comprehend:DetectKeyPhrases
+            - comprehend:DetectDominantLanguage
+            Resource: '*'
+      - PolicyName: DynamoDBAccess
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+            - dynamodb:Query
+            - dynamodb:Scan
+            Resource:
+              Fn::GetAtt:
+              - ReceiptsTable
+              - Arn
+          - Effect: Allow
+            Action:
+            - dynamodb:GetRecords
+            - dynamodb:GetShardIterator
+            - dynamodb:DescribeStream
+            - dynamodb:ListStreams
+            Resource:
+              Fn::GetAtt:
+              - ReceiptsTable
+              - StreamArn
+      - PolicyName: CloudWatchLogging
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+            Resource:
+            - Fn::Sub: arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/receipt-categorizer-${Environment}:*
+  ReceiptCategorizerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: receipt-categorizer-${Environment}
+      CodeUri: ReceiptCategorizerFunction
+      Handler: index.handler
+      Runtime: nodejs18.x
+      Timeout: 60
+      MemorySize: 256
+      Role:
+        Fn::GetAtt:
+        - ReceiptCategorizerRole
+        - Arn
+      Environment:
+        Variables:
+          RECEIPTS_TABLE:
+            Ref: ReceiptsTable
+          AWS_REGION:
+            Ref: AWS::Region
+          COMPREHEND_MIN_CONFIDENCE: '0.7'
+          LOG_LEVEL: info
+      Events:
+        DynamoDBStream:
+          Type: DynamoDB
+          Properties:
+            Stream:
+              Fn::GetAtt:
+              - ReceiptsTable
+              - StreamArn
+            StartingPosition: LATEST
+            BatchSize: 1
+            MaximumBatchingWindowInSeconds: 1
+            FunctionResponseTypes:
+            - ReportBatchItemFailures
+    Metadata:
+      SamResourceId: ReceiptCategorizerFunction
+  ReceiptsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName:
+        Fn::Sub: ${ReceiptsTableName}-${Environment}
+      AttributeDefinitions:
+      - AttributeName: userId
+        AttributeType: S
+      - AttributeName: receiptId
+        AttributeType: S
+      KeySchema:
+      - AttributeName: userId
+        KeyType: HASH
+      - AttributeName: receiptId
+        KeyType: RANGE
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+      BillingMode: PAY_PER_REQUEST
+      Tags:
+      - Key: Environment
+        Value:
+          Ref: Environment
+Outputs:
+  ReceiptCategorizerFunction:
+    Description: Receipt Categorizer Lambda Function ARN
+    Value:
+      Fn::GetAtt:
+      - ReceiptCategorizerFunction
+      - Arn
+  ReceiptCategorizerRoleArn:
+    Description: IAM Role ARN for Receipt Categorizer
+    Value:
+      Fn::GetAtt:
+      - ReceiptCategorizerRole
+      - Arn
+  ReceiptsTableArn:
+    Description: ARN of the Receipts DynamoDB table
+    Value:
+      Fn::GetAtt:
+      - ReceiptsTable
+      - Arn
+  ReceiptsTableStreamArn:
+    Description: ARN of the Receipts DynamoDB table stream
+    Value:
+      Fn::GetAtt:
+      - ReceiptsTable
+      - StreamArn

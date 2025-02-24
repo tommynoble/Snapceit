@@ -1,6 +1,6 @@
 import { TextractClient, AnalyzeExpenseCommand } from "@aws-sdk/client-textract";
-import { detectCategory } from './categoryDetection';
 import { parseNumber } from './formatters';
+import { BUSINESS_EXPENSE_CATEGORIES } from '../constants/us-tax';
 
 const textractClient = new TextractClient({
   region: import.meta.env.VITE_AWS_REGION || 'us-east-1',
@@ -14,87 +14,41 @@ interface ExtractedReceiptData {
   merchantName?: string;
   total?: number;
   tax?: number;
+  category?: string;
+  items?: Array<{ description: string; price: number }>;
   rawData?: any;
 }
 
 // Category detection keywords
-const CATEGORY_KEYWORDS = {
-  'Food & Dining': [
-    // Restaurants and food places
-    'restaurant', 'cafe', 'diner', 'bistro', 'grill', 'pizzeria', 'sushi', 
-    'mcdonalds', 'burger king', 'wendys', 'subway', 'starbucks', 'dunkin',
-    'kitchen', 'bakery', 'deli', 'food', 'dining', 'takeout', 'delivery',
-    // Grocery stores
-    'grocery', 'supermarket', 'market', 'foods', 'trader joes', 'whole foods',
-    'safeway', 'kroger', 'costco', 'walmart', 'target'
-  ],
-  'Shopping': [
-    'mall', 'store', 'retail', 'outlet', 'boutique', 'shop', 'mart',
-    'amazon', 'ebay', 'walmart', 'target', 'best buy', 'clothing',
-    'fashion', 'apparel', 'shoes', 'electronics', 'hardware'
-  ],
-  'Transportation': [
-    'uber', 'lyft', 'taxi', 'cab', 'transport', 'transit', 'metro', 'subway',
-    'bus', 'train', 'railway', 'gas', 'fuel', 'parking', 'garage',
-    'shell', 'exxon', 'mobil', 'chevron', 'bp'
-  ],
-  'Entertainment': [
-    'cinema', 'theater', 'theatre', 'movie', 'concert', 'show', 'ticket',
-    'netflix', 'spotify', 'hulu', 'disney+', 'amazon prime',
-    'game', 'playstation', 'xbox', 'nintendo', 'entertainment'
-  ],
-  'Healthcare': [
-    'pharmacy', 'drug', 'medical', 'health', 'clinic', 'hospital', 'doctor',
-    'dental', 'dentist', 'cvs', 'walgreens', 'rite aid', 'medicine',
-    'prescription', 'healthcare', 'vitamin', 'wellness'
-  ],
-  'Utilities': [
-    'utility', 'electric', 'water', 'gas', 'power', 'energy', 'internet',
-    'phone', 'mobile', 'cable', 'broadband', 'att', 'verizon', 'comcast',
-    'sprint', 't-mobile'
-  ],
-  'Travel': [
-    'hotel', 'motel', 'inn', 'resort', 'airbnb', 'booking', 'expedia',
-    'airline', 'airways', 'flight', 'travel', 'vacation', 'trip',
-    'delta', 'united', 'american airlines', 'southwest'
-  ]
-};
+const CATEGORY_KEYWORDS = BUSINESS_EXPENSE_CATEGORIES;
 
 function detectCategory(merchantName: string, items: Array<{ description: string }> = []): string {
-  // Convert merchant name to lowercase for comparison
+  // Convert merchant name and items to lowercase for comparison
   const merchantLower = merchantName.toLowerCase();
-  
-  // Combine all item descriptions into a single string
   const itemsText = items.map(item => item.description.toLowerCase()).join(' ');
-  
-  // Check each category's keywords
-  for (const [category, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
-    // Check if any keyword matches the merchant name
-    const merchantMatch = keywords.some(keyword => 
-      merchantLower.includes(keyword.toLowerCase())
-    );
+  const fullText = `${merchantLower} ${itemsText}`;
+
+  // Check each business category's keywords
+  for (const [categoryId, category] of Object.entries(BUSINESS_EXPENSE_CATEGORIES)) {
+    // Get the examples as keywords
+    const keywords = category.examples || [];
     
-    // Check if any keyword matches in the items
-    const itemsMatch = keywords.some(keyword =>
-      itemsText.includes(keyword.toLowerCase())
+    // Check if any keyword matches in the full text
+    const hasMatch = keywords.some(keyword => 
+      fullText.includes(keyword.toLowerCase())
     );
-    
-    if (merchantMatch || itemsMatch) {
-      console.log(`Detected category ${category} based on:`, {
-        merchantMatch,
-        itemsMatch,
-        merchant: merchantName,
-        matchedItems: items.filter(item => 
-          keywords.some(keyword => 
-            item.description.toLowerCase().includes(keyword.toLowerCase())
-          )
-        )
+
+    if (hasMatch) {
+      console.log(`Detected category ${categoryId} for merchant "${merchantName}"`, {
+        matchedText: fullText,
+        category: category.name
       });
-      return category;
+      return categoryId;
     }
   }
-  
-  return 'Other';
+
+  // Default to other_expenses if no match found
+  return 'other_expenses';
 }
 
 function extractTaxInformation(blocks: any[], summaryFields: any[] = []) {
@@ -304,7 +258,7 @@ function extractMerchantName(blocks: any[]): string {
   return fallbackBlock ? fallbackBlock.text : 'Unknown Merchant';
 }
 
-export async function analyzeReceiptFromS3(bucketName: string, objectKey: string) {
+export async function analyzeReceiptFromS3(bucketName: string, objectKey: string): Promise<ExtractedReceiptData> {
   try {
     const command = new AnalyzeExpenseCommand({
       Document: {
@@ -318,104 +272,69 @@ export async function analyzeReceiptFromS3(bucketName: string, objectKey: string
     const response = await textractClient.send(command);
     console.log('Textract Response:', JSON.stringify(response, null, 2));
 
-    let merchantName = '';
-    let total = 0;
-    let subtotal = 0;
-    let items: Array<{ description: string; price: number; quantity?: number }> = [];
-    let allText = '';
-    let summaryFields: any[] = [];
-
-    // Process expense fields
-    response.ExpenseDocuments?.forEach(doc => {
-      summaryFields = doc.SummaryFields || [];
-      
-      doc.SummaryFields?.forEach(field => {
-        if (field.Type?.Text === 'VENDOR') {
-          merchantName = field.ValueDetection?.Text || '';
-        }
-        if (field.Type?.Text === 'TOTAL') {
-          const totalText = field.ValueDetection?.Text || '0';
-          total = parseNumber(totalText);
-        }
-        if (field.Type?.Text === 'SUBTOTAL') {
-          const subtotalText = field.ValueDetection?.Text || '0';
-          subtotal = parseNumber(subtotalText);
-        }
-      });
-
-      // Extract line items
-      doc.LineItemGroups?.forEach(group => {
-        group.LineItems?.forEach(lineItem => {
-          const item: { description: string; price: number; quantity?: number } = {
-            description: '',
-            price: 0
-          };
-
-          lineItem.LineItemExpenseFields?.forEach(field => {
-            if (field.Type?.Text === 'ITEM') {
-              item.description = field.ValueDetection?.Text || '';
-              allText += ' ' + item.description;
-            }
-            if (field.Type?.Text === 'PRICE') {
-              const priceText = field.ValueDetection?.Text || '0';
-              item.price = parseNumber(priceText);
-            }
-            if (field.Type?.Text === 'QUANTITY') {
-              const quantityText = field.ValueDetection?.Text || '0';
-              item.quantity = parseNumber(quantityText);
-            }
-          });
-
-          if (item.description || item.price) {
-            items.push(item);
-          }
-        });
-      });
-    });
-
-    // If no merchant name found from expense fields, try extracting from blocks
-    if (!merchantName) {
-      const blocks = response.ExpenseDocuments?.[0]?.Blocks || [];
-      merchantName = extractMerchantName(blocks);
-    }
-
-    // Extract tax information and date
-    const blocks = response.ExpenseDocuments?.[0]?.Blocks || [];
-    blocks.forEach(block => {
-      if (block.Text) {
-        allText += ' ' + block.Text;
-      }
-    });
-    
-    // Pass both blocks and summary fields for better tax detection
-    const taxInfo = extractTaxInformation(blocks, summaryFields);
-    const date = extractDate(blocks);
-
-    // Detect category based on all collected text
-    const category = detectCategory(allText);
-
-    // Calculate tax if not found but we have total and subtotal
-    if (taxInfo.total === 0 && total > 0 && subtotal > 0) {
-      const calculatedTax = parseFloat((total - subtotal).toFixed(2));
-      if (calculatedTax > 0) {
-        taxInfo.total = calculatedTax;
-        taxInfo.breakdown.salesTax = calculatedTax;
-        console.log('Calculated tax from total and subtotal:', calculatedTax);
-      }
-    }
-
-    return {
-      merchantName,
-      total,
-      subtotal,
-      tax: taxInfo,
-      items,
-      date,
-      category
+    const extractedData: ExtractedReceiptData = {
+      rawData: response
     };
 
+    if (response.ExpenseDocuments && response.ExpenseDocuments.length > 0) {
+      const doc = response.ExpenseDocuments[0];
+      
+      // Extract merchant name
+      if (doc.SummaryFields) {
+        const vendorField = doc.SummaryFields.find(
+          field => field.Type?.Text === 'VENDOR'
+        );
+        if (vendorField && vendorField.ValueDetection?.Text) {
+          extractedData.merchantName = vendorField.ValueDetection.Text;
+        }
+      }
+
+      // Extract total amount
+      if (doc.SummaryFields) {
+        const totalField = doc.SummaryFields.find(
+          field => field.Type?.Text === 'TOTAL'
+        );
+        if (totalField && totalField.ValueDetection?.Text) {
+          extractedData.total = parseNumber(totalField.ValueDetection.Text);
+        }
+      }
+
+      // Extract line items
+      extractedData.items = doc.LineItemGroups?.[0]?.LineItems?.map(item => {
+        const description = item.LineItemExpenseFields?.find(
+          field => field.Type?.Text === 'ITEM'
+        )?.ValueDetection?.Text || '';
+        
+        const priceStr = item.LineItemExpenseFields?.find(
+          field => field.Type?.Text === 'PRICE'
+        )?.ValueDetection?.Text || '0';
+
+        return {
+          description,
+          price: parseNumber(priceStr)
+        };
+      }) || [];
+
+      // Detect category using the merchant name and items
+      extractedData.category = detectCategory(
+        extractedData.merchantName || '', 
+        extractedData.items || []
+      );
+
+      // Extract tax information
+      if (doc.SummaryFields) {
+        const taxField = doc.SummaryFields.find(
+          field => field.Type?.Text === 'TAX'
+        );
+        if (taxField && taxField.ValueDetection?.Text) {
+          extractedData.tax = parseNumber(taxField.ValueDetection.Text);
+        }
+      }
+    }
+
+    return extractedData;
   } catch (error) {
-    console.error('Error analyzing receipt with Textract:', error);
+    console.error('Error analyzing receipt:', error);
     throw error;
   }
 }

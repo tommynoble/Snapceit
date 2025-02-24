@@ -4,11 +4,13 @@ import { authenticateUser } from '../middleware/auth';
 import { validateRequest } from '../middleware/validate';
 import { updateUserSchema } from '../schemas/user.schema';
 import pool from '../db/config';
-import { DynamoDB } from 'aws-sdk';
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import { DynamoDBDocumentClient, GetCommand, PutCommand, QueryCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { DYNAMODB_CONFIG, TABLES } from '../config/dynamodb';
 
 const router = Router();
-const dynamoDB = new DynamoDB.DocumentClient(DYNAMODB_CONFIG);
+const client = new DynamoDBClient(DYNAMODB_CONFIG);
+const dynamoDB = DynamoDBDocumentClient.from(client);
 
 // Add authenticateUser middleware to all routes
 router.use(authenticateUser);
@@ -55,7 +57,15 @@ router.get('/profile', async (req, res) => {
       return res.json({ success: true, data: newUser } as SuccessResponse);
     }
     
-    res.json({ success: true, data: user } as SuccessResponse);
+    const params = {
+      TableName: TABLES.USER_SETTINGS,
+      Key: { userId }
+    };
+    
+    const result = await dynamoDB.send(new GetCommand(params));
+    const settings = result.Item || {};
+    
+    res.json({ success: true, data: { ...user, settings } } as SuccessResponse);
   } catch (error) {
     console.error('Failed to fetch user profile:', error);
     res.status(500).json({ error: 'Failed to fetch user profile', statusCode: 500 } as ErrorResponse);
@@ -71,7 +81,7 @@ router.get('/settings', async (req, res) => {
       Key: { userId }
     };
     
-    const result = await dynamoDB.get(params).promise();
+    const result = await dynamoDB.send(new GetCommand(params));
     const settings = result.Item || {};
     
     res.json({ success: true, data: settings } as SuccessResponse);
@@ -104,7 +114,7 @@ router.put('/settings', async (req, res) => {
       ReturnValues: 'ALL_NEW',
     };
     
-    const result = await dynamoDB.update(params).promise();
+    const result = await dynamoDB.send(new UpdateCommand(params));
     res.json({ success: true, data: result.Attributes } as SuccessResponse);
   } catch (error) {
     console.error('Failed to update user settings:', error);
@@ -125,7 +135,7 @@ router.get('/receipts', async (req, res) => {
       }
     };
     
-    const result = await dynamoDB.query(params).promise();
+    const result = await dynamoDB.send(new QueryCommand(params));
     
     res.json({ 
       success: true, 

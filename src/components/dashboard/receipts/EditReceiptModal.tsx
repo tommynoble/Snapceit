@@ -22,6 +22,7 @@ import {
   US_STATES,
   BusinessExpenseCategoryId 
 } from '../../../constants/us-tax';
+import { useAuth } from '../../../auth/CognitoAuthContext';
 
 interface EditReceiptModalProps {
   isOpen: boolean;
@@ -50,6 +51,8 @@ interface EditReceiptModalProps {
       notes?: string;
     };
     state?: string;
+    suggestedCategory?: string;
+    categoryConfidence?: string;
   };
   onSave: (formData: any) => void;
   readOnly?: boolean;
@@ -57,8 +60,42 @@ interface EditReceiptModalProps {
 
 export function EditReceiptModal({ isOpen, onClose, receipt, onSave, readOnly = false }: EditReceiptModalProps) {
   const { currency, formatAmount, state } = useCurrency();
+  const { currentUser } = useAuth();
 
   const userState = state || receipt.state;
+
+  // Business category icon helper
+  const getBusinessCategoryIcon = (categoryId: string) => {
+    // Special handling for Food & Dining category
+    if (categoryId === 'Food & Dining') {
+      return (
+        <div className="p-2 rounded-full bg-orange-100">
+          <Store className="h-5 w-5 text-orange-600" />
+        </div>
+      );
+    }
+
+    const category = BUSINESS_EXPENSE_CATEGORIES[categoryId as BusinessExpenseCategoryId];
+    if (!category) return <Store className="h-5 w-5 text-gray-400" />;
+
+    const iconSize = "h-5 w-5";
+    const IconComponent = {
+      'Award': Calendar,
+      'Car': MapPin,
+      'Briefcase': Store,
+      'Globe': Receipt,
+      'Utensils': Store,
+      'Zap': DollarSign,
+      'Wrench': AlertTriangle,
+      'Tag': Store
+    }[category.icon] || Store;
+
+    return (
+      <div className={`p-2 rounded-full ${category.bgColor}`}>
+        <IconComponent className={`${iconSize} ${category.color}`} />
+      </div>
+    );
+  };
 
   // Format number helper function
   const formatNumber = (value: number | undefined): string => {
@@ -74,17 +111,16 @@ export function EditReceiptModal({ isOpen, onClose, receipt, onSave, readOnly = 
     date: formatDateForInput(receipt.date),
     merchant: receipt.merchant,
     total: receipt.total,
-    category: receipt.category,
     tax: receipt.tax?.total || 0,
     taxRate: receipt.tax?.rate || 0,
     items: receipt.items || [],
     imageUrl: receipt.imageUrl || receipt.preview || '',
+    businessCategory: receipt.businessCategory || 'uncategorized',
     taxDeductible: receipt.taxDeductible || false,
-    businessCategory: receipt.businessCategory || '',
-    currency: currency,
     businessPurpose: receipt.taxDetails?.businessPurpose || '',
-    deductiblePercentage: receipt.taxDetails?.deductiblePercentage || 100,
-    taxNotes: receipt.taxDetails?.notes || ''
+    deductiblePercentage: receipt.taxDetails?.deductiblePercentage || 0,
+    taxNotes: receipt.taxDetails?.notes || '',
+    status: receipt.status || 'pending'
   });
 
   // Enhanced merchant category detection with machine learning-like scoring
@@ -323,6 +359,17 @@ export function EditReceiptModal({ isOpen, onClose, receipt, onSave, readOnly = 
       }
     }
 
+    // Handle category change
+    if (name === 'businessCategory') {
+      console.log('Category changed to:', value);
+      setFormData(prev => ({
+        ...prev,
+        businessCategory: value,
+        status: 'pending' // Mark for reprocessing
+      }));
+      return;
+    }
+
     setFormData(prev => ({
       ...prev,
       [name]: name === 'deductiblePercentage' ? parseFloat(value) || 0 : value
@@ -338,7 +385,7 @@ export function EditReceiptModal({ isOpen, onClose, receipt, onSave, readOnly = 
       date: formData.date,
       merchant: formData.merchant,
       total: formData.total,
-      category: formData.category,
+      businessCategory: formData.businessCategory,
       tax: {
         total: formData.tax,
         rate: formData.taxRate,
@@ -346,16 +393,18 @@ export function EditReceiptModal({ isOpen, onClose, receipt, onSave, readOnly = 
       items: formData.items,
       imageUrl: formData.imageUrl,
       taxDeductible: formData.taxDeductible,
-      businessCategory: formData.businessCategory,
       taxDetails: {
         businessPurpose: formData.businessPurpose,
         deductiblePercentage: formData.deductiblePercentage,
         notes: formData.taxNotes
       },
-      state: userState
+      state: userState,
+      status: 'pending' // Mark for reprocessing
     };
 
+    console.log('Saving receipt with category:', formData.businessCategory);
     onSave(receiptUpdate);
+    onClose();
   };
 
   const getDeductionSummary = () => {
@@ -449,12 +498,12 @@ export function EditReceiptModal({ isOpen, onClose, receipt, onSave, readOnly = 
 
   // Fetch tax rates and categories when modal opens
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && currentUser?.token) {
       const fetchTaxData = async () => {
         try {
           const year = new Date().getFullYear();
           const [ratesRes, categoriesRes] = await Promise.all([
-            taxApi.getTaxRates(year),
+            taxApi.getTaxRates(year, currentUser.token),
             taxApi.getTaxCategories(year)
           ]);
           setTaxRates(ratesRes);
@@ -465,7 +514,26 @@ export function EditReceiptModal({ isOpen, onClose, receipt, onSave, readOnly = 
       };
       fetchTaxData();
     }
-  }, [isOpen]);
+  }, [isOpen, currentUser?.token]);
+
+  useEffect(() => {
+    setFormData(prev => ({
+      ...prev,
+      date: formatDateForInput(receipt.date),
+      merchant: receipt.merchant,
+      total: receipt.total,
+      tax: receipt.tax?.total || 0,
+      taxRate: receipt.tax?.rate || 0,
+      items: receipt.items || [],
+      imageUrl: receipt.imageUrl || receipt.preview || '',
+      taxDeductible: receipt.taxDeductible || false,
+      businessCategory: receipt.businessCategory || 'uncategorized',
+      businessPurpose: receipt.taxDetails?.businessPurpose || '',
+      deductiblePercentage: receipt.taxDetails?.deductiblePercentage || 0,
+      taxNotes: receipt.taxDetails?.notes || '',
+      confidence: receipt.categoryConfidence || 'low'
+    }));
+  }, [receipt]);
 
   // Calculate deductible amount using API
   const calculateDeduction = async (category, amount, date) => {
@@ -512,6 +580,35 @@ export function EditReceiptModal({ isOpen, onClose, receipt, onSave, readOnly = 
         formData.date
       );
     }
+  };
+
+  const renderCategorySection = () => {
+    return (
+      <div className="space-y-4">
+        <div className="flex flex-col">
+          <label htmlFor="businessCategory" className="text-sm font-medium text-gray-700 mb-1">
+            Category
+          </label>
+          <select
+            id="businessCategory"
+            name="businessCategory"
+            value={formData.businessCategory}
+            onChange={handleChange}
+            className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm rounded-md"
+          >
+            <option value="uncategorized">Select a category</option>
+            {Object.entries(BUSINESS_EXPENSE_CATEGORIES).map(([id, category]) => (
+              <option key={id} value={id}>
+                {category.name}
+              </option>
+            ))}
+          </select>
+          <p className="mt-1 text-sm text-gray-500">
+            {BUSINESS_EXPENSE_CATEGORIES[formData.businessCategory as keyof typeof BUSINESS_EXPENSE_CATEGORIES]?.description || 'Choose a category for your receipt'}
+          </p>
+        </div>
+      </div>
+    );
   };
 
   if (!isOpen) return null;
@@ -674,24 +771,7 @@ export function EditReceiptModal({ isOpen, onClose, receipt, onSave, readOnly = 
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">
-                  Business Category
-                </label>
-                <select
-                  value={formData.businessCategory}
-                  onChange={(e) => setFormData(prev => ({ ...prev, businessCategory: e.target.value }))}
-                  disabled={readOnly}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 sm:text-sm"
-                >
-                  <option value="">Select a category</option>
-                  {Object.entries(BUSINESS_EXPENSE_CATEGORIES).map(([id, category]) => (
-                    <option key={id} value={id}>
-                      {category.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {renderCategorySection()}
 
               {/* Items Section */}
               <div>

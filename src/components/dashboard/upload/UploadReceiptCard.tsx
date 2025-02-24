@@ -48,16 +48,17 @@ export function UploadReceiptCard() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [extractedData, setExtractedData] = useState<ExtractedData | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState('Uncategorized');
+  const [selectedCategory, setSelectedCategory] = useState('Awaiting Categorization');
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const categories = [
+    'Awaiting Categorization',
+    'Food & Dining',
+    'Travel',
+    'Office Expenses',
+    'Utilities',
     'Advertising',
     'Car and Truck Expenses',
-    'Office Expenses',
-    'Travel',
-    'Meals',
-    'Utilities',
     'Taxes and Licenses',
     'Supplies'
   ];
@@ -79,7 +80,7 @@ export function UploadReceiptCard() {
     setUploadProgress(0);
     setError(null);
     setIsVerifying(false);
-    setSelectedCategory('Uncategorized');
+    setSelectedCategory('Awaiting Categorization');
     setExtractedData(null);
     
     // Clean up preview URL
@@ -300,17 +301,12 @@ export function UploadReceiptCard() {
                     <label className="block text-xs font-medium text-gray-700">
                       Category
                     </label>
-                    <select
-                      value={selectedCategory}
-                      onChange={(e) => setSelectedCategory(e.target.value)}
-                      className="w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 text-sm h-8"
-                    >
-                      {categories.map(category => (
-                        <option key={category} value={category}>
-                          {category}
-                        </option>
-                      ))}
-                    </select>
+                    <input
+                      type="text"
+                      value="Awaiting Categorization..."
+                      readOnly
+                      className="w-full rounded-md border-gray-300 bg-gray-50 shadow-sm text-sm h-8 cursor-not-allowed"
+                    />
                   </div>
                 </div>
 
@@ -397,18 +393,18 @@ export function UploadReceiptCard() {
                   <div className="space-y-2">
                     <div className="font-medium mt-4">Tax Information</div>
                     <div className="space-y-1 text-sm text-gray-600">
-                      <div>Total Tax: ${extractedData.tax.total.toFixed(2)}</div>
-                      {extractedData.tax.breakdown?.salesTax > 0 && (
+                      <div>Total Tax: ${(extractedData.tax.total || 0).toFixed(2)}</div>
+                      {extractedData.tax.breakdown?.salesTax && (
                         <div>Sales Tax: ${extractedData.tax.breakdown.salesTax.toFixed(2)}</div>
                       )}
-                      {extractedData.tax.breakdown?.stateTax > 0 && (
+                      {extractedData.tax.breakdown?.stateTax && (
                         <div>State Tax: ${extractedData.tax.breakdown.stateTax.toFixed(2)}</div>
                       )}
-                      {extractedData.tax.breakdown?.localTax > 0 && (
+                      {extractedData.tax.breakdown?.localTax && (
                         <div>Local Tax: ${extractedData.tax.breakdown.localTax.toFixed(2)}</div>
                       )}
                       {extractedData.tax.breakdown?.otherTaxes?.map((tax, index) => (
-                        <div key={index}>{tax.name}: ${tax.amount.toFixed(2)}</div>
+                        <div key={index}>{tax.name}: ${(tax.amount || 0).toFixed(2)}</div>
                       ))}
                     </div>
                   </div>
@@ -443,7 +439,9 @@ export function UploadReceiptCard() {
                 {/* Total Amount */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Total Amount</label>
-                  <div className="mt-1 text-sm text-gray-900">${extractedData?.total?.toFixed(2) || '0.00'}</div>
+                  <div className="mt-1 text-sm text-gray-900">
+                    ${(extractedData?.total || 0).toFixed(2)}
+                  </div>
                 </div>
               </div>
 

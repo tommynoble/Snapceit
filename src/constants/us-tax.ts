@@ -354,6 +354,18 @@ export const US_STATES = [
 
 // Business Expense Categories with their deduction rules
 export const BUSINESS_EXPENSE_CATEGORIES = {
+  'Food & Dining': {
+    id: 'food_dining',
+    name: 'Food & Dining',
+    icon: 'Utensils',
+    color: 'text-orange-600',
+    bgColor: 'bg-orange-100',
+    deductible: true,
+    description: 'Food and dining expenses',
+    examples: ['Restaurant meals', 'Catering', 'Coffee shops'],
+    limitations: 'Generally 50% deductible for business meals',
+    deductiblePercentage: 50
+  },
   advertising: {
     id: 'advertising',
     name: 'Advertising',
@@ -370,36 +382,35 @@ export const BUSINESS_EXPENSE_CATEGORIES = {
     ],
     limitations: 'Must be ordinary and necessary for your business'
   },
-  car_and_truck: {
-    id: 'car_and_truck',
-    name: 'Car and Truck Expenses',
-    icon: 'Car',
-    color: 'text-red-500',
-    bgColor: 'bg-red-100',
-    deductible: true,
-    description: 'Vehicle expenses for business use',
-    examples: [
-      'Gas',
-      'Insurance',
-      'Repairs',
-      'Vehicle depreciation'
-    ],
-    limitations: 'Must choose between standard mileage rate or actual expenses',
-    standardRate: 65.5, // 2023 standard mileage rate (cents per mile),
-  },
-  office: {
-    id: 'office',
+  office_expenses: {
+    id: 'office_expenses',
     name: 'Office Expenses',
-    icon: 'Briefcase',
-    color: 'text-gray-500',
-    bgColor: 'bg-gray-100',
+    icon: 'Building',
+    color: 'text-indigo-600',
+    bgColor: 'bg-indigo-100',
     deductible: true,
-    description: 'Office supplies and expenses',
+    description: 'Office-related expenses',
     examples: [
-      'Stationery',
-      'Printing supplies',
-      'Software subscriptions',
-      'Office furniture'
+      'Rent',
+      'Utilities',
+      'Office furniture',
+      'Office equipment'
+    ],
+    limitations: 'Must be ordinary and necessary for your business'
+  },
+  supplies: {
+    id: 'supplies',
+    name: 'Supplies',
+    icon: 'Briefcase',
+    color: 'text-emerald-600',
+    bgColor: 'bg-emerald-100',
+    deductible: true,
+    description: 'Business supplies and materials',
+    examples: [
+      'Office supplies',
+      'Cleaning supplies',
+      'Small tools',
+      'Other consumables'
     ],
     limitations: 'Must be ordinary and necessary for your business'
   },
@@ -457,34 +468,18 @@ export const BUSINESS_EXPENSE_CATEGORIES = {
     ],
     limitations: 'Must separate business and personal use'
   },
-  supplies: {
-    id: 'supplies',
-    name: 'Supplies',
-    icon: 'Wrench',
-    color: 'text-zinc-500',
-    bgColor: 'bg-zinc-100',
-    deductible: true,
-    description: 'Business supplies and materials',
-    examples: [
-      'Office supplies',
-      'Cleaning supplies',
-      'Small tools',
-      'Safety equipment'
-    ],
-    limitations: 'Must be used in the tax year purchased'
-  },
-  other: {
-    id: 'other',
+  other_expenses: {
+    id: 'other_expenses',
     name: 'Other Expenses',
-    icon: 'Tag',
-    color: 'text-gray-400',
-    bgColor: 'bg-gray-50',
+    icon: 'FileText',
+    color: 'text-violet-600',
+    bgColor: 'bg-violet-100',
     deductible: true,
     description: 'Other business expenses',
     examples: [
-      'Professional development',
       'Bank fees',
-      'Business insurance',
+      'Professional services',
+      'Licenses and permits',
       'Miscellaneous expenses'
     ],
     limitations: 'Must be ordinary and necessary for your business'

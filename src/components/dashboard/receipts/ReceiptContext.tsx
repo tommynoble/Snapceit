@@ -93,8 +93,24 @@ export const ReceiptProvider: React.FC<{ children: React.ReactNode }> = ({ child
       if (!currentUser?.idToken) {
         throw new Error('No ID token available');
       }
+
+      console.log('Updating receipt:', { id, updates }); // Debug log
+
       const data = await api.receipts.update(id, updates, currentUser.idToken);
-      setReceipts(prev => prev.map(r => (r.id === id || r.receiptId === id) ? data : r));
+      
+      // Immediately update the local state with the new data
+      setReceipts(prev => prev.map(r => {
+        if (r.id === id || r.receiptId === id) {
+          const updatedReceipt = { ...r, ...updates };
+          console.log('Updated receipt:', updatedReceipt); // Debug log
+          return updatedReceipt;
+        }
+        return r;
+      }));
+      
+      // Refresh receipts to get the latest data from server
+      await fetchReceipts();
+      
       return data;
     } catch (error) {
       console.error('Error updating receipt:', error);

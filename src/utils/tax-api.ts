@@ -80,7 +80,7 @@ export const taxApi = {
     return response.data;
   },
 
-  getTaxRates: async (year: number): Promise<{
+  getTaxRates: async (year: number, token: string): Promise<{
     standardMileageRate: number;
     mealDeductionRate: number;
     homeOfficeRates: {
@@ -88,8 +88,11 @@ export const taxApi = {
       actual: boolean;
     };
   }> => {
-    const response = await api.get(`/tax/rates/${year}`);
-    return response.data;
+    const response = await apiRequest(`/tax/rates/${year}`, {
+      method: 'GET',
+      token
+    });
+    return response;
   },
 
   // Tax Documents

@@ -1,36 +1,39 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Award, 
-  Car, 
-  Briefcase, 
-  Globe, 
-  Utensils, 
-  Zap, 
-  Receipt as ReceiptIcon, 
-  Wrench, 
-  Tag, 
+  Award,      // Advertising
+  Car,        // Car and Truck Expenses
+  Building,   // Office Expenses
+  Globe,      // Travel
+  Utensils,   // Food & Dining
+  Briefcase,  // Supplies
+  FileText,   // Other Expenses
+  Tag,        // Default/Uncategorized
   MoreVertical, 
   Edit2, 
   Trash2, 
   X, 
-  AlertTriangle, 
-  Copy, 
-  Check, 
-  ShoppingBag, 
-  Coffee, 
-  Home, 
-  Gift, 
-  Book, 
-  Heart, 
-  Megaphone, 
-  FileText 
+  AlertTriangle,
+  Copy
 } from 'lucide-react';
 import { useReceipts } from './ReceiptContext';
 import { EditReceiptModal } from './EditReceiptModal';
 import { toast } from 'react-hot-toast';
 import { useCurrency } from '../../../contexts/CurrencyContext';
-import { BUSINESS_EXPENSE_CATEGORIES, BusinessExpenseCategoryId } from '../../../constants/us-tax';
+import { BUSINESS_EXPENSE_CATEGORIES } from '../../../constants/us-tax';
+import { useAuth } from '../../../auth/CognitoAuthContext';
+import { api } from '../../../utils/api';
+
+const iconMap: { [key: string]: any } = {
+  Award,      // Advertising
+  Car,        // Car and Truck Expenses
+  Building,   // Office Expenses
+  Globe,      // Travel
+  Utensils,   // Food & Dining
+  Briefcase,  // Supplies
+  FileText,   // Other Expenses
+  Tag         // Default/Uncategorized
+};
 
 export function RecentReceiptsCard() {
   const { receipts, deleteReceipt, updateReceipt, refreshReceipts } = useReceipts();
@@ -41,56 +44,39 @@ export function RecentReceiptsCard() {
   const [selectedReceipt, setSelectedReceipt] = useState<any>(null);
   const [selectedReceipts, setSelectedReceipts] = useState<Set<string>>(new Set());
   const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
+  const { currentUser } = useAuth();
 
-  const getBusinessCategoryIcon = (categoryId: string) => {
-    const category = BUSINESS_EXPENSE_CATEGORIES[categoryId as BusinessExpenseCategoryId];
-    if (!category) return <Tag className="h-5 w-5 text-gray-400" />;
+  const getBusinessCategoryIcon = (categoryId?: string, receipt?: any) => {
+    if (!categoryId || !BUSINESS_EXPENSE_CATEGORIES[categoryId as keyof typeof BUSINESS_EXPENSE_CATEGORIES]) {
+      // Set a default business category for uncategorized receipts
+      if (receipt && categoryId !== 'other_expenses' && currentUser?.token) {
+        api.receipts.update(receipt.id, { 
+          category: 'other_expenses' // Default to Other Expenses
+        }, currentUser.token)
+          .then(() => {
+            refreshReceipts();
+          })
+          .catch(error => {
+            console.error('Error updating receipt category:', error);
+          });
+      }
 
-    const iconSize = "h-5 w-5";
-    const IconComponent = {
-      'Award': Award,
-      'Car': Car,
-      'Briefcase': Briefcase,
-      'Globe': Globe,
-      'Utensils': Utensils,
-      'Zap': Zap,
-      'Wrench': Wrench,
-      'Tag': Tag
-    }[category.icon] || Tag;
+      const defaultCategory = BUSINESS_EXPENSE_CATEGORIES['other_expenses'];
+      return (
+        <div className={`p-2 rounded-full ${defaultCategory.bgColor}`}>
+          <FileText className={`h-5 w-5 ${defaultCategory.color}`} />
+        </div>
+      );
+    }
 
+    const category = BUSINESS_EXPENSE_CATEGORIES[categoryId as keyof typeof BUSINESS_EXPENSE_CATEGORIES];
+    const IconComponent = iconMap[category.icon] || Tag;
     return (
       <div className={`p-2 rounded-full ${category.bgColor}`}>
-        <IconComponent className={`${iconSize} ${category.color}`} />
+        <IconComponent className={`h-5 w-5 ${category.color}`} />
       </div>
     );
   };
-
-  // Handle shift key press
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.shiftKey) {
-        setIsMultiSelectMode(true);
-      }
-    };
-
-    const handleKeyUp = (e: KeyboardEvent) => {
-      if (!e.shiftKey) {
-        setIsMultiSelectMode(false);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('keyup', handleKeyUp);
-
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keyup', handleKeyUp);
-    };
-  }, []);
-
-  useEffect(() => {
-    console.log('Current receipts:', receipts); // Debug log
-  }, [receipts]);
 
   const handleReceiptClick = (receipt: any) => {
     if (isMultiSelectMode) {
@@ -178,113 +164,146 @@ export function RecentReceiptsCard() {
   const handleEditSubmit = async (updatedReceipt: any) => {
     try {
       const id = selectedReceipt.id || selectedReceipt.receiptId;
+      
+      // Update the receipt
       await updateReceipt(id, {
         ...updatedReceipt,
-        receiptId: id // Preserve the receipt ID
+        receiptId: id
       });
       
-      // Update the local state immediately
-      const updatedReceipts = receipts.map(r => 
-        (r.id === id || r.receiptId === id) 
-          ? { ...r, ...updatedReceipt, receiptId: id }
-          : r
-      );
+      // Force refresh receipts to get updated data
+      await refreshReceipts();
       
-      // Close modal and refresh
       setEditModalOpen(false);
+      setSelectedReceipt(null);
       toast.success('Receipt updated successfully');
-      refreshReceipts();
     } catch (error) {
       console.error('Error updating receipt:', error);
       toast.error('Failed to update receipt');
     }
   };
 
-  const renderReceipt = (receipt: any) => (
-    <motion.div
-      key={receipt.receiptId || receipt.id}
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      onClick={() => isMultiSelectMode ? handleReceiptClick(receipt) : handleEdit(receipt)}
-      className={`group relative flex items-center justify-between rounded-lg border p-4 hover:bg-gray-50 cursor-pointer
-        ${selectedReceipts.has(receipt.receiptId) ? 'border-purple-500 bg-purple-50' : 'border-gray-200'}
-        ${isMultiSelectMode ? 'hover:border-purple-500' : ''}`}
-    >
-      <div className="flex items-center gap-3">
-        {getBusinessCategoryIcon(receipt.businessCategory || 'other')}
-        <div className="flex-1 min-w-0">
-          <div className="font-medium text-gray-900">
-            {formatAmount(receipt.total || 0)}
-          </div>
-          <div className="text-sm text-gray-500">
-            {receipt.merchant || 'Unknown Merchant'}
-          </div>
-          <div className="mt-1 text-xs text-gray-400">
-            {receipt.category !== 'Uncategorized' ? receipt.category : ''} 
-            {receipt.category !== 'Uncategorized' && '•'} 
-            {new Date(receipt.date).toLocaleDateString()}
+  const renderReceipt = (receipt: any) => {
+    const receiptId = receipt.receiptId || receipt.id;
+    const category = receipt.businessCategory ? 
+      BUSINESS_EXPENSE_CATEGORIES[receipt.businessCategory as keyof typeof BUSINESS_EXPENSE_CATEGORIES] : 
+      null;
+    
+    return (
+      <motion.div
+        key={receiptId}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        onClick={() => isMultiSelectMode ? handleReceiptClick(receipt) : handleEdit(receipt)}
+        className={`group relative flex items-center justify-between rounded-lg border p-4 hover:bg-gray-50 cursor-pointer
+          ${selectedReceipts.has(receiptId) ? 'border-purple-500 bg-purple-50' : 'border-gray-200'}
+          ${isMultiSelectMode ? 'hover:border-purple-500' : ''}`}
+      >
+        <div className="flex items-center gap-3">
+          {getBusinessCategoryIcon(receipt.businessCategory, receipt)}
+          <div className="flex-1 min-w-0">
+            <div className="font-medium text-gray-900">
+              {formatAmount(receipt.total || 0)}
+            </div>
+            <div className="text-sm text-gray-500">
+              {receipt.merchant || 'Unknown Merchant'}
+            </div>
+            <div className="mt-1 text-xs text-gray-400 flex items-center gap-1">
+              <span className="font-medium">
+                {category ? category.name : 'Uncategorized'}
+              </span>
+              <span>•</span>
+              <span>{new Date(receipt.date).toLocaleDateString()}</span>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="relative ml-auto">
-        <button 
-          onClick={(e) => {
-            e.stopPropagation();
-            setActiveMenu(activeMenu === receipt.receiptId ? null : receipt.receiptId);
-          }}
-          className="rounded-full p-1.5 hover:bg-gray-100 transition-colors"
-        >
-          <MoreVertical className="h-5 w-5 text-gray-400" />
-        </button>
+        <div className="relative ml-auto">
+          <button 
+            onClick={(e) => {
+              e.stopPropagation();
+              setActiveMenu(activeMenu === receiptId ? null : receiptId);
+            }}
+            className="rounded-full p-1.5 hover:bg-gray-100 transition-colors"
+          >
+            <MoreVertical className="h-5 w-5 text-gray-400" />
+          </button>
 
-        <AnimatePresence>
-          {activeMenu === receipt.receiptId && (
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50"
-              style={{ top: '100%' }}
-            >
-              <div className="py-1" role="menu">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleEdit(receipt);
-                  }}
-                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
-                  role="menuitem"
-                >
-                  <Edit2 className="h-4 w-4 mr-2" />
-                  Edit
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDeleteClick(receipt, e);
-                  }}
-                  disabled={receipt.status === 'adding'}
-                  className={`w-full text-left px-4 py-2 text-sm flex items-center
-                    ${receipt.status === 'adding' 
-                      ? 'text-gray-400 cursor-not-allowed' 
-                      : 'text-red-600 hover:bg-gray-100'
-                    }`}
-                  role="menuitem"
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Delete
-                  {receipt.status === 'adding' && (
-                    <span className="ml-2 text-xs">(Adding in progress)</span>
-                  )}
-                </button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-    </motion.div>
-  );
+          <AnimatePresence>
+            {activeMenu === receiptId && (
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50"
+                style={{ top: '100%' }}
+              >
+                <div className="py-1" role="menu">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEdit(receipt);
+                    }}
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                    role="menuitem"
+                  >
+                    <Edit2 className="h-4 w-4 mr-2" />
+                    Edit
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteClick(receipt, e);
+                    }}
+                    disabled={receipt.status === 'adding'}
+                    className={`w-full text-left px-4 py-2 text-sm flex items-center
+                      ${receipt.status === 'adding' 
+                        ? 'text-gray-400 cursor-not-allowed' 
+                        : 'text-red-600 hover:bg-gray-100'
+                      }`}
+                    role="menuitem"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete
+                    {receipt.status === 'adding' && (
+                      <span className="ml-2 text-xs">(Adding in progress)</span>
+                    )}
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </motion.div>
+    );
+  };
+
+  // Handle shift key press
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.shiftKey) {
+        setIsMultiSelectMode(true);
+      }
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (!e.shiftKey) {
+        setIsMultiSelectMode(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, []);
+
+  useEffect(() => {
+    console.log('Current receipts:', receipts); // Debug log
+  }, [receipts]);
 
   return (
     <motion.div
@@ -319,7 +338,7 @@ export function RecentReceiptsCard() {
       </div>
       {receipts.length === 0 && (
         <div className="flex flex-col items-center justify-center h-full text-gray-500">
-          <ReceiptIcon className="h-12 w-12 text-gray-300 mb-2" />
+          <Tag className="h-12 w-12 text-gray-300 mb-2" />
           <p>No receipts yet</p>
         </div>
       )}

@@ -6,59 +6,125 @@ Parameters:
     Type: String
     Default: receipts
     Description: Name of the DynamoDB table storing receipts
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues:
+      - dev
+      - prod
+    Description: Environment name
 
 Resources:
+  ReceiptCategorizerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: ComprehendAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - comprehend:DetectEntities
+                  - comprehend:DetectKeyPhrases
+                  - comprehend:DetectDominantLanguage
+                Resource: '*'
+        - PolicyName: DynamoDBAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:DeleteItem
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                Resource: !GetAtt ReceiptsTable.Arn
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetRecords
+                  - dynamodb:GetShardIterator
+                  - dynamodb:DescribeStream
+                  - dynamodb:ListStreams
+                Resource: !GetAtt ReceiptsTable.StreamArn
+        - PolicyName: CloudWatchLogging
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: 
+                  - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/receipt-categorizer-${Environment}:*
+
   ReceiptCategorizerFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: .
+      FunctionName: !Sub receipt-categorizer-${Environment}
+      CodeUri: dist/
       Handler: index.handler
       Runtime: nodejs18.x
-      Timeout: 30
+      Timeout: 60
       MemorySize: 256
+      Role: !GetAtt ReceiptCategorizerRole.Arn
       Environment:
         Variables:
-          RECEIPTS_TABLE: !Ref ReceiptsTableName
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref ReceiptsTableName
-        - Version: '2012-10-17'
-          Statement:
-            - Effect: Allow
-              Action:
-                - comprehend:DetectEntities
-                - comprehend:DetectKeyPhrases
-              Resource: '*'
+          RECEIPTS_TABLE: !Ref ReceiptsTable
+          AWS_REGION: !Ref AWS::Region
+          COMPREHEND_MIN_CONFIDENCE: '0.7'
+          LOG_LEVEL: info
       Events:
-        Stream:
+        DynamoDBStream:
           Type: DynamoDB
           Properties:
             Stream: !GetAtt ReceiptsTable.StreamArn
             StartingPosition: LATEST
             BatchSize: 1
+            MaximumBatchingWindowInSeconds: 1
+            FunctionResponseTypes:
+              - ReportBatchItemFailures
 
   ReceiptsTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: !Ref ReceiptsTableName
+      TableName: !Sub ${ReceiptsTableName}-${Environment}
       AttributeDefinitions:
-        - AttributeName: id
-          AttributeType: S
         - AttributeName: userId
+          AttributeType: S
+        - AttributeName: receiptId
           AttributeType: S
       KeySchema:
-        - AttributeName: id
-          KeyType: HASH
         - AttributeName: userId
+          KeyType: HASH
+        - AttributeName: receiptId
           KeyType: RANGE
-      BillingMode: PAY_PER_REQUEST
       StreamSpecification:
-        StreamViewType: NEW_IMAGE
+        StreamViewType: NEW_AND_OLD_IMAGES
+      BillingMode: PAY_PER_REQUEST
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
 
 Outputs:
   ReceiptCategorizerFunction:
     Description: Receipt Categorizer Lambda Function ARN
     Value: !GetAtt ReceiptCategorizerFunction.Arn
+  ReceiptCategorizerRoleArn:
+    Description: IAM Role ARN for Receipt Categorizer
+    Value: !GetAtt ReceiptCategorizerRole.Arn
   ReceiptsTableArn:
     Description: ARN of the Receipts DynamoDB table
     Value: !GetAtt ReceiptsTable.Arn
