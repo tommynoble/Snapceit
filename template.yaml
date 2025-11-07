@@ -1,0 +1,113 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Receipt Scanner API
+
+Parameters:
+  CognitoUserPoolArn:
+    Type: String
+    Description: ARN of the Cognito User Pool
+  Stage:
+    Type: String
+    Default: dev
+    AllowedValues:
+      - dev
+      - prod
+    Description: Deployment stage
+
+Resources:
+  ReceiptsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambda/
+      Handler: receipts.handler
+      Runtime: nodejs18.x
+      Architectures:
+        - x86_64
+      MemorySize: 128
+      Timeout: 30
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref ReceiptsTable
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ReceiptsTable
+      Events:
+        GetReceipts:
+          Type: Api
+          Properties:
+            Path: /receipts/{userId}
+            Method: get
+            Auth:
+              Authorizer: CognitoAuthorizer
+        GetReceipt:
+          Type: Api
+          Properties:
+            Path: /receipts/{userId}/{receiptId}
+            Method: get
+            Auth:
+              Authorizer: CognitoAuthorizer
+        CreateReceipt:
+          Type: Api
+          Properties:
+            Path: /receipts
+            Method: post
+            Auth:
+              Authorizer: CognitoAuthorizer
+        UpdateReceipt:
+          Type: Api
+          Properties:
+            Path: /receipts/{userId}/{receiptId}
+            Method: put
+            Auth:
+              Authorizer: CognitoAuthorizer
+        DeleteReceipt:
+          Type: Api
+          Properties:
+            Path: /receipts/{userId}/{receiptId}
+            Method: delete
+            Auth:
+              Authorizer: CognitoAuthorizer
+
+  ReceiptsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub receipts-${Stage}
+      AttributeDefinitions:
+        - AttributeName: userId
+          AttributeType: S
+        - AttributeName: receiptId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: userId
+          KeyType: HASH
+        - AttributeName: receiptId
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      SSESpecification:
+        SSEEnabled: true
+
+  ApiGatewayApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: !Ref Stage
+      Cors:
+        AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
+        AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+        AllowOrigin: "'*'"
+      Auth:
+        Authorizers:
+          CognitoAuthorizer:
+            UserPoolArn: !Ref CognitoUserPoolArn
+            Identity:
+              Header: Authorization
+              ValidationExpression: Bearer.*
+            AuthorizationScopes:
+              - aws.cognito.signin.user.admin
+
+Outputs:
+  ApiEndpoint:
+    Description: API Gateway endpoint URL
+    Value: !Sub https://${ApiGatewayApi}.execute-api.${AWS::Region}.amazonaws.com/${Stage}
+  ReceiptsTableName:
+    Description: DynamoDB table name
+    Value: !Ref ReceiptsTable

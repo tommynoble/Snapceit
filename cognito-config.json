@@ -1,0 +1,17 @@
+{
+  "UsernameAttributes": ["email"],
+  "AutoVerifiedAttributes": ["email"],
+  "Schema": [
+    {
+      "Name": "email",
+      "AttributeDataType": "String",
+      "DeveloperOnlyAttribute": false,
+      "Mutable": true,
+      "Required": true,
+      "StringAttributeConstraints": {
+        "MinLength": "0",
+        "MaxLength": "2048"
+      }
+    }
+  ]
+}
