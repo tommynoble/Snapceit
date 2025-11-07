@@ -13,7 +13,7 @@ import { UserProfileModal } from './user/UserProfileModal';
 import { TaxDetailsCard } from './tax/TaxDetailsCard';
 import { PriceMatchModal } from './pricematch/PriceMatchModal';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAuth } from '../../auth/CognitoAuthContext';
+import { useAuth } from '../../auth/SupabaseAuthContext';
 import { Sidebar } from './Sidebar';
 import { DashboardNavbar } from './DashboardNavbar';
 import logo from '../../../images/logo.svg';
