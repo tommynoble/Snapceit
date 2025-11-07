@@ -11,7 +11,6 @@ import {
   FileText,
   ShoppingBag
 } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
 import { useStats } from './useStats';
 import { useCurrency } from '../../../hooks/useCurrency';
 import { useReceipts } from '../receipts/ReceiptContext';
@@ -54,59 +53,59 @@ export function TotalReceiptsCard() {
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ scale: 1.01 }}
       transition={{ duration: 0.2 }}
+      className="relative p-5 rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-lg shadow-md bg-gradient-to-br from-purple-600/20 to-purple-800/20"
+      style={{
+        backdropFilter: 'blur(10px)',
+      }}
     >
-      <Card className="relative overflow-hidden transition-all duration-300 hover:shadow-lg shadow-md bg-gradient-to-br from-purple-600/20 to-purple-800/20 border-0" style={{ backdropFilter: 'blur(10px)' }}>
-        <CardContent className="p-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-white/80">Total Spending</p>
-              <h3 className="mt-2 text-3xl font-bold text-white">
-                {stats.loading ? '-' : formatCurrency(stats.totalSpending.value)}
-              </h3>
-              <p className="text-sm text-white/60 mt-1">
-                {!stats.loading && `${Object.keys(stats.categoryCounts).length} Categories • ${receipts.length} Receipts`}
-              </p>
-            </div>
-            <div className="rounded-full bg-gradient-to-r from-purple-500/20 to-purple-600/20 p-3">
-              <Receipt className="h-6 w-6 text-white" />
-            </div>
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm font-medium text-white/80">Total Spending</p>
+          <h3 className="mt-2 text-3xl font-bold text-white">
+            {stats.loading ? '-' : formatCurrency(stats.totalSpending.value)}
+          </h3>
+          <p className="text-sm text-white/60 mt-1">
+            {!stats.loading && `${Object.keys(stats.categoryCounts).length} Categories • ${receipts.length} Receipts`}
+          </p>
+        </div>
+        <div className="rounded-full bg-gradient-to-r from-purple-500/20 to-purple-600/20 p-3">
+          <Receipt className="h-6 w-6 text-white" />
+        </div>
+      </div>
+      
+      {!stats.loading && stats.totalReceipts.trend && (
+        <div className="mt-4 flex items-center">
+          <span className={`text-sm font-medium ${stats.totalReceipts.trend.isPositive ? 'text-green-400' : 'text-red-400'}`}>
+            {stats.totalReceipts.trend.isPositive ? '↑' : '↓'} {Math.abs(stats.totalReceipts.trend.value)}%
+          </span>
+          <span className="ml-2 text-sm text-white/60">vs last month</span>
+        </div>
+      )}
+
+      {/* Category summary */}
+      {!stats.loading && (
+        <div className="mt-4 border-t border-white/10 pt-4">
+          <div className="grid grid-cols-5 gap-2">
+            {Object.entries(stats.categoryBreakdown || {})
+              .sort((a, b) => b[1].total - a[1].total)
+              .slice(0, 5)
+              .map(([category, data]) => (
+                <div key={category} title={`${category}: ${formatCurrency(data.total)}`} className="flex flex-col items-center">
+                  {getCategoryIcon(category)}
+                  <span className="mt-1 text-xs text-white/60 truncate max-w-full">
+                    {formatCurrency(data.total)}
+                  </span>
+                </div>
+              ))}
           </div>
-          
-          {!stats.loading && stats.totalReceipts.trend && (
-            <div className="mt-4 flex items-center">
-              <span className={`text-sm font-medium ${stats.totalReceipts.trend.isPositive ? 'text-green-400' : 'text-red-400'}`}>
-                {stats.totalReceipts.trend.isPositive ? '↑' : '↓'} {Math.abs(stats.totalReceipts.trend.value)}%
-              </span>
-              <span className="ml-2 text-sm text-white/60">vs last month</span>
-            </div>
-          )}
+        </div>
+      )}
 
-          {/* Category summary */}
-          {!stats.loading && (
-            <div className="mt-4 border-t border-white/10 pt-4">
-              <div className="grid grid-cols-5 gap-2">
-                {Object.entries(stats.categoryBreakdown || {})
-                  .sort((a, b) => b[1].total - a[1].total)
-                  .slice(0, 5)
-                  .map(([category, data]) => (
-                    <div key={category} title={`${category}: ${formatCurrency(data.total)}`} className="flex flex-col items-center">
-                      {getCategoryIcon(category)}
-                      <span className="mt-1 text-xs text-white/60 truncate max-w-full">
-                        {formatCurrency(data.total)}
-                      </span>
-                    </div>
-                  ))}
-              </div>
-            </div>
-          )}
-
-          {stats.loading && (
-            <div className="mt-4 animate-pulse">
-              <div className="w-32 h-4 bg-white/10 rounded"></div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {stats.loading && (
+        <div className="mt-4 animate-pulse">
+          <div className="w-32 h-4 bg-white/10 rounded"></div>
+        </div>
+      )}
     </motion.div>
   );
 }

@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { api } from '../../../utils/api';
 import { toast } from 'react-hot-toast';
-import { useAuth } from '../../../auth/CognitoAuthContext';
+import { useAuth } from '../../../auth/SupabaseAuthContext';
+import { supabase } from '../../../lib/supabase';
 
 export interface Receipt {
   id: string;
@@ -61,11 +61,19 @@ export const ReceiptProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const fetchReceipts = async () => {
     try {
       setLoading(true);
-      if (!currentUser?.idToken) {
-        throw new Error('No ID token available');
+      if (!currentUser?.id) {
+        throw new Error('No user ID available');
       }
-      const data = await api.receipts.list(currentUser.idToken);
-      setReceipts(data);
+      
+      const { data, error } = await supabase
+        .from('receipts')
+        .select('*')
+        .eq('user_id', currentUser.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      
+      setReceipts(data || []);
     } catch (error) {
       console.error('Error fetching receipts:', error);
       setError('Failed to fetch receipts');
@@ -76,11 +84,33 @@ export const ReceiptProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const createReceipt = async (receipt: any) => {
     try {
-      if (!currentUser?.idToken) {
-        throw new Error('No ID token available');
+      if (!currentUser?.id) {
+        throw new Error('No user ID available');
       }
-      const data = await api.receipts.create(receipt, currentUser.idToken);
-      setReceipts(prev => [...prev, data]);
+
+      const { data, error } = await supabase
+        .from('receipts')
+        .insert([
+          {
+            user_id: currentUser.id,
+            merchant: receipt.merchant,
+            amount: receipt.amount,
+            total: receipt.total,
+            category: receipt.category,
+            receipt_date: receipt.date,
+            items: receipt.items,
+            tax: receipt.tax,
+            image_url: receipt.imageUrl,
+            status: 'completed',
+            notes: receipt.notes,
+          }
+        ])
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      setReceipts(prev => [data, ...prev]);
       return data;
     } catch (error) {
       console.error('Error creating receipt:', error);
@@ -90,11 +120,31 @@ export const ReceiptProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const updateReceipt = async (id: string, updates: any) => {
     try {
-      if (!currentUser?.idToken) {
-        throw new Error('No ID token available');
+      if (!currentUser?.id) {
+        throw new Error('No user ID available');
       }
-      const data = await api.receipts.update(id, updates, currentUser.idToken);
-      setReceipts(prev => prev.map(r => (r.id === id || r.receiptId === id) ? data : r));
+
+      const { data, error } = await supabase
+        .from('receipts')
+        .update({
+          merchant: updates.merchant,
+          amount: updates.amount,
+          total: updates.total,
+          category: updates.category,
+          receipt_date: updates.date,
+          items: updates.items,
+          tax: updates.tax,
+          notes: updates.notes,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', id)
+        .eq('user_id', currentUser.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      setReceipts(prev => prev.map(r => (r.id === id) ? data : r));
       return data;
     } catch (error) {
       console.error('Error updating receipt:', error);
@@ -104,11 +154,19 @@ export const ReceiptProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const deleteReceipt = async (id: string) => {
     try {
-      if (!currentUser?.idToken) {
-        throw new Error('No ID token available');
+      if (!currentUser?.id) {
+        throw new Error('No user ID available');
       }
-      await api.receipts.delete(id, currentUser.idToken);
-      setReceipts(prev => prev.filter(r => r.id !== id && r.receiptId !== id));
+
+      const { error } = await supabase
+        .from('receipts')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', currentUser.id);
+
+      if (error) throw error;
+      
+      setReceipts(prev => prev.filter(r => r.id !== id));
     } catch (error) {
       console.error('Error deleting receipt:', error);
       throw error;
@@ -117,10 +175,10 @@ export const ReceiptProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   // Fetch receipts on mount and when user changes
   useEffect(() => {
-    if (currentUser?.idToken) {
+    if (currentUser?.id) {
       fetchReceipts();
     }
-  }, [currentUser?.idToken]); // Fetch when user token changes
+  }, [currentUser?.id]); // Fetch when user ID changes
 
   return (
     <ReceiptContext.Provider value={{
