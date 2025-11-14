@@ -10,37 +10,37 @@ const Hero = () => {
 
   return (
     <>
-      <section className="relative min-h-[100vh] flex flex-col justify-start text-center px-4 sm:px-6 -mt-4 overflow-hidden pb-32 sm:pb-40">
+      <section className="relative min-h-[100vh] flex flex-col justify-start text-center px-4 sm:px-6 -mt-4 overflow-hidden pb-20 sm:pb-32">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="max-w-4xl mx-auto pt-32 sm:pt-36 relative z-10"
+          className="max-w-4xl mx-auto pt-24 sm:pt-[7.5rem] relative z-10"
         >
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="text-[2.1rem] sm:text-4xl lg:text-5xl font-bold text-white mb-6 leading-tight"
+            className="font-bold text-white mb-3 sm:mb-4 leading-tight text-3xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-[3.5rem]"
           >
-            Say Goodbye to Paper<br className="block sm:hidden" /> Receipts
+            Say Goodbye to<br className="block sm:hidden" /> Paper Receipts
           </motion.h1>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-base sm:text-lg lg:text-xl font-paragraph text-white max-w-2xl mx-auto mb-8"
+            className="text-base sm:text-lg lg:text-xl font-paragraph text-white max-w-2xl mx-auto mb-6 sm:mb-8"
           >
             Digitize, organize, and access your receipts effortlessly. Our AI-powered solution makes expense tracking simpler than ever.
           </motion.p>
-          <div className="flex justify-center mb-2 sm:mb-4">
+          <div className="flex justify-center mb-4 sm:mb-6">
             <PrimaryButton onClick={() => navigate('/onboarding')}>
               Get Started
             </PrimaryButton>
           </div>
         </motion.div>
 
-        <div className="w-full max-w-7xl mx-auto px-4 pr-8 absolute top-[35%] sm:top-[40%] z-0">
+        <div className="w-full max-w-7xl mx-auto px-4 pr-8 absolute top-[42%] sm:top-[calc(38%-40px)] z-0">
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}

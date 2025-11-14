@@ -59,7 +59,7 @@ const Features2 = () => {
   ];
 
   return (
-    <section className="py-24 bg-white">
+    <section id="features" className="py-24 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <motion.h2 
@@ -92,8 +92,21 @@ const Features2 = () => {
               transition={{ duration: 0.5, delay: index * 0.1 }}
               className="relative"
             >
-              <div className="rounded-2xl p-6 bg-gradient-to-r from-[#D444EF]/95 to-[#7431CA]/95 transition-all duration-300 h-[280px] flex flex-col ring-1 ring-white/10 hover:ring-white/20 group-hover/readmore:scale-105">
-                <div className="mb-4">
+              <div className="rounded-2xl p-6 bg-gradient-to-r from-[#D444EF]/95 to-[#7431CA]/95 transition-all duration-300 h-[280px] flex flex-col ring-1 ring-white/10 hover:ring-white/20 group-hover/readmore:scale-105 overflow-hidden">
+                {/* Bottom-right corner decoration */}
+                <svg
+                  className="absolute bottom-0 right-0 w-24 h-24 opacity-20"
+                  viewBox="0 0 100 100"
+                  preserveAspectRatio="none"
+                >
+                  <circle cx="100" cy="100" r="60" fill="none" stroke="white" strokeWidth="1" />
+                  <circle cx="100" cy="100" r="40" fill="none" stroke="white" strokeWidth="1" />
+                  <circle cx="100" cy="100" r="20" fill="none" stroke="white" strokeWidth="1" />
+                  <line x1="100" y1="40" x2="100" y2="160" stroke="white" strokeWidth="0.5" opacity="0.5" />
+                  <line x1="40" y1="100" x2="160" y2="100" stroke="white" strokeWidth="0.5" opacity="0.5" />
+                </svg>
+
+                <div className="mb-4 relative z-10">
                   <motion.div
                     initial={{ opacity: 0, scale: 0.5 }}
                     whileInView={{ opacity: 1, scale: 1 }}
@@ -103,13 +116,13 @@ const Features2 = () => {
                     {feature.icon}
                   </motion.div>
                 </div>
-                <h3 className="text-xl font-bold text-white mb-2">
+                <h3 className="text-xl font-bold text-white mb-2 relative z-10">
                   {feature.title}
                 </h3>
-                <p className="text-white/90 text-sm leading-relaxed mb-4">
+                <p className="text-white/90 text-sm leading-relaxed mb-4 relative z-10">
                   {feature.description}
                 </p>
-                <div className="mt-auto flex items-center text-[#bfdbfe] cursor-pointer group/readmore">
+                <div className="mt-auto flex items-center text-[#bfdbfe] cursor-pointer group/readmore relative z-10">
                   <span className="font-semibold">Read More</span>
                   <div className="relative w-4 h-4 ml-1 overflow-hidden">
                     <div className="absolute inset-y-0 left-0 w-8 flex items-center transition-transform duration-300 ease-in-out transform group-hover/readmore:-translate-x-4">

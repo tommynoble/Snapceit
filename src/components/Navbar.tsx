@@ -10,7 +10,18 @@ const Navbar = () => {
 
   const handleNavigation = (path: string) => {
     setIsOpen(false); // Close menu
-    navigate(path); // Navigate to the path
+    if (path.startsWith('/#')) {
+      // Handle anchor links with smooth scroll
+      const id = path.substring(2);
+      const element = document.getElementById(id);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+        // Update URL without reloading
+        window.history.pushState(null, '', `/${id}`);
+      }
+    } else {
+      navigate(path); // Navigate to the path
+    }
   };
 
   const menuVariants = {
@@ -48,28 +59,38 @@ const Navbar = () => {
         {/* Desktop Navigation - Centered */}
         <div className="hidden md:flex items-center space-x-8">
           <motion.div whileHover={{ scale: 1.05 }} className="relative">
-            <Link to="/capabilities" className="text-base text-white hover:text-purple-200 transition-colors font-semibold">
-              Capabilities
+            <button onClick={() => handleNavigation('/#about')} className="text-base text-white hover:text-purple-200 transition-colors font-semibold">
+              About
               <motion.div
                 className="absolute bottom-0 left-0 w-0 h-[2px] bg-[rgb(208,67,239)]"
                 whileHover={{ width: '100%' }}
                 transition={{ duration: 0.2 }}
               />
-            </Link>
+            </button>
           </motion.div>
           <motion.div whileHover={{ scale: 1.05 }} className="relative">
-            <Link to="/product" className="text-base text-white hover:text-purple-200 transition-colors font-semibold">
-              Product
+            <button onClick={() => handleNavigation('/#integrations')} className="text-base text-white hover:text-purple-200 transition-colors font-semibold">
+              Integrations
               <motion.div
                 className="absolute bottom-0 left-0 w-0 h-[2px] bg-[rgb(208,67,239)]"
                 whileHover={{ width: '100%' }}
                 transition={{ duration: 0.2 }}
               />
-            </Link>
+            </button>
+          </motion.div>
+          <motion.div whileHover={{ scale: 1.05 }} className="relative">
+            <button onClick={() => handleNavigation('/#features')} className="text-base text-white hover:text-purple-200 transition-colors font-semibold">
+              Features
+              <motion.div
+                className="absolute bottom-0 left-0 w-0 h-[2px] bg-[rgb(208,67,239)]"
+                whileHover={{ width: '100%' }}
+                transition={{ duration: 0.2 }}
+              />
+            </button>
           </motion.div>
           <motion.div whileHover={{ scale: 1.05 }} className="relative">
             <Link to="/action" className="text-base text-white hover:text-purple-200 transition-colors font-semibold">
-              Action
+              Stories
               <motion.div
                 className="absolute bottom-0 left-0 w-0 h-[2px] bg-[rgb(208,67,239)]"
                 whileHover={{ width: '100%' }}
@@ -156,19 +177,28 @@ const Navbar = () => {
             
             <motion.div variants={itemVariants}>
               <button
-                onClick={() => handleNavigation('/capabilities')}
+                onClick={() => handleNavigation('/#about')}
                 className="block w-full text-left text-base text-white hover:text-purple-200 transition-colors font-semibold py-2"
               >
-                Capabilities
+                About
               </button>
             </motion.div>
 
             <motion.div variants={itemVariants}>
               <button
-                onClick={() => handleNavigation('/product')}
+                onClick={() => handleNavigation('/#integrations')}
                 className="block w-full text-left text-base text-white hover:text-purple-200 transition-colors font-semibold py-2"
               >
-                Product
+                Integrations
+              </button>
+            </motion.div>
+
+            <motion.div variants={itemVariants}>
+              <button
+                onClick={() => handleNavigation('/#features')}
+                className="block w-full text-left text-base text-white hover:text-purple-200 transition-colors font-semibold py-2"
+              >
+                Features
               </button>
             </motion.div>
 
@@ -177,7 +207,7 @@ const Navbar = () => {
                 onClick={() => handleNavigation('/action')}
                 className="block w-full text-left text-base text-white hover:text-purple-200 transition-colors font-semibold py-2"
               >
-                Action
+                Stories
               </button>
             </motion.div>
 

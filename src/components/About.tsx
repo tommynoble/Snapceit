@@ -1,25 +1,39 @@
 import { LogIn, ScanLine, UserCog } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-const Features = () => {
+const About = () => {
+
   const iconVariants = {
-    initial: { scale: 0, rotate: -180 },
+    initial: { 
+      scale: 0, 
+      rotate: -180,
+      opacity: 0
+    },
     animate: { 
       scale: 1, 
       rotate: 0,
+      opacity: 1,
       transition: { 
         type: "spring",
         stiffness: 260,
         damping: 20,
-        delay: 0.1
+        delay: 0.1,
+        duration: 0.8
       }
     },
     hover: { 
       scale: 1.05,
+      rotate: 360,
       transition: { 
-        type: "spring",
-        stiffness: 400,
-        damping: 10
+        rotate: {
+          duration: 0.5,
+          ease: "easeInOut"
+        },
+        scale: {
+          type: "spring",
+          stiffness: 400,
+          damping: 10
+        }
       }
     }
   };
@@ -32,9 +46,9 @@ const Features = () => {
           initial="initial"
           animate="animate"
           whileHover="hover"
-          className="w-12 h-12 bg-purple-100/10 rounded-xl p-2 backdrop-blur-sm"
+          className="w-14 h-14 bg-purple-100/10 rounded-xl p-2 backdrop-blur-sm"
         >
-          <LogIn className="w-8 h-8 text-purple-500/90" />
+          <LogIn className="w-10 h-10 text-purple-500/90" />
         </motion.div>
       ),
       title: "Quick Setup",
@@ -47,9 +61,9 @@ const Features = () => {
           initial="initial"
           animate="animate"
           whileHover="hover"
-          className="w-12 h-12 bg-purple-100/10 rounded-xl p-2 backdrop-blur-sm"
+          className="w-14 h-14 bg-purple-100/10 rounded-xl p-2 backdrop-blur-sm"
         >
-          <ScanLine className="w-8 h-8 text-purple-500/90" />
+          <ScanLine className="w-10 h-10 text-purple-500/90" />
         </motion.div>
       ),
       title: "Instant Scanning",
@@ -62,9 +76,9 @@ const Features = () => {
           initial="initial"
           animate="animate"
           whileHover="hover"
-          className="w-12 h-12 bg-purple-100/10 rounded-xl p-2 backdrop-blur-sm"
+          className="w-14 h-14 bg-purple-100/10 rounded-xl p-2 backdrop-blur-sm"
         >
-          <UserCog className="w-8 h-8 text-purple-500/90" />
+          <UserCog className="w-10 h-10 text-purple-500/90" />
         </motion.div>
       ),
       title: "Smart Insights",
@@ -77,10 +91,10 @@ const Features = () => {
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-8 sm:mb-12">
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-3 sm:mb-4 text-gray-900 tracking-normal leading-[1.15] sm:leading-[1.2]">
-            Save your receipt in<br className="block sm:hidden" /> the Cloud
+            Automate your<br className="block sm:hidden" /> expense tracking
           </h2>
           <p className="text-base sm:text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
-            Scan your receipt in three easy steps, we take care of the rest
+            AI-powered receipt intelligence that automatically categorizes expenses and integrates with your existing accounting tools.
           </p>
         </div>
 
@@ -111,4 +125,4 @@ const Features = () => {
   );
 };
 
-export default Features;
+export default About;
