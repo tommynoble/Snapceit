@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <!-- Purple gradient background -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#D444EF;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#AF3AEB;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#7C2AE8;stop-opacity:1" />
+    </linearGradient>
+    <!-- Cyan to blue gradient for lightning bolt -->
+    <linearGradient id="boltGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0.56" style="stop-color:#4FDDE6;stop-opacity:1" />
+      <stop offset="1" style="stop-color:#597FFB;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background with purple gradient -->
+  <rect width="200" height="200" fill="url(#bgGrad)"/>
+  
+  <!-- Lightning bolt "S" from main logo, scaled and centered -->
+  <g transform="translate(100, 100) scale(0.95) translate(-100, -100)">
+    <path d="M152.426 139.291L58.6777 62.7633L97.4993 41.3631L152.456 9.78315L99.4861 63.0015L152.426 139.291ZM152.426 139.291L110.373 109.939L58.5747 186.189L152.426 139.291Z" fill="url(#boltGrad)"/>
+  </g>
+</svg>

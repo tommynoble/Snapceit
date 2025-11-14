@@ -1,6 +1,6 @@
 import { FacebookIcon, GithubIcon, InstagramIcon, TwitterIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import logo from '../../images/logo.svg';
+// Logo moved to public folder
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -40,7 +40,7 @@ const Footer = () => {
           {/* Logo and Social */}
           <div className="col-span-2 md:col-span-1 pl-0 sm:pl-0">
             <Link to="/" className="inline-block mb-8">
-              <img src={logo} alt="Snapceit" className="h-16 w-auto" />
+              <img src="/logo.svg" alt="Snapceit" className="h-16 w-auto" />
             </Link>
             <div className="flex space-x-4 mb-4">
               {footerLinks.social.map((item) => {

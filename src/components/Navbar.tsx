@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { User } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import logo from '../../images/logo.svg';
+// Logo moved to public folder
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -42,7 +42,7 @@ const Navbar = () => {
       <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-2 backdrop-blur-md rounded-[48px] border-2 border-[rgb(216,94,241,0.54)]">
         {/* Logo on far left */}
         <Link to="/" className="text-white" onClick={() => setIsOpen(false)}>
-          <img src={logo} alt="Logo" className="h-16 md:h-16 h-12 w-auto" />
+          <img src="/logo.svg" alt="Logo" className="h-16 md:h-16 h-12 w-auto" />
         </Link>
 
         {/* Desktop Navigation - Centered */}
