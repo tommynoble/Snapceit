@@ -71,14 +71,23 @@ export const ReceiptProvider: React.FC<{ children: React.ReactNode }> = ({ child
         throw new Error('No user ID available');
       }
       
-      const { data, error } = await supabase
-        .from('receipts')
-        .select('*')
-        .eq('user_id', currentUser.id)
-        .order('created_at', { ascending: false });
+      // Fetch from receipts_v2 using raw HTTP
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/receipts_v2?user_id=eq.${currentUser.id}&order=created_at.desc`,
+        {
+          method: 'GET',
+          headers: {
+            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          },
+        }
+      );
 
-      if (error) throw error;
-      
+      if (!response.ok) {
+        throw new Error('Failed to fetch receipts');
+      }
+
+      const data = await response.json();
       setReceipts(data || []);
     } catch (error) {
       console.error('Error fetching receipts:', error);
@@ -188,6 +197,47 @@ export const ReceiptProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const deleteReceipt = async (id: string) => {
+    try {
+      if (!currentUser?.id) {
+        throw new Error('No user ID available');
+      }
+
+      console.log('Attempting to delete receipt:', { id, userId: currentUser.id });
+
+      // Delete from receipts_v2 using raw HTTP
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/receipts_v2?id=eq.${id}&user_id=eq.${currentUser.id}`;
+      console.log('Delete URL:', url);
+
+      const response = await fetch(url, {
+        method: 'DELETE',
+        headers: {
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+      });
+
+      console.log('Delete response status:', response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Delete failed:', response.status, errorText);
+        throw new Error(`Failed to delete receipt: ${response.status} ${errorText}`);
+      }
+
+      const responseText = await response.text();
+      console.log('Delete response:', responseText);
+      console.log('Receipt deleted successfully:', id);
+      
+      // Update local state
+      setReceipts(prev => prev.filter(r => r.id !== id));
+    } catch (error) {
+      console.error('Error deleting receipt:', error);
+      throw error;
+    }
+  };
+
+  // Old deleteReceipt code (commented out for reference)
+  const _deleteReceiptOld = async (id: string) => {
     try {
       if (!currentUser?.id) {
         throw new Error('No user ID available');

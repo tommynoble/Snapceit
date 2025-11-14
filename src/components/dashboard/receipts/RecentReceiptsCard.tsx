@@ -13,7 +13,8 @@ import {
   Globe, 
   Zap, 
   Megaphone, 
-  FileText 
+  FileText,
+  AlertTriangle
 } from 'lucide-react';
 import { useReceipts } from './ReceiptContext';
 import { toast } from 'react-hot-toast';
@@ -300,8 +301,9 @@ export function RecentReceiptsCard() {
                   
                   {/* Status badges */}
                   {receipt.status === 'pending' && (
-                    <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-800">
-                      📤 Uploading
+                    <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-800 animate-pulse">
+                      <span className="inline-block h-2 w-2 rounded-full bg-blue-500 mr-1.5 animate-bounce"></span>
+                      Processing...
                     </span>
                   )}
                   {receipt.status === 'ocr_done' && (
@@ -333,15 +335,23 @@ export function RecentReceiptsCard() {
                   )}
                 </div>
                 <div className="mt-1 text-xs text-gray-400">
-                  {(receipt.createdAt || receipt.created_at) && (
+                  {/* Show receipt date if extracted, otherwise show upload date */}
+                  {receipt.receipt_date || receipt.date ? (
+                    <div className="font-medium text-gray-600">
+                      📅 {new Date(receipt.receipt_date || receipt.date || '').toLocaleDateString('en-US', { 
+                        month: 'short', 
+                        day: 'numeric', 
+                        year: 'numeric'
+                      })}
+                    </div>
+                  ) : (
                     <div>
-                      {new Date(receipt.createdAt || receipt.created_at || '').toLocaleString('en-US', { 
+                      Uploaded: {new Date(receipt.createdAt || receipt.created_at || '').toLocaleString('en-US', { 
                         month: 'short', 
                         day: 'numeric', 
                         year: 'numeric',
                         hour: '2-digit', 
-                        minute: '2-digit', 
-                        second: '2-digit'
+                        minute: '2-digit'
                       })}
                     </div>
                   )}

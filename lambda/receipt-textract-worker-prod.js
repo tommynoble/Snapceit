@@ -170,16 +170,35 @@ async function callTextract(imageBytes) {
 }
 
 /**
- * Extract vendor from Textract response
+ * Extract vendor from Textract response with cleanup
  */
 function extractVendor(textractResponse) {
   try {
     const lines = textractResponse.Blocks
       .filter(b => b.BlockType === 'LINE')
-      .map(b => b.Text)
+      .map(b => b.Text.trim())
+      .filter(b => b.length > 0)
       .slice(0, 5); // First 5 lines likely contain vendor
 
-    return lines[0] || 'Unknown Vendor';
+    let vendor = lines[0] || 'Unknown Vendor';
+    
+    // Clean up vendor name
+    vendor = vendor
+      .replace(/SUPERSTORE/gi, '')
+      .replace(/SUPERCENTER/gi, '')
+      .replace(/STORE/gi, '')
+      .replace(/INC\.|LLC\.|CO\./gi, '')
+      .replace(/-/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toUpperCase();
+    
+    // Capitalize properly
+    vendor = vendor.split(' ')
+      .map(word => word.charAt(0) + word.slice(1).toLowerCase())
+      .join(' ');
+    
+    return vendor || 'Unknown Vendor';
   } catch (error) {
     log.warn('Failed to extract vendor', { error: error.message });
     return 'Unknown Vendor';
@@ -363,17 +382,24 @@ async function processReceipt(pgClient, supabase, queueRow) {
     const ocrS3Key = await storeOcrArtifact(receiptId, textractResponse);
 
     // 5) Update Supabase idempotently (only if not already processed)
+    // NOTE: We now write into receipts_v2 (new table) and only touch columns that exist there
+    const rawOcrData = {
+      s3_key: ocrS3Key,
+      confidence: ocrConfidence,
+      extracted_date: receiptDate
+    };
+
+    const updatePayload = {
+      merchant: vendor,
+      total: total,
+      raw_ocr: rawOcrData,
+      status: 'ocr_done',
+      updated_at: new Date().toISOString()
+    };
+    
     const { error: updateError } = await supabase
-      .from('receipts')
-      .update({
-        merchant: vendor,
-        total: total,
-        receipt_date: receiptDate,
-        ocr_confidence: ocrConfidence,
-        raw_ocr: { s3_key: ocrS3Key }, // Store OCR artifact path in raw_ocr JSON
-        status: 'ocr_done',
-        updated_at: new Date().toISOString()
-      })
+      .from('receipts_v2')
+      .update(updatePayload)
       .eq('id', receiptId)
       .not('status', 'eq', 'ocr_done'); // Idempotency: do not overwrite if already processed
 
