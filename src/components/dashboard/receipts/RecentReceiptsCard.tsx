@@ -13,7 +13,8 @@ import {
   Globe, 
   Zap, 
   Megaphone, 
-  FileText 
+  FileText,
+  AlertTriangle
 } from 'lucide-react';
 import { useReceipts } from './ReceiptContext';
 import { toast } from 'react-hot-toast';
