@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { User } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-// Logo moved to public folder
+import logo from '../../images/logo.svg';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -10,18 +10,7 @@ const Navbar = () => {
 
   const handleNavigation = (path: string) => {
     setIsOpen(false); // Close menu
-    if (path.startsWith('/#')) {
-      // Handle anchor links with smooth scroll
-      const id = path.substring(2);
-      const element = document.getElementById(id);
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth' });
-        // Update URL without reloading
-        window.history.pushState(null, '', `/${id}`);
-      }
-    } else {
-      navigate(path); // Navigate to the path
-    }
+    navigate(path); // Navigate to the path
   };
 
   const menuVariants = {
@@ -53,44 +42,34 @@ const Navbar = () => {
       <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-2 backdrop-blur-md rounded-[48px] border-2 border-[rgb(216,94,241,0.54)]">
         {/* Logo on far left */}
         <Link to="/" className="text-white" onClick={() => setIsOpen(false)}>
-          <img src="/logo.svg" alt="Logo" className="h-16 md:h-16 h-12 w-auto" />
+          <img src={logo} alt="Logo" className="h-16 md:h-16 h-12 w-auto" />
         </Link>
 
         {/* Desktop Navigation - Centered */}
         <div className="hidden md:flex items-center space-x-8">
           <motion.div whileHover={{ scale: 1.05 }} className="relative">
-            <button onClick={() => handleNavigation('/#about')} className="text-base text-white hover:text-purple-200 transition-colors font-semibold">
-              About
+            <Link to="/capabilities" className="text-base text-white hover:text-purple-200 transition-colors font-semibold">
+              Capabilities
               <motion.div
                 className="absolute bottom-0 left-0 w-0 h-[2px] bg-[rgb(208,67,239)]"
                 whileHover={{ width: '100%' }}
                 transition={{ duration: 0.2 }}
               />
-            </button>
+            </Link>
           </motion.div>
           <motion.div whileHover={{ scale: 1.05 }} className="relative">
-            <button onClick={() => handleNavigation('/#integrations')} className="text-base text-white hover:text-purple-200 transition-colors font-semibold">
-              Integrations
+            <Link to="/product" className="text-base text-white hover:text-purple-200 transition-colors font-semibold">
+              Product
               <motion.div
                 className="absolute bottom-0 left-0 w-0 h-[2px] bg-[rgb(208,67,239)]"
                 whileHover={{ width: '100%' }}
                 transition={{ duration: 0.2 }}
               />
-            </button>
-          </motion.div>
-          <motion.div whileHover={{ scale: 1.05 }} className="relative">
-            <button onClick={() => handleNavigation('/#features')} className="text-base text-white hover:text-purple-200 transition-colors font-semibold">
-              Features
-              <motion.div
-                className="absolute bottom-0 left-0 w-0 h-[2px] bg-[rgb(208,67,239)]"
-                whileHover={{ width: '100%' }}
-                transition={{ duration: 0.2 }}
-              />
-            </button>
+            </Link>
           </motion.div>
           <motion.div whileHover={{ scale: 1.05 }} className="relative">
             <Link to="/action" className="text-base text-white hover:text-purple-200 transition-colors font-semibold">
-              Stories
+              Action
               <motion.div
                 className="absolute bottom-0 left-0 w-0 h-[2px] bg-[rgb(208,67,239)]"
                 whileHover={{ width: '100%' }}
@@ -177,28 +156,19 @@ const Navbar = () => {
             
             <motion.div variants={itemVariants}>
               <button
-                onClick={() => handleNavigation('/#about')}
+                onClick={() => handleNavigation('/capabilities')}
                 className="block w-full text-left text-base text-white hover:text-purple-200 transition-colors font-semibold py-2"
               >
-                About
+                Capabilities
               </button>
             </motion.div>
 
             <motion.div variants={itemVariants}>
               <button
-                onClick={() => handleNavigation('/#integrations')}
+                onClick={() => handleNavigation('/product')}
                 className="block w-full text-left text-base text-white hover:text-purple-200 transition-colors font-semibold py-2"
               >
-                Integrations
-              </button>
-            </motion.div>
-
-            <motion.div variants={itemVariants}>
-              <button
-                onClick={() => handleNavigation('/#features')}
-                className="block w-full text-left text-base text-white hover:text-purple-200 transition-colors font-semibold py-2"
-              >
-                Features
+                Product
               </button>
             </motion.div>
 
@@ -207,7 +177,7 @@ const Navbar = () => {
                 onClick={() => handleNavigation('/action')}
                 className="block w-full text-left text-base text-white hover:text-purple-200 transition-colors font-semibold py-2"
               >
-                Stories
+                Action
               </button>
             </motion.div>
 

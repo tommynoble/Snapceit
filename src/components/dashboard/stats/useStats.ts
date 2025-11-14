@@ -145,9 +145,16 @@ export function useStats() {
   const currentMonthReceipts = receipts.filter(receipt => {
     try {
       // Handle both ISO string and custom date formats
-      const receiptDate = new Date(receipt.date);
+      // Use receipt_date from database, fallback to date if available
+      const dateValue = receipt.receipt_date || receipt.date;
+      if (!dateValue) {
+        console.warn('No date found for receipt:', receipt);
+        return false;
+      }
+      
+      const receiptDate = new Date(dateValue);
       if (isNaN(receiptDate.getTime())) {
-        console.warn('Invalid date found:', receipt.date);
+        console.warn('Invalid date found:', dateValue);
         return false;
       }
 

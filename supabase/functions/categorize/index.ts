@@ -29,23 +29,60 @@ const DEFAULT_MIN_CONF = 0.75;
 
 function loadRules(): RulesPack {
   const raw = Deno.env.get("RULES_JSON");
-  if (!raw) throw new Error("RULES_JSON not set");
+  if (!raw) {
+    // Return default rules if RULES_JSON not set
+    console.warn("RULES_JSON not set, using default rules");
+    return {
+      version: "default",
+      vendors: [],
+      keywords: [],
+      categoryMap: {
+        "Other": 9,
+        "Groceries": 10,
+        "Fuel": 11,
+        "Transport": 12,
+        "Software": 13,
+        "Meals": 15,
+        "Travel": 7,
+        "Shopping": 3,
+        "Utilities": 5,
+        "Healthcare": 6,
+        "Entertainment": 4,
+        "Business": 8,
+        "Lodging": 14,
+        "Phone & Internet": 16,
+        "Office Supplies": 17,
+        "Repairs & Maintenance": 18,
+        "Subscriptions": 19,
+        "Food & Dining": 1,
+        "Transportation": 2
+      }
+    };
+  }
   return JSON.parse(raw);
 }
 
 async function fetchReceipt(receipt_id: string) {
   const { data: r, error } = await supabase
     .from("receipts")
-    .select("id,user_id,vendor_text,total_amount,currency,receipt_date,country,ocr_json,ocr_confidence")
+    .select("*")
     .eq("id", receipt_id)
     .single();
   if (error) throw error;
 
-  const { data: items, error: liErr } = await supabase
-    .from("line_items")
-    .select("id,description,total")
-    .eq("receipt_id", receipt_id);
-  if (liErr) throw liErr;
+  // Try to fetch line_items if the table exists, otherwise use empty array
+  let items = [];
+  try {
+    const { data: liData, error: liErr } = await supabase
+      .from("line_items")
+      .select("id,description,total")
+      .eq("receipt_id", receipt_id);
+    if (!liErr && liData) {
+      items = liData;
+    }
+  } catch (e) {
+    console.warn("line_items table not found, using empty array");
+  }
 
   return { receipt: r, items };
 }
@@ -132,8 +169,9 @@ serve(async (req) => {
     const rules = loadRules();
     const { receipt, items } = await fetchReceipt(receipt_id);
 
-    // Apply rules
-    let best = applyRules(rules, receipt.vendor_text ?? "", items ?? []);
+    // Apply rules - handle different column names
+    const vendorText = receipt.vendor_text || receipt.merchant || receipt.merchant_name || "";
+    let best = applyRules(rules, vendorText, items ?? []);
     if (best) {
       await upsertPrediction("receipt", receipt_id, best.category_id, best.confidence, "rule", `rules@${rules.version}`, best.details);
     }

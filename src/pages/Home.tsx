@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import About from '../components/About';
+import Features from '../components/Features';
 import Features2 from '../components/Features2';
 import Hero from '../components/Hero';
 import Navbar from '../components/Navbar';
@@ -18,8 +18,8 @@ const Home = () => {
         </div>
       </div>
       <main>
-        {/* About Section */}
-        <About />
+        {/* Features Section */}
+        <Features />
         <QuickbooksSection />
         <Features2 />
         <ReviewsSection />

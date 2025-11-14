@@ -16,7 +16,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../auth/SupabaseAuthContext';
 import { Sidebar } from './Sidebar';
 import { DashboardNavbar } from './DashboardNavbar';
-import logo from '/logo.svg';
+import logo from '../../../images/logo.svg';
 import { TaxCalculator } from './tax/TaxCalculator';
 import { PriceMatchPage } from '../../pages/dashboard/PriceMatchPage';
 import { TemplatePreview } from '../../pages/dashboard/TemplatePreview';

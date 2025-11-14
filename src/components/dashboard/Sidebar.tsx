@@ -38,7 +38,7 @@ export function Sidebar({
     <div className="fixed left-0 top-0 h-full w-64 bg-black/10 backdrop-blur-xl border-r border-white/10 flex flex-col shadow-[0_0_8px_rgba(255,255,255,0.03)]">
       {/* Logo */}
       <div className="px-6 py-8">
-        <img src="/logo.svg" alt="Logo" className="h-16" />
+        <img src="/images/logo.svg" alt="Logo" className="h-16" />
       </div>
 
       {/* Navigation */}

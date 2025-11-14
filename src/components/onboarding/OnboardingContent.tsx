@@ -35,7 +35,7 @@ export function OnboardingContent({ slide, onNext, onPrev }: OnboardingContentPr
         <div className="mb-6 sm:mb-8 rounded-full bg-white/10 p-6 sm:p-8 backdrop-blur-sm">
           {currentSlide.icon}
         </div>
-        <h1 className="mb-3 sm:mb-4 font-bold text-white" style={{ fontSize: '3.5rem' }}>
+        <h1 className="mb-3 sm:mb-4 text-3xl sm:text-4xl lg:text-5xl font-bold text-white">
           {currentSlide.title}
         </h1>
         <p className="max-w-md text-base sm:text-lg text-white/80">
