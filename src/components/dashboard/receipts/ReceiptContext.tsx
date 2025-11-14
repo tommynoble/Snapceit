@@ -14,8 +14,12 @@ export interface Receipt {
     quantity?: number;
   }>;
   imageUrl?: string;
-  status: 'processing' | 'completed';
+  image_url?: string;
+  status: 'pending' | 'processing' | 'completed' | 'categorized' | 'ocr_done';
   category: string;
+  category_id?: number;
+  category_confidence?: number;
+  ocr_confidence?: number; // Confidence from Textract extraction
   tax?: {
     total: number;
     type?: string;
@@ -26,6 +30,7 @@ export interface Receipt {
   phone?: string;
   invoiceNumber?: string;
   createdAt?: string;
+  created_at?: string;
   receiptId?: string;
 }
 
@@ -39,6 +44,7 @@ interface ReceiptContextType {
   updateReceipt: (id: string, updates: Partial<Receipt>) => Promise<Receipt>;
   deleteReceipt: (receiptId: string) => Promise<void>;
   refreshReceipts: () => Promise<void>;
+  correctReceipt: (receiptId: string, categoryId: number, reason?: string) => Promise<void>;
 }
 
 const ReceiptContext = createContext<ReceiptContextType | undefined>(undefined);
@@ -93,16 +99,20 @@ export const ReceiptProvider: React.FC<{ children: React.ReactNode }> = ({ child
         .insert([
           {
             user_id: currentUser.id,
-            merchant: receipt.merchant,
-            amount: receipt.amount,
-            total: receipt.total,
-            category: receipt.category,
-            receipt_date: receipt.date,
-            items: receipt.items,
-            tax: receipt.tax,
-            image_url: receipt.imageUrl,
-            status: 'completed',
-            notes: receipt.notes,
+            merchant: receipt.merchant || 'Unknown Merchant',
+            amount: receipt.amount || receipt.total || 0,
+            total: receipt.total || 0,
+            category: 'Other', // Default category - will be updated during batch processing
+            receipt_date: receipt.date || new Date().toISOString(),
+            items: receipt.items || [],
+            tax: receipt.tax || null,
+            image_url: receipt.imageUrl || null,
+            status: 'pending', // Changed to 'pending' for batch processing
+            notes: receipt.notes || null,
+            raw_ocr: null,
+            processing_logs: null,
+            business_category: null,
+            tax_deductible: false,
           }
         ])
         .select()
@@ -158,6 +168,48 @@ export const ReceiptProvider: React.FC<{ children: React.ReactNode }> = ({ child
         throw new Error('No user ID available');
       }
 
+      // Always fetch the latest row from DB to get canonical image_url
+      const { data: row, error: fetchErr } = await supabase
+        .from('receipts')
+        .select('id, user_id, image_url')
+        .eq('id', id)
+        .eq('user_id', currentUser.id)
+        .single();
+
+      if (fetchErr) {
+        console.warn('Warning: could not fetch receipt before delete:', fetchErr);
+      }
+
+      // Delete image from Supabase Storage if present
+      if (row?.image_url) {
+        try {
+          // Expected public URL format:
+          // https://<project>.supabase.co/storage/v1/object/public/receipts/<userId>/<timestamp>/image.jpg
+          const splitKey = '/storage/v1/object/public/receipts/';
+          const idx = row.image_url.indexOf(splitKey);
+          if (idx !== -1) {
+            const fileKey = row.image_url.substring(idx + splitKey.length); // userId/.../image.jpg
+            const { error: delErr } = await supabase.storage
+              .from('receipts')
+              .remove([fileKey]);
+            if (delErr) {
+              console.warn('Storage delete failed:', delErr, 'key:', fileKey);
+            } else {
+              console.log('Storage file deleted:', fileKey);
+            }
+          } else {
+            console.warn('Unexpected image_url format, skipping storage delete:', row.image_url);
+          }
+        } catch (e) {
+          console.warn('Exception during storage delete:', e);
+        }
+      }
+
+      // Note: OCR artifact in AWS S3 (ocr/{receiptId}.json) is NOT deleted
+      // This is intentional for audit trail and recovery purposes
+      // If needed, add AWS S3 cleanup via Lambda or separate cleanup job
+
+      // Delete DB row
       const { error } = await supabase
         .from('receipts')
         .delete()
@@ -165,10 +217,59 @@ export const ReceiptProvider: React.FC<{ children: React.ReactNode }> = ({ child
         .eq('user_id', currentUser.id);
 
       if (error) throw error;
-      
+
       setReceipts(prev => prev.filter(r => r.id !== id));
     } catch (error) {
       console.error('Error deleting receipt:', error);
+      throw error;
+    }
+  };
+
+  const correctReceipt = async (receiptId: string, categoryId: number, reason?: string) => {
+    try {
+      if (!currentUser?.id) {
+        throw new Error('No user ID available');
+      }
+
+      // Store correction in corrections table
+      const { error: correctionError } = await supabase
+        .from('corrections')
+        .insert({
+          user_id: currentUser.id,
+          subject_type: 'receipt',
+          subject_id: receiptId,
+          category_id: categoryId,
+          reason: reason || 'User correction',
+        });
+
+      if (correctionError) throw correctionError;
+
+      // Update receipt with corrected category
+      const { error: updateError } = await supabase
+        .from('receipts')
+        .update({
+          category_id: categoryId,
+          category_confidence: 1.0, // User correction = high confidence
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', receiptId)
+        .eq('user_id', currentUser.id);
+
+      if (updateError) throw updateError;
+
+      // Update local state
+      setReceipts(prev =>
+        prev.map(r =>
+          r.id === receiptId
+            ? { ...r, category_id: categoryId, category_confidence: 1.0 }
+            : r
+        )
+      );
+
+      toast.success('Receipt corrected successfully');
+    } catch (error) {
+      console.error('Error correcting receipt:', error);
+      toast.error('Failed to correct receipt');
       throw error;
     }
   };
@@ -177,6 +278,13 @@ export const ReceiptProvider: React.FC<{ children: React.ReactNode }> = ({ child
   useEffect(() => {
     if (currentUser?.id) {
       fetchReceipts();
+      
+      // Poll for updates every 30 seconds to catch Lambda status changes (reduced from 5s to prevent constant re-renders)
+      const pollInterval = setInterval(() => {
+        fetchReceipts();
+      }, 30000);
+      
+      return () => clearInterval(pollInterval);
     }
   }, [currentUser?.id]); // Fetch when user ID changes
 
@@ -190,7 +298,8 @@ export const ReceiptProvider: React.FC<{ children: React.ReactNode }> = ({ child
       addReceipt: createReceipt,
       updateReceipt,
       deleteReceipt,
-      refreshReceipts: fetchReceipts
+      refreshReceipts: fetchReceipts,
+      correctReceipt
     }}>
       {children}
     </ReceiptContext.Provider>

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button } from '../ui/Button';
-import { useAuth } from '../../auth/CognitoAuthContext';
+import { useAuth } from '../../auth/SupabaseAuthContext';
 import { useNavigate } from 'react-router-dom';
 
 interface DashboardHeaderProps {

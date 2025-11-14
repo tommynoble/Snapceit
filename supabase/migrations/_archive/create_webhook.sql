@@ -1,0 +1,32 @@
+-- Create webhook for receipt uploads to trigger Lambda
+-- This webhook will call the Lambda function whenever a receipt is uploaded to storage
+
+-- Note: Webhooks in Supabase are managed via the Dashboard UI
+-- This is a reference for what the webhook should do
+
+-- Manual steps to create webhook in Supabase Dashboard:
+-- 1. Go to Supabase Dashboard
+-- 2. Select your project
+-- 3. Go to Database → Webhooks
+-- 4. Click "Create a new webhook"
+-- 5. Fill in:
+--    - Name: receipt-textract-trigger
+--    - Table: storage.objects
+--    - Events: INSERT
+--    - URL: https://k5hrkbdnr3l53wllyhtrrduqqm0qvkzm.lambda-url.us-east-1.on.aws/
+-- 6. Click "Create webhook"
+
+-- The webhook will send a POST request with this payload:
+-- {
+--   "type": "INSERT",
+--   "record": {
+--     "id": "...",
+--     "name": "receipts/userId/receiptId.jpg",
+--     "bucket_id": "receipts",
+--     "owner": "userId",
+--     "created_at": "2025-11-11T...",
+--     "updated_at": "2025-11-11T...",
+--     "metadata": {...}
+--   },
+--   "table": "storage.objects"
+-- }

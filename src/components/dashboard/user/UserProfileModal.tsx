@@ -1,8 +1,9 @@
 import { User, LogOut, Mail, Calendar, X, Shield, CreditCard, Settings, Camera, Loader2 } from 'lucide-react';
-import { useAuth } from '../../../auth/CognitoAuthContext';
+import { useAuth } from '../../../auth/SupabaseAuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { useState, useRef } from 'react';
+import { getUserDisplayName, getUserAvatarUrl, getUserCreatedAt } from '../../../utils/userHelpers';
 
 interface UserProfileModalProps {
   isOpen: boolean;
@@ -72,9 +73,9 @@ export function UserProfileModal({ isOpen, onClose, onLogout }: UserProfileModal
                 </button>
                 <div className="flex items-center gap-4">
                   <div className="relative group">
-                    {currentUser?.photoURL ? (
+                    {getUserAvatarUrl(currentUser) ? (
                       <img
-                        src={currentUser.photoURL}
+                        src={getUserAvatarUrl(currentUser)!}
                         alt="Profile"
                         className="h-20 w-20 rounded-full border-4 border-white/20 object-cover transition-transform group-hover:scale-105"
                       />
@@ -106,7 +107,7 @@ export function UserProfileModal({ isOpen, onClose, onLogout }: UserProfileModal
                   </div>
                   <div>
                     <h3 className="text-2xl font-semibold text-white">
-                      {currentUser?.displayName || 'User'}
+                      {getUserDisplayName(currentUser)}
                     </h3>
                     <p className="text-sm text-white/80">{currentUser?.email}</p>
                   </div>
@@ -131,9 +132,7 @@ export function UserProfileModal({ isOpen, onClose, onLogout }: UserProfileModal
                       <div>
                         <p className="text-sm font-medium text-gray-500">Member Since</p>
                         <p className="text-sm text-gray-900">
-                          {currentUser?.metadata.creationTime
-                            ? new Date(currentUser.metadata.creationTime).toLocaleDateString()
-                            : 'N/A'}
+                          {getUserCreatedAt(currentUser)?.toLocaleDateString() || 'N/A'}
                         </p>
                       </div>
                     </div>

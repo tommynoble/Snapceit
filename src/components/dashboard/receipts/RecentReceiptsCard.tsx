@@ -1,40 +1,32 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Receipt as ReceiptIcon, 
   MoreVertical, 
-  Edit2, 
   Trash2, 
   X, 
-  AlertTriangle, 
   Copy, 
-  Check, 
   ShoppingBag, 
-  Coffee, 
   Car, 
-  Home, 
   Utensils, 
-  Gift, 
-  Book, 
   Briefcase, 
-  Heart, 
   Globe, 
   Zap, 
   Megaphone, 
   FileText 
 } from 'lucide-react';
 import { useReceipts } from './ReceiptContext';
-import { EditReceiptModal } from './EditReceiptModal';
 import { toast } from 'react-hot-toast';
 
 export function RecentReceiptsCard() {
   const { receipts, deleteReceipt, updateReceipt, refreshReceipts } = useReceipts();
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
-  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [viewModalOpen, setViewModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [selectedReceipt, setSelectedReceipt] = useState<any>(null);
   const [selectedReceipts, setSelectedReceipts] = useState<Set<string>>(new Set());
   const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
 
   // Category icon mapping
   const categoryIcons: { [key: string]: { 
@@ -57,9 +49,34 @@ export function RecentReceiptsCard() {
     const config = categoryIcons[category] || categoryIcons['Other'];
     const Icon = config.icon;
     return (
-      <div className={`p-2.5 rounded-full ${config.bgColor} flex items-center justify-center`}>
-        <Icon className={`h-5 w-5 ${config.color}`} />
+      <div className={`p-2.5 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center`}>
+        <Icon className={`h-5 w-5 text-white`} />
       </div>
+    );
+  };
+
+  // Get confidence badge with color coding
+  const getConfidenceBadge = (confidence?: number) => {
+    if (!confidence) return null;
+    
+    let bgColor = 'bg-red-100';
+    let textColor = 'text-red-800';
+    let label = 'Low';
+    
+    if (confidence >= 0.75) {
+      bgColor = 'bg-green-100';
+      textColor = 'text-green-800';
+      label = 'High';
+    } else if (confidence >= 0.65) {
+      bgColor = 'bg-yellow-100';
+      textColor = 'text-yellow-800';
+      label = 'Medium';
+    }
+    
+    return (
+      <span className={`inline-flex items-center rounded-full ${bgColor} px-2 py-1 text-xs font-medium ${textColor}`}>
+        {label} ({(confidence * 100).toFixed(0)}%)
+      </span>
     );
   };
 
@@ -85,6 +102,32 @@ export function RecentReceiptsCard() {
       window.removeEventListener('keyup', handleKeyUp);
     };
   }, []);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      // Check if click is outside the card
+      if (cardRef.current && !cardRef.current.contains(target)) {
+        setActiveMenu(null);
+      }
+    };
+
+    if (activeMenu) {
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [activeMenu]);
+
+  // Auto-close menu after 5 seconds
+  useEffect(() => {
+    if (activeMenu) {
+      const timer = setTimeout(() => {
+        setActiveMenu(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [activeMenu]);
 
   useEffect(() => {
     console.log('Current receipts:', receipts); // Debug log
@@ -194,6 +237,7 @@ export function RecentReceiptsCard() {
 
   return (
     <motion.div
+      ref={cardRef}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       className="rounded-2xl bg-white p-6 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.01]"
@@ -223,13 +267,20 @@ export function RecentReceiptsCard() {
       <div className="h-[400px] overflow-y-auto pr-2 space-y-4 scrollbar-thin scrollbar-thumb-purple-200 scrollbar-track-transparent">
         {receipts.map((receipt, index) => (
           <motion.div
-            key={receipt.receiptId || index}
+            key={receipt.id || receipt.receiptId || index}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
-            onClick={() => isMultiSelectMode ? handleReceiptClick(receipt) : handleEdit(receipt)}
+            onClick={() => {
+              if (isMultiSelectMode) {
+                handleReceiptClick(receipt);
+              } else {
+                setViewModalOpen(true);
+                setSelectedReceipt(receipt);
+              }
+            }}
             className={`group relative flex items-center justify-between rounded-lg border p-4 hover:bg-gray-50 cursor-pointer
-              ${selectedReceipts.has(receipt.receiptId) ? 'border-purple-500 bg-purple-50' : 'border-gray-200'}
+              ${selectedReceipts.has(receipt.id || receipt.receiptId) ? 'border-purple-500 bg-purple-50' : 'border-gray-200'}
               ${isMultiSelectMode ? 'hover:border-purple-500' : ''}`}
           >
             <div className="flex items-center gap-4">
@@ -238,11 +289,62 @@ export function RecentReceiptsCard() {
                 <div className="font-medium text-gray-900">
                   ${(receipt.total || 0).toFixed(2)}
                 </div>
-                <div className="text-sm text-gray-500">
-                  {receipt.merchant || 'Unknown Merchant'}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <div className="text-sm text-gray-500">
+                    {receipt.merchant && receipt.merchant !== 'Unknown Merchant' 
+                      ? receipt.merchant 
+                      : (receipt.status === 'pending' || receipt.status === 'ocr_done')
+                        ? <div className="flex items-center gap-1"><ReceiptIcon className="h-4 w-4" /> Processing...</div>
+                        : 'Unknown Merchant'}
+                  </div>
+                  
+                  {/* Status badges */}
+                  {receipt.status === 'pending' && (
+                    <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-800">
+                      📤 Uploading
+                    </span>
+                  )}
+                  {receipt.status === 'ocr_done' && (
+                    <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-800">
+                      ✅ Processed
+                    </span>
+                  )}
+                  {receipt.status === 'categorized' && (
+                    <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-1 text-xs font-medium text-emerald-800">
+                      🎯 Categorized
+                    </span>
+                  )}
+                  
+                  {/* OCR Confidence (during ocr_done phase) */}
+                  {receipt.ocr_confidence && receipt.status === 'ocr_done' && (
+                    getConfidenceBadge(receipt.ocr_confidence)
+                  )}
+                  
+                  {/* Category Confidence (after categorized) */}
+                  {receipt.category_confidence && receipt.status === 'categorized' && (
+                    getConfidenceBadge(receipt.category_confidence)
+                  )}
+                  
+                  {/* Review chip for low confidence */}
+                  {receipt.category_confidence && receipt.category_confidence < 0.75 && receipt.status === 'categorized' && (
+                    <span className="inline-flex items-center rounded-full bg-orange-100 px-2 py-1 text-xs font-medium text-orange-800">
+                      ⚠️ Review
+                    </span>
+                  )}
                 </div>
                 <div className="mt-1 text-xs text-gray-400">
-                  {receipt.category !== 'Uncategorized' ? receipt.category : ''} {receipt.category !== 'Uncategorized' && '•'} {new Date(receipt.date).toLocaleDateString()}
+                  {(receipt.createdAt || receipt.created_at) && (
+                    <div>
+                      {new Date(receipt.createdAt || receipt.created_at || '').toLocaleString('en-US', { 
+                        month: 'short', 
+                        day: 'numeric', 
+                        year: 'numeric',
+                        hour: '2-digit', 
+                        minute: '2-digit', 
+                        second: '2-digit'
+                      })}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -251,7 +353,7 @@ export function RecentReceiptsCard() {
               <button 
                 onClick={(e) => {
                   e.stopPropagation();
-                  setActiveMenu(activeMenu === receipt.receiptId ? null : receipt.receiptId);
+                  setActiveMenu(activeMenu === (receipt.id || receipt.receiptId) ? null : (receipt.id || receipt.receiptId));
                 }}
                 className="rounded-full p-1.5 hover:bg-gray-100 transition-colors"
               >
@@ -259,26 +361,16 @@ export function RecentReceiptsCard() {
               </button>
 
               <AnimatePresence>
-                {activeMenu === receipt.receiptId && (
+                {activeMenu === (receipt.id || receipt.receiptId) && (
                   <motion.div 
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.95 }}
                     className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50"
                     style={{ top: '100%' }}
+                    onClick={(e) => e.stopPropagation()}
                   >
                     <div className="py-1" role="menu">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEdit(receipt);
-                        }}
-                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
-                        role="menuitem"
-                      >
-                        <Edit2 className="h-4 w-4 mr-2" />
-                        Edit
-                      </button>
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -313,21 +405,217 @@ export function RecentReceiptsCard() {
         )}
       </div>
 
-      {editModalOpen && selectedReceipt && (
-        <EditReceiptModal
-          isOpen={true}
-          onClose={() => {
-            setEditModalOpen(false);
-            setSelectedReceipt(null);
-          }}
-          receipt={selectedReceipt}
-          onSave={handleSave}
-        />
+      {viewModalOpen && selectedReceipt && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 flex items-center justify-center p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="relative bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+          >
+            <button
+              onClick={() => {
+                setViewModalOpen(false);
+                setSelectedReceipt(null);
+              }}
+              className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full z-10"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            
+            <div className="flex flex-col lg:flex-row h-full overflow-hidden">
+              {/* Left side - Receipt Image */}
+              <div className="w-full lg:w-1/2 p-6 border-b lg:border-b-0 lg:border-r border-gray-200 overflow-y-auto">
+                <h2 className="text-xl font-semibold mb-4">Receipt Image</h2>
+                <div className="flex items-center justify-center">
+                  {selectedReceipt?.imageUrl || selectedReceipt?.image_url || selectedReceipt?.preview ? (
+                    <img
+                      src={selectedReceipt?.imageUrl || selectedReceipt?.image_url || selectedReceipt?.preview}
+                      alt="Receipt"
+                      className="w-4/5 h-auto rounded-lg object-contain shadow-md"
+                    />
+                  ) : (
+                    <div className="text-center py-12 text-gray-500">
+                      <ReceiptIcon className="h-12 w-12 mx-auto mb-2" />
+                      <p>No receipt image available</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Right side - Extracted Fields */}
+              <div className="w-full lg:w-1/2 p-6 overflow-y-auto">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-xl font-semibold">
+                    {selectedReceipt.status === 'pending' ? 'Processing Receipt...' : 'Extracted Information'}
+                  </h2>
+                </div>
+
+                {/* Show extracted fields only if processed */}
+                {(selectedReceipt.status === 'ocr_done' || selectedReceipt.status === 'categorized') ? (
+                  <div className="space-y-5">
+                    {/* Status */}
+                    <div className="bg-gradient-to-r from-green-50 to-green-100 p-4 rounded-lg border border-green-200">
+                      <div className="text-sm font-medium text-green-600 mb-1">Processing Status</div>
+                      <div className="flex items-center gap-2">
+                        {selectedReceipt.status === 'ocr_done' && (
+                          <>
+                            <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+                            <span className="text-sm text-green-700 font-medium">✅ Processed</span>
+                          </>
+                        )}
+                        {selectedReceipt.status === 'categorized' && (
+                          <>
+                            <div className="h-2 w-2 bg-emerald-500 rounded-full"></div>
+                            <span className="text-sm text-emerald-700 font-medium">🎯 Categorized</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Vendor */}
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">Vendor / Merchant</label>
+                      <div className="mt-1 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                        <p className="text-lg font-semibold text-gray-900">{selectedReceipt.merchant || 'Unknown'}</p>
+                      </div>
+                    </div>
+
+                    {/* Total Amount */}
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">Total Amount</label>
+                      <div className="mt-1 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                        <p className="text-2xl font-bold text-gray-900">${(selectedReceipt.total || 0).toFixed(2)}</p>
+                      </div>
+                    </div>
+
+                    {/* Receipt Date */}
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">Receipt Date</label>
+                      <div className="mt-1 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                        <p className="text-sm text-gray-900">
+                          {selectedReceipt.date ? new Date(selectedReceipt.date).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                          }) : 'Not available'}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* OCR Confidence */}
+                    {selectedReceipt.ocr_confidence && (
+                      <div>
+                        <label className="text-sm font-medium text-gray-600">OCR Confidence</label>
+                        <div className="mt-1 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1 bg-gray-200 rounded-full h-2">
+                              <div
+                                className={`h-2 rounded-full transition-all ${
+                                  selectedReceipt.ocr_confidence >= 0.8 ? 'bg-green-500' :
+                                  selectedReceipt.ocr_confidence >= 0.6 ? 'bg-yellow-500' :
+                                  'bg-red-500'
+                                }`}
+                                style={{ width: `${selectedReceipt.ocr_confidence * 100}%` }}
+                              ></div>
+                            </div>
+                            <span className="text-sm font-semibold text-gray-900">
+                              {(selectedReceipt.ocr_confidence * 100).toFixed(1)}%
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Category */}
+                    {selectedReceipt.category && (
+                      <div>
+                        <label className="text-sm font-medium text-gray-600">Category</label>
+                        <div className="mt-1 p-3 bg-purple-50 rounded-lg border border-purple-200">
+                          <p className="text-sm font-medium text-purple-900">{selectedReceipt.category}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Category Confidence */}
+                    {selectedReceipt.category_confidence && (
+                      <div>
+                        <label className="text-sm font-medium text-gray-600">Category Confidence</label>
+                        <div className="mt-1 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1 bg-gray-200 rounded-full h-2">
+                              <div
+                                className={`h-2 rounded-full transition-all ${
+                                  selectedReceipt.category_confidence >= 0.75 ? 'bg-green-500' :
+                                  selectedReceipt.category_confidence >= 0.65 ? 'bg-yellow-500' :
+                                  'bg-red-500'
+                                }`}
+                                style={{ width: `${selectedReceipt.category_confidence * 100}%` }}
+                              ></div>
+                            </div>
+                            <span className="text-sm font-semibold text-gray-900">
+                              {(selectedReceipt.category_confidence * 100).toFixed(1)}%
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <div className="mb-6">
+                      <div className="relative h-16 w-16 mb-4">
+                        {/* Outer rotating ring */}
+                        <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-blue-500 border-r-blue-500 animate-spin"></div>
+                        {/* Middle rotating ring (slower) */}
+                        <div className="absolute inset-2 rounded-full border-4 border-transparent border-b-purple-500 border-l-purple-500 animate-spin" style={{ animationDirection: 'reverse', animationDuration: '2s' }}></div>
+                        {/* Center dot */}
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="h-3 w-3 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full animate-pulse"></div>
+                        </div>
+                      </div>
+                    </div>
+                    <p className="text-gray-600 font-medium text-lg">Processing receipt...</p>
+                    <div className="mt-3 flex items-center justify-center gap-1">
+                      <span className="text-sm text-gray-400">Extracting information</span>
+                      <span className="inline-flex gap-1">
+                        <span className="h-1 w-1 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0s' }}></span>
+                        <span className="h-1 w-1 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></span>
+                        <span className="h-1 w-1 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></span>
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Timestamp - Always visible */}
+                <div className="mt-6 pt-6 border-t border-gray-200">
+                  <div className="text-sm text-gray-600">
+                    <span className="font-medium">Uploaded:</span> {new Date(selectedReceipt.created_at || selectedReceipt.createdAt || '').toLocaleString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      second: '2-digit',
+                      hour12: true
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
       )}
 
       {deleteModalOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50">
-          <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+        <div 
+          className="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50"
+          onClick={() => setDeleteModalOpen(false)}
+        >
+          <div 
+            className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0"
+            onClick={(e) => e.stopPropagation()}
+          >
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}

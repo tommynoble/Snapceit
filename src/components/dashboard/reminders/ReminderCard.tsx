@@ -1,13 +1,15 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { AlertTriangle, TrendingUp, Bell } from 'lucide-react';
+import { AlertTriangle, TrendingUp, Bell, Clock, CheckCircle } from 'lucide-react';
 import { useStats } from '../stats/useStats';
+import { useReceipts } from '../receipts/ReceiptContext';
 
 export function ReminderCard() {
   const stats = useStats();
+  const { receipts } = useReceipts();
 
-  // Calculate spending alerts based on stats
-  const getSpendingStatus = () => {
+  // Memoize spending status to prevent re-renders
+  const spendingStatus = useMemo(() => {
     if (stats.loading) {
       return {
         severity: 'normal',
@@ -41,9 +43,36 @@ export function ReminderCard() {
       severity: 'normal',
       message: 'Spending patterns are normal',
     };
-  };
+  }, [stats]);
 
-  const spendingStatus = getSpendingStatus();
+  // Memoize receipt reminder calculations to prevent re-renders
+  const receiptReminder = useMemo(() => {
+    const pending = receipts?.filter(r => r.status === 'pending' || r.status === 'ocr_done').length || 0;
+    const categorized = receipts?.filter(r => r.status === 'categorized').length || 0;
+    const total = receipts?.length || 0;
+
+    if (pending > 0) {
+      return {
+        severity: 'alert',
+        message: `${pending} receipt${pending > 1 ? 's' : ''} awaiting categorization`,
+        detail: 'Complete categorization to track expenses'
+      };
+    }
+
+    if (total === 0) {
+      return {
+        severity: 'warning',
+        message: 'No receipts uploaded yet',
+        detail: 'Start uploading receipts to track spending'
+      };
+    }
+
+    return {
+      severity: 'normal',
+      message: `${categorized} receipts categorized`,
+      detail: 'All receipts are up to date'
+    };
+  }, [receipts]);
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
@@ -61,9 +90,9 @@ export function ReminderCard() {
       case 'alert':
         return <AlertTriangle className="h-5 w-5 text-red-500" />;
       case 'warning':
-        return <TrendingUp className="h-5 w-5 text-amber-500" />;
+        return <Clock className="h-5 w-5 text-amber-500" />;
       default:
-        return <Bell className="h-5 w-5 text-green-500" />;
+        return <CheckCircle className="h-5 w-5 text-green-500" />;
     }
   };
 
@@ -78,21 +107,26 @@ export function ReminderCard() {
       <h3 className="text-lg font-semibold text-gray-900 mb-4">Reminders</h3>
       
       <div className="space-y-4">
+        {/* Receipt Status Reminder */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex items-center justify-between rounded-lg border border-purple-100 bg-purple-50 p-4"
+          className={`flex items-center justify-between rounded-lg border p-4 ${getSeverityColor(receiptReminder.severity)}`}
         >
-          <div>
-            <div className="font-medium text-purple-900">
-              Get Receipts up to Date
-            </div>
-            <div className="text-sm text-purple-600">
-              Due Today
+          <div className="flex items-center gap-3">
+            {getSeverityIcon(receiptReminder.severity)}
+            <div>
+              <div className="font-medium">
+                {receiptReminder.message}
+              </div>
+              <div className="text-sm opacity-80">
+                {receiptReminder.detail}
+              </div>
             </div>
           </div>
         </motion.div>
 
+        {/* Spending Status Reminder */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

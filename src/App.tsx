@@ -21,6 +21,8 @@ import StyleGuide from './components/StyleGuide';
 import { api } from './utils/api';
 import { SettingsPage } from './pages/dashboard/SettingsPage';
 import { CurrencyProvider } from './contexts/CurrencyContext';
+import { ResetPassword } from './pages/ResetPassword';
+import { ForgotPassword } from './components/auth/ForgotPassword';
 
 // Protected Route Component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -110,6 +112,18 @@ const AppContent: React.FC = () => {
             </PublicRoute>
           } />
           <Route path="/email-confirmed" element={<EmailConfirmed />} />
+          <Route path="/forgot-password" element={
+            <PublicRoute>
+              <AuthLayout>
+                <ForgotPassword />
+              </AuthLayout>
+            </PublicRoute>
+          } />
+          <Route path="/reset-password" element={
+            <AuthLayout>
+              <ResetPassword />
+            </AuthLayout>
+          } />
           
           {/* Protected Routes */}
           <Route path="/dashboard/*" element={

@@ -1,7 +1,8 @@
 import { Search, Bell, HelpCircle, Sun, X, User, Settings, LogOut } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { useAuth } from '../../auth/CognitoAuthContext';
+import { useAuth } from '../../auth/SupabaseAuthContext';
+import { getUserDisplayName, getUserInitials, getUserAvatarUrl } from '../../utils/userHelpers';
 
 interface DashboardNavbarProps {
   onProfileClick: () => void;
@@ -51,16 +52,9 @@ export const DashboardNavbar = ({ onProfileClick, onSettingsClick, onLogout }: D
     }
   };
 
-  const getInitials = () => {
-    if (currentUser?.displayName) {
-      return currentUser.displayName
-        .split(' ')
-        .map(n => n[0])
-        .join('')
-        .toUpperCase();
-    }
-    return currentUser?.email?.[0].toUpperCase() || 'U';
-  };
+  const displayName = getUserDisplayName(currentUser);
+  const initials = getUserInitials(currentUser);
+  const avatarUrl = getUserAvatarUrl(currentUser);
 
   return (
     <div className="w-full">
@@ -130,15 +124,15 @@ export const DashboardNavbar = ({ onProfileClick, onSettingsClick, onLogout }: D
               onClick={handleAvatarClick}
               className="relative p-1.5 rounded-full transition-all hover:scale-105 focus:outline-none focus:ring-2 focus:ring-[#4FDDE6]/50"
             >
-              {currentUser?.photoURL ? (
+              {avatarUrl ? (
                 <img
-                  src={currentUser.photoURL}
+                  src={avatarUrl}
                   alt="Profile"
                   className="h-7 w-7 rounded-full object-cover ring-1 ring-white/20"
                 />
               ) : (
                 <div className="h-7 w-7 rounded-full bg-white/10 ring-1 ring-white/20 flex items-center justify-center">
-                  <span className="text-white/90 text-sm font-medium">{getInitials()}</span>
+                  <span className="text-white/90 text-sm font-medium">{initials}</span>
                 </div>
               )}
             </button>
@@ -154,9 +148,9 @@ export const DashboardNavbar = ({ onProfileClick, onSettingsClick, onLogout }: D
                 >
                   <div className="p-4 border-b border-white/10">
                     <div className="flex items-center gap-3">
-                      {currentUser?.photoURL ? (
+                      {avatarUrl ? (
                         <img
-                          src={currentUser.photoURL}
+                          src={avatarUrl}
                           alt="Profile"
                           className="h-10 w-10 rounded-full object-cover ring-1 ring-white/20"
                         />
@@ -167,7 +161,7 @@ export const DashboardNavbar = ({ onProfileClick, onSettingsClick, onLogout }: D
                       )}
                       <div>
                         <p className="text-sm font-medium text-white">
-                          {currentUser?.displayName || 'User'}
+                          {displayName}
                         </p>
                         <p className="text-xs text-white/70">{currentUser?.email}</p>
                       </div>

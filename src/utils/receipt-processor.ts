@@ -1,7 +1,6 @@
-import { uploadToS3 } from './s3';
-import { analyzeReceiptFromS3 } from './textract';
+import { supabase } from '../lib/supabase';
 
-const BUCKET_NAME = 'snapceit';
+const BUCKET_NAME = 'receipts';
 
 interface ProcessedReceipt {
   imageUrl: string;
@@ -36,29 +35,31 @@ export const processReceipt = async (
   onProgress?: (progress: number) => void
 ): Promise<ProcessedReceipt> => {
   try {
-    // Step 1: Upload image to S3
+    // Step 1: Upload image to Supabase Storage
     const timestamp = Date.now();
-    const imageKey = `receipts/${userId}/${timestamp}/image.${file.name.split('.').pop()}`;
-    const { url: imageUrl } = await uploadToS3(file, imageKey, onProgress);
+    const imageKey = `${userId}/${timestamp}/image.${file.name.split('.').pop()}`;
+    
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from(BUCKET_NAME)
+      .upload(imageKey, file);
 
-    // Step 2: Analyze with Textract
-    const extractedData = await analyzeReceiptFromS3(BUCKET_NAME, imageKey);
+    if (uploadError) throw uploadError;
 
-    // Step 3: Store extracted data in S3
-    const dataKey = `receipts/${userId}/${timestamp}/data.json`;
-    const dataBlob = new Blob([JSON.stringify(extractedData)], { type: 'application/json' });
-    const { url: dataUrl } = await uploadToS3(dataBlob as File, dataKey, onProgress);
+    // Get public URL
+    const { data: { publicUrl: imageUrl } } = supabase.storage
+      .from(BUCKET_NAME)
+      .getPublicUrl(imageKey);
 
-    // Step 4: Return combined data with category
+    // Step 2: Return minimal data - Textract will process later in batch
     const receiptData: ProcessedReceipt = {
       imageUrl,
-      dataUrl,
-      merchantName: extractedData.merchantName,
-      total: extractedData.total,
-      date: extractedData.date,
-      category: extractedData.category, 
-      items: extractedData.items,
-      tax: extractedData.tax,
+      dataUrl: imageUrl,
+      merchantName: 'Unknown Merchant', // Will be filled by Textract batch job
+      total: 0, // Will be filled by Textract batch job
+      date: new Date().toISOString(),
+      category: undefined, // Will be filled by Textract batch job
+      items: [], // Will be filled by Textract batch job
+      tax: undefined, // Will be filled by Textract batch job
       userId,
       createdAt: new Date()
     };

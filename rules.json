@@ -1,0 +1,213 @@
+{
+  "version": "2025-11-08",
+  "description": "Rules engine configuration for receipt categorization. Edit this to add/update vendor and keyword patterns.",
+  "categoryMap": {
+    "Food & Dining": 1,
+    "Transportation": 2,
+    "Shopping": 3,
+    "Entertainment": 4,
+    "Utilities": 5,
+    "Healthcare": 6,
+    "Travel": 7,
+    "Business": 8,
+    "Other": 9,
+    "Groceries": 10,
+    "Fuel": 11,
+    "Transport": 12,
+    "Software": 13,
+    "Lodging": 14,
+    "Meals": 15,
+    "Phone & Internet": 16,
+    "Office Supplies": 17,
+    "Repairs & Maintenance": 18,
+    "Subscriptions": 19
+  },
+  "vendors": [
+    {
+      "type": "vendor",
+      "pattern": "(tesco|sainsbury|asda|aldi|lidl|morrisons|waitrose)",
+      "category": "Groceries",
+      "confidence": 0.78,
+      "region": "GB"
+    },
+    {
+      "type": "vendor",
+      "pattern": "(whole foods|trader joe|kroger|safeway|publix)",
+      "category": "Groceries",
+      "confidence": 0.75,
+      "region": "US"
+    },
+    {
+      "type": "vendor",
+      "pattern": "(shell|bp|esso|texaco|total|chevron|exxon|mobil)",
+      "category": "Fuel",
+      "confidence": 0.8,
+      "region": "GB/US"
+    },
+    {
+      "type": "vendor",
+      "pattern": "(uber|bolt|lyft|taxi|cab)",
+      "category": "Transport",
+      "confidence": 0.75,
+      "region": "GB/US"
+    },
+    {
+      "type": "vendor",
+      "pattern": "(aws|digitalocean|namecheap|godaddy|cloudflare|heroku|vercel)",
+      "category": "Software",
+      "confidence": 0.8,
+      "region": "US"
+    },
+    {
+      "type": "vendor",
+      "pattern": "(premier inn|travelodge|marriott|hilton|ibis|holiday inn|best western)",
+      "category": "Lodging",
+      "confidence": 0.8,
+      "region": "GB/US"
+    },
+    {
+      "type": "vendor",
+      "pattern": "(mcdonald|kfc|burger king|starbucks|costa|pret|subway|chipotle)",
+      "category": "Meals",
+      "confidence": 0.72,
+      "region": "GB/US"
+    },
+    {
+      "type": "vendor",
+      "pattern": "(vodafone|o2|ee|bt|virgin media|xfinity|verizon|at&t|t-mobile)",
+      "category": "Phone & Internet",
+      "confidence": 0.78,
+      "region": "GB/US"
+    },
+    {
+      "type": "vendor",
+      "pattern": "(staples|office depot|ryman|officeworks)",
+      "category": "Office Supplies",
+      "confidence": 0.75,
+      "region": "GB/US"
+    },
+    {
+      "type": "vendor",
+      "pattern": "(boots|superdrug|lloyds pharmacy|walgreens|cvs)",
+      "category": "Healthcare",
+      "confidence": 0.7,
+      "region": "GB/US"
+    },
+    {
+      "type": "vendor",
+      "pattern": "(amazon|ebay|asos|next|marks & spencer|john lewis)",
+      "category": "Shopping",
+      "confidence": 0.65,
+      "region": "GB/US"
+    },
+    {
+      "type": "vendor",
+      "pattern": "(netflix|spotify|disney|hulu|prime video|apple tv)",
+      "category": "Entertainment",
+      "confidence": 0.8,
+      "region": "GB/US"
+    }
+  ],
+  "keywords": [
+    {
+      "type": "keyword",
+      "pattern": "diesel|petrol|gasoline|fuel|unleaded|premium",
+      "category": "Fuel",
+      "confidence": 0.7,
+      "description": "Fuel-related keywords"
+    },
+    {
+      "type": "keyword",
+      "pattern": "ride|trip fare|airport transfer|taxi|cab|transport",
+      "category": "Transport",
+      "confidence": 0.67,
+      "description": "Transportation keywords"
+    },
+    {
+      "type": "keyword",
+      "pattern": "domain|hosting|ssl|server|compute|cdn|saas|license|software",
+      "category": "Software",
+      "confidence": 0.72,
+      "description": "Software/hosting keywords"
+    },
+    {
+      "type": "keyword",
+      "pattern": "hotel|inn|suite|resort|lodging|bnb|accommodation|motel",
+      "category": "Lodging",
+      "confidence": 0.7,
+      "description": "Lodging keywords"
+    },
+    {
+      "type": "keyword",
+      "pattern": "meal|food|restaurant|cafe|dine|takeaway|lunch|dinner|breakfast",
+      "category": "Meals",
+      "confidence": 0.65,
+      "description": "Meals/dining keywords"
+    },
+    {
+      "type": "keyword",
+      "pattern": "subscription|renewal|auto[- ]renew|monthly plan|annual plan",
+      "category": "Subscriptions",
+      "confidence": 0.72,
+      "description": "Subscription keywords"
+    },
+    {
+      "type": "keyword",
+      "pattern": "paper|ink|toner|pen|notebook|staple|desk|chair|office",
+      "category": "Office Supplies",
+      "confidence": 0.68,
+      "description": "Office supply keywords"
+    },
+    {
+      "type": "keyword",
+      "pattern": "repair|maintenance|service call|labour|parts|fix|plumber|electrician",
+      "category": "Repairs & Maintenance",
+      "confidence": 0.7,
+      "description": "Repair/maintenance keywords"
+    },
+    {
+      "type": "keyword",
+      "pattern": "electricity|gas bill|water bill|utility|meter|power|electric",
+      "category": "Utilities",
+      "confidence": 0.72,
+      "description": "Utilities keywords"
+    },
+    {
+      "type": "keyword",
+      "pattern": "grocery|groceries|supermarket|produce|fresh|meat|dairy",
+      "category": "Groceries",
+      "confidence": 0.75,
+      "description": "Grocery keywords"
+    },
+    {
+      "type": "keyword",
+      "pattern": "flight|airline|airport|hotel|vacation|travel|trip",
+      "category": "Travel",
+      "confidence": 0.68,
+      "description": "Travel keywords"
+    },
+    {
+      "type": "keyword",
+      "pattern": "pharmacy|medicine|prescription|medical|doctor|health|clinic",
+      "category": "Healthcare",
+      "confidence": 0.7,
+      "description": "Healthcare keywords"
+    },
+    {
+      "type": "keyword",
+      "pattern": "movie|cinema|theatre|ticket|concert|event|entertainment",
+      "category": "Entertainment",
+      "confidence": 0.65,
+      "description": "Entertainment keywords"
+    }
+  ],
+  "notes": {
+    "confidence_ranges": {
+      "low": "0.0-0.65 (flag for review)",
+      "medium": "0.65-0.75 (probably correct)",
+      "high": "0.75-1.0 (trust it)"
+    },
+    "how_to_use": "1. Normalize vendor text (lowercase, remove punctuation). 2. Test against vendor patterns. 3. Test line items against keyword patterns. 4. Return highest confidence match. 5. If confidence < 0.75, flag for ML/LLM.",
+    "editing": "Add new vendor/keyword patterns as needed. Update confidence scores based on feedback. Increment version when publishing changes."
+  }
+}

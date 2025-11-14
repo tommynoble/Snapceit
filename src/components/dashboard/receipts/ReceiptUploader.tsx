@@ -3,6 +3,8 @@ import { Camera, Upload, X, Scan, Edit2, Download } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useReceipts } from './ReceiptContext';
 import { Calendar } from 'lucide-react';
+import { supabase } from '../../../lib/supabase';
+import { useAuth } from '../../../auth/SupabaseAuthContext';
 
 interface UploadedReceipt {
   preview: string;
@@ -34,6 +36,7 @@ interface UploadedReceipt {
 
 export function ReceiptUploader() {
   const { addReceipt } = useReceipts();
+  const { currentUser } = useAuth();
   const [isDragging, setIsDragging] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadedReceipt, setUploadedReceipt] = useState<UploadedReceipt | null>(null);
@@ -42,22 +45,42 @@ export function ReceiptUploader() {
     setIsProcessing(true);
     
     try {
-      // Create form data for the file
-      const formData = new FormData();
-      formData.append('receipt', file);
+      // Step 1: Upload image to Supabase Storage
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${currentUser?.id}/${Date.now()}.${fileExt}`;
+      
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('receipts')
+        .upload(fileName, file);
 
-      // Send to backend for Textract processing
-      const response = await fetch('http://localhost:3000/api/scan-receipt', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to process receipt');
+      if (uploadError) {
+        throw new Error('Failed to upload image');
       }
 
-      const receiptData = await response.json();
-      console.log('Receipt data:', receiptData);
+      // Get public URL for the uploaded image
+      const { data: { publicUrl } } = supabase.storage
+        .from('receipts')
+        .getPublicUrl(fileName);
+
+      // Step 2: Send to backend for Textract processing (if backend is running)
+      let receiptData: any = {};
+      try {
+        const formData = new FormData();
+        formData.append('receipt', file);
+
+        const response = await fetch('http://localhost:3000/api/scan-receipt', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (response.ok) {
+          receiptData = await response.json();
+          console.log('Receipt data from Textract:', receiptData);
+        }
+      } catch (textractError) {
+        console.log('Textract backend not available, using manual entry');
+        // Continue without Textract data
+      }
 
       // Create preview URL for the image
       const previewUrl = URL.createObjectURL(file);
@@ -65,6 +88,7 @@ export function ReceiptUploader() {
       const newReceipt = {
         preview: previewUrl,
         amount: receiptData.total || 0,
+        total: receiptData.total || 0, // Add total field
         merchant: receiptData.merchant || 'Unknown Merchant',
         date: receiptData.date || new Date().toLocaleDateString(),
         items: receiptData.items || [],
@@ -75,23 +99,24 @@ export function ReceiptUploader() {
         address: receiptData.address || undefined,
         phone: receiptData.phone || undefined,
         invoiceNumber: receiptData.invoiceNumber || undefined,
+        imageUrl: publicUrl, // Store the Supabase Storage URL
       };
 
       console.log('New receipt:', newReceipt);
       setUploadedReceipt(newReceipt);
 
-      // Add to receipts list
-      addReceipt({
+      // Add to receipts list (will save to Supabase database)
+      await addReceipt({
         ...newReceipt,
         status: 'completed',
       });
     } catch (error) {
       console.error('Error processing receipt:', error);
-      // You might want to show an error message to the user here
+      alert('Failed to process receipt. Please try again.');
     } finally {
       setIsProcessing(false);
     }
-  }, [addReceipt]);
+  }, [addReceipt, currentUser]);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -138,7 +163,8 @@ export function ReceiptUploader() {
     if (uploadedReceipt) {
       addReceipt({
         ...uploadedReceipt,
-        status: 'completed',
+        total: uploadedReceipt.amount, // Ensure total field is included
+        status: 'pending', // Changed to 'pending' - will be processed by Textract batch job
       });
       setUploadedReceipt(null);
     }

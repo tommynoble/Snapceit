@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '../auth/CognitoAuthContext';
+import { useAuth } from '../auth/SupabaseAuthContext';
 import { settingsService } from '../services/settingsService';
 import type { UserSettings } from '../services/settingsService';
 
@@ -31,45 +31,16 @@ export function useSettings() {
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    async function loadSettings() {
-      if (!currentUser) {
-        setSettings(DEFAULT_SETTINGS);
-        setLoading(false);
-        return;
-      }
-
-      try {
-        const userSettings = await settingsService.getUserSettings(currentUser.uid);
-        if (userSettings) {
-          setSettings(userSettings);
-        } else {
-          // Create default settings if none exist
-          const defaultSettings = await settingsService.createUserSettings(currentUser.uid, DEFAULT_SETTINGS);
-          setSettings(defaultSettings);
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err : new Error('Failed to load settings'));
-        // Still use default settings on error
-        setSettings(DEFAULT_SETTINGS);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    loadSettings();
+    // Temporarily disabled - using default settings until backend is ready
+    setSettings(DEFAULT_SETTINGS);
+    setLoading(false);
   }, [currentUser]);
 
   const updateSettings = async (updates: Partial<UserSettings>) => {
-    if (!currentUser) return;
-
-    try {
-      const updatedSettings = await settingsService.updateUserSettings(currentUser.uid, updates);
-      setSettings(updatedSettings);
-      return updatedSettings;
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to update settings'));
-      throw err;
-    }
+    // Temporarily store locally until backend is ready
+    const updatedSettings = { ...settings, ...updates };
+    setSettings(updatedSettings);
+    return updatedSettings;
   };
 
   return {

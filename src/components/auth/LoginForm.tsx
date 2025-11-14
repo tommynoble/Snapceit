@@ -97,24 +97,8 @@ export function LoginForm() {
     }));
   };
 
-  const handleResetPassword = async () => {
-    if (!formData.email) {
-      setError('Please enter your email address first.');
-      return;
-    }
-    
-    try {
-      setError('');
-      setSuccessMessage('');
-      setIsLoading(true);
-      await resetPassword(formData.email);
-      setSuccessMessage('Password reset instructions sent! Please check your inbox and spam folder.');
-    } catch (err: any) {
-      setError(getErrorMessage(err));
-      console.error('[DEBUG] Password reset error:', err);
-    } finally {
-      setIsLoading(false);
-    }
+  const handleResetPassword = () => {
+    navigate('/forgot-password');
   };
 
   return (
@@ -218,7 +202,7 @@ export function LoginForm() {
                     onClick={handleResetPassword}
                     className="text-xs sm:text-sm text-white/80 hover:text-white transition-colors group"
                   >
-                    Forgot password? <span className="text-[#23cff4] group-hover:text-[#23cff4] border-b border-[#23cff4]">Send reset code</span>
+                    Forgot password? <span className="text-[#23cff4] group-hover:text-[#23cff4] border-b border-[#23cff4]">Reset it here</span>
                   </button>
                 </div>
               </div>

@@ -2,6 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { X, Calendar, Building2, DollarSign, Tag, Receipt, Upload, Camera, Percent } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
+import { useReceipts } from './ReceiptContext';
 
 interface EditReceiptModalProps {
   isOpen: boolean;
@@ -29,6 +30,8 @@ interface EditReceiptModalProps {
 }
 
 export function EditReceiptModal({ isOpen, onClose, receipt, onSave, readOnly = false }: EditReceiptModalProps) {
+  const { correctReceipt } = useReceipts();
+  
   const formatDateForInput = (date: string) => {
     return date.split('T')[0];
   };
@@ -71,6 +74,28 @@ export function EditReceiptModal({ isOpen, onClose, receipt, onSave, readOnly = 
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
+    
+    // If category changed and it's different from original, call correctReceipt
+    if (name === 'category' && value !== receipt.category && value !== '') {
+      // Map category name to ID (you may need to adjust this mapping based on your categories)
+      const categoryMap: { [key: string]: number } = {
+        'Advertising': 1,
+        'Car and Truck Expenses': 2,
+        'Office Expenses': 3,
+        'Travel': 4,
+        'Meals': 5,
+        'Utilities': 6,
+        'Taxes and Licenses': 7,
+        'Supplies': 8,
+        'Other': 9,
+      };
+      
+      const categoryId = categoryMap[value];
+      if (categoryId && receipt.id) {
+        correctReceipt(receipt.id, categoryId, 'User override from edit modal');
+      }
+    }
+    
     setFormData(prev => ({
       ...prev,
       [name]: name === 'total' || name === 'tax' ? parseFloat(value) || 0 : value

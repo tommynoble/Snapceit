@@ -21,6 +21,7 @@ import { TaxCalculator } from './tax/TaxCalculator';
 import { PriceMatchPage } from '../../pages/dashboard/PriceMatchPage';
 import { TemplatePreview } from '../../pages/dashboard/TemplatePreview';
 import { SettingsPage } from '../../pages/dashboard/SettingsPage';
+import { Profile } from '../../pages/dashboard/Profile';
 
 export function DashboardLayout() {
   const [isUserProfileOpen, setIsUserProfileOpen] = useState(false);
@@ -41,7 +42,7 @@ export function DashboardLayout() {
   const handleTaxPageClick = () => navigate('/dashboard/tax-calculator');
 
   const handleProfileClick = () => {
-    setIsUserProfileOpen(true);
+    navigate('/dashboard/profile');
   };
 
   const DashboardContent = () => (
@@ -163,6 +164,7 @@ export function DashboardLayout() {
                   />
                   <Route path="tax-calculator" element={<TaxCalculator />} />
                   <Route path="settings" element={<SettingsPage />} />
+                  <Route path="profile" element={<Profile />} />
                 </Routes>
               </div>
             </div>
