@@ -99,7 +99,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         email: email.toLowerCase(),
         password,
         options: {
-          emailRedirectTo: 'http://localhost:5184/email-confirmed',
+          emailRedirectTo: 'https://snapceit.com/email-confirmed',
         }
       });
 
