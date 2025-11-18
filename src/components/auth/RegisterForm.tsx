@@ -11,13 +11,29 @@ interface RegisterFormProps {
 }
 
 const getErrorMessage = (error: any) => {
+  const message = error.message?.toLowerCase() || '';
+  
   if (error.name === 'UsernameExistsException') {
     // Check if the user is unverified
-    if (error.message.toLowerCase().includes('not confirmed')) {
+    if (message.includes('not confirmed')) {
       return 'This email is registered but not verified. We\'ll send you a new verification code.';
     }
     return 'This email is already registered and verified. Please try logging in instead.';
   }
+  
+  // Handle Supabase specific error messages
+  if (message.includes('already registered') || message.includes('user already exists')) {
+    return 'This email has already been registered. Please try logging in instead.';
+  }
+  
+  if (message.includes('invalid email')) {
+    return 'Please enter a valid email address.';
+  }
+  
+  if (message.includes('password')) {
+    return 'Password must be at least 6 characters long.';
+  }
+  
   return error.message || 'An error occurred during registration. Please try again.';
 };
 
@@ -139,97 +155,119 @@ export function RegisterForm({ onBack, heading = "Get started with Snapceit" }: 
             )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-white/80 mb-1.5">
-                  Email Address
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  className="w-full px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/40 focus:border-transparent backdrop-blur-sm text-sm"
-                  placeholder="Enter your email"
-                  required
-                  disabled={loading}
-                />
-              </div>
+              {!successMessage ? (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-white/80 mb-1.5">
+                      Email Address
+                    </label>
+                    <input
+                      type="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      className="w-full px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/40 focus:border-transparent backdrop-blur-sm text-sm"
+                      placeholder="Enter your email"
+                      required
+                      disabled={loading}
+                    />
+                  </div>
 
-              <div>
-                <label className="block text-sm font-medium text-white/80 mb-1.5">
-                  Password
-                </label>
-                <div className="relative">
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    name="password"
-                    value={formData.password}
-                    onChange={handleInputChange}
-                    className="w-full px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/40 focus:border-transparent backdrop-blur-sm text-sm"
-                    placeholder="Create a password"
-                    required
-                    disabled={loading || !!successMessage}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white"
-                  >
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </button>
-                </div>
-              </div>
+                  <div>
+                    <label className="block text-sm font-medium text-white/80 mb-1.5">
+                      Password
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        name="password"
+                        value={formData.password}
+                        onChange={handleInputChange}
+                        className="w-full px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/40 focus:border-transparent backdrop-blur-sm text-sm"
+                        placeholder="Create a password"
+                        required
+                        disabled={loading}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white"
+                      >
+                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
+                  </div>
 
-              <div>
-                <label className="block text-sm font-medium text-white/80 mb-1.5">
-                  Confirm Password
-                </label>
-                <div className="relative">
-                  <input
-                    type={showConfirmPassword ? 'text' : 'password'}
-                    name="confirmPassword"
-                    value={formData.confirmPassword}
-                    onChange={handleInputChange}
-                    className="w-full px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/40 focus:border-transparent backdrop-blur-sm text-sm"
-                    placeholder="Confirm your password"
-                    required
-                    disabled={loading || !!successMessage}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white"
-                  >
-                    {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </button>
-                </div>
-              </div>
+                  <div>
+                    <label className="block text-sm font-medium text-white/80 mb-1.5">
+                      Confirm Password
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        name="confirmPassword"
+                        value={formData.confirmPassword}
+                        onChange={handleInputChange}
+                        className="w-full px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/40 focus:border-transparent backdrop-blur-sm text-sm"
+                        placeholder="Confirm your password"
+                        required
+                        disabled={loading}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white"
+                      >
+                        {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
+                  </div>
 
-              <div className="space-y-3 pt-2">
-                <motion.button
-                  type="submit"
-                  disabled={loading}
-                  className={`w-full py-3 px-4 rounded-lg text-white font-semibold transition-all duration-200 ${
-                    loading
-                      ? 'bg-purple-400 cursor-not-allowed'
-                      : 'bg-purple-600 hover:bg-purple-700'
-                  }`}
-                  whileHover={{ scale: loading ? 1 : 1.02 }}
-                  whileTap={{ scale: loading ? 1 : 0.98 }}
-                >
-                  {loading ? 'Creating Account...' : 'Create Account'}
-                </motion.button>
-                
-                <div className="flex flex-col space-y-2 text-center">
+                  <div className="space-y-3 pt-2">
+                    <motion.button
+                      type="submit"
+                      disabled={loading}
+                      className={`w-full py-3 px-4 rounded-lg text-white font-semibold transition-all duration-200 ${
+                        loading
+                          ? 'bg-purple-400 cursor-not-allowed'
+                          : 'bg-purple-600 hover:bg-purple-700'
+                      }`}
+                      whileHover={{ scale: loading ? 1 : 1.02 }}
+                      whileTap={{ scale: loading ? 1 : 0.98 }}
+                    >
+                      {loading ? 'Creating Account...' : 'Create Account'}
+                    </motion.button>
+                    
+                    <div className="flex flex-col space-y-2 text-center">
+                      <button
+                        type="button"
+                        onClick={onBack}
+                        className="text-xs sm:text-sm text-white/80 hover:text-white transition-colors group"
+                      >
+                        Already have an account? <span className="text-[#23cff4] group-hover:text-[#23cff4] border-b border-[#23cff4]">Sign in</span>
+                      </button>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="space-y-4 text-center py-8">
+                  <div className="text-4xl mb-4">✓</div>
+                  <h3 className="text-xl font-semibold text-white mb-2">Check Your Email</h3>
+                  <p className="text-white/80 mb-6">
+                    We've sent a verification link to <span className="font-semibold text-white">{formData.email}</span>
+                  </p>
+                  <p className="text-sm text-white/60 mb-6">
+                    Click the link in the email to verify your account and get started with Snapceit.
+                  </p>
                   <button
                     type="button"
                     onClick={onBack}
-                    className="text-xs sm:text-sm text-white/80 hover:text-white transition-colors group"
+                    className="text-sm text-[#23cff4] hover:text-[#23cff4] transition-colors"
                   >
-                    Already have an account? <span className="text-[#23cff4] group-hover:text-[#23cff4] border-b border-[#23cff4]">Sign in</span>
+                    Back to Sign In
                   </button>
                 </div>
-              </div>
+              )}
             </form>
           </div>
         </motion.div>
