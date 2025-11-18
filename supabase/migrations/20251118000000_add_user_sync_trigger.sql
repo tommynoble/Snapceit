@@ -29,23 +29,5 @@ CREATE TRIGGER on_auth_user_confirmed
   WHEN (OLD.email_confirmed_at IS DISTINCT FROM NEW.email_confirmed_at)
   EXECUTE FUNCTION public.handle_new_user_confirmed();
 
--- Also handle new signups (insert unconfirmed initially)
-CREATE OR REPLACE FUNCTION public.handle_new_user_signup()
-RETURNS TRIGGER AS $$
-BEGIN
-  -- Insert user with email_verified = false initially
-  INSERT INTO public.users (id, email, email_verified, created_at, updated_at)
-  VALUES (NEW.id, NEW.email, false, NEW.created_at, NOW())
-  ON CONFLICT (id) DO NOTHING;
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- Drop existing trigger if it exists
-DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
-
--- Create trigger for new user creation
-CREATE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW
-  EXECUTE FUNCTION public.handle_new_user_signup();
+-- Note: Do NOT create users on signup - only on email confirmation
+-- This prevents unverified emails from being added to the database
