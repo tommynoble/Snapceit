@@ -148,12 +148,6 @@ export function RegisterForm({ onBack, heading = "Get started with Snapceit" }: 
               </div>
             )}
 
-            {successMessage && (
-              <div className="mb-4 bg-green-500/10 border border-green-500/20 text-green-200 px-4 py-3 rounded-lg text-sm sm:text-base">
-                {successMessage}
-              </div>
-            )}
-
             <form onSubmit={handleSubmit} className="space-y-4">
               {!successMessage ? (
                 <>
@@ -251,7 +245,13 @@ export function RegisterForm({ onBack, heading = "Get started with Snapceit" }: 
                 </>
               ) : (
                 <div className="space-y-4 text-center py-8">
-                  <div className="text-4xl mb-4">✓</div>
+                  <div className="flex justify-center mb-6">
+                    <div className="w-16 h-16 bg-gradient-to-br from-[#23cff4] to-[#597FFB] rounded-full flex items-center justify-center">
+                      <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                  </div>
                   <h3 className="text-xl font-semibold text-white mb-2">Check Your Email</h3>
                   <p className="text-white/80 mb-6">
                     We've sent a verification link to <span className="font-semibold text-white">{formData.email}</span>
