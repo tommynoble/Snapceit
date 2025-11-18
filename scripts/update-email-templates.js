@@ -3,6 +3,8 @@
 /**
  * Script to update Supabase email templates via Management API
  * Usage: node scripts/update-email-templates.js
+ * 
+ * Requires: VITE_SUPABASE_URL and VITE_SUPABASE_SERVICE_ROLE_KEY in .env
  */
 
 import fs from 'fs';
@@ -18,15 +20,16 @@ dotenv.config({ path: path.join(__dirname, '../.env') });
 
 // Get environment variables
 const supabaseUrl = process.env.VITE_SUPABASE_URL;
-const apiKey = process.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+const serviceRoleKey = process.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
 
-if (!supabaseUrl || !apiKey) {
+if (!supabaseUrl || !serviceRoleKey) {
   console.error('❌ Error: Missing environment variables');
   console.error('Required: VITE_SUPABASE_URL, VITE_SUPABASE_SERVICE_ROLE_KEY');
   console.error('\nTo get SERVICE_ROLE_KEY:');
   console.error('1. Go to Supabase Dashboard');
   console.error('2. Project Settings → API');
-  console.error('3. Copy "service_role" key');
+  console.error('3. Copy "service_role" key (the long secret one)');
+  console.error('4. Add to .env: VITE_SUPABASE_SERVICE_ROLE_KEY=your_key_here');
   process.exit(1);
 }
 
@@ -47,65 +50,50 @@ const resetPasswordTemplate = fs.readFileSync(resetPasswordPath, 'utf-8');
 
 console.log('📧 Updating Supabase email templates...\n');
 
-// Function to make API request using fetch
-async function makeRequest(method, templateType, data) {
-  const url = `https://api.supabase.com/v1/projects/${projectId}/auth/email-templates/${templateType}`;
-  
-  try {
-    const response = await fetch(url, {
-      method: method,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-      },
-      body: data ? JSON.stringify(data) : undefined,
-    });
-
-    const body = await response.text();
-    let parsedBody;
-    try {
-      parsedBody = JSON.parse(body);
-    } catch {
-      parsedBody = body;
-    }
-
-    return {
-      status: response.status,
-      body: parsedBody,
-    };
-  } catch (error) {
-    throw error;
-  }
-}
-
-// Update templates
+// Update templates via REST API
 async function updateTemplates() {
   try {
     // Update confirmation template
     console.log('📤 Updating confirmation template...');
-    const confirmRes = await makeRequest('PUT', 'confirmation', {
-      template: confirmationTemplate,
+    const confirmRes = await fetch(`${supabaseUrl}/auth/v1/admin/email-templates/confirm`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': serviceRoleKey,
+        'Authorization': `Bearer ${serviceRoleKey}`,
+      },
+      body: JSON.stringify({
+        template: confirmationTemplate,
+      }),
     });
 
-    if (confirmRes.status === 200 || confirmRes.status === 204) {
-      console.log('✅ Confirmation template updated successfully\n');
-    } else {
-      console.error('❌ Failed to update confirmation template:', confirmRes.body);
+    if (!confirmRes.ok) {
+      const error = await confirmRes.text();
+      console.error('❌ Failed to update confirmation template:', error);
       process.exit(1);
     }
+    console.log('✅ Confirmation template updated successfully\n');
 
     // Update reset password template
     console.log('📤 Updating reset password template...');
-    const resetRes = await makeRequest('PUT', 'recovery', {
-      template: resetPasswordTemplate,
+    const resetRes = await fetch(`${supabaseUrl}/auth/v1/admin/email-templates/recovery`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': serviceRoleKey,
+        'Authorization': `Bearer ${serviceRoleKey}`,
+      },
+      body: JSON.stringify({
+        template: resetPasswordTemplate,
+      }),
     });
 
-    if (resetRes.status === 200 || resetRes.status === 204) {
-      console.log('✅ Reset password template updated successfully\n');
-    } else {
-      console.error('❌ Failed to update reset password template:', resetRes.body);
+    if (!resetRes.ok) {
+      const error = await resetRes.text();
+      console.error('❌ Failed to update reset password template:', error);
       process.exit(1);
     }
+    console.log('✅ Reset password template updated successfully\n');
 
     console.log('🎉 All email templates updated successfully!');
   } catch (error) {
