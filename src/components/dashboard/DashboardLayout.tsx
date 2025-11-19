@@ -20,7 +20,8 @@ import logo from '../../../images/logo.svg';
 import { TaxCalculator } from './tax/TaxCalculator';
 import { PriceMatchPage } from '../../pages/dashboard/PriceMatchPage';
 import { TemplatePreview } from '../../pages/dashboard/TemplatePreview';
-import { SettingsPage } from '../../pages/dashboard/SettingsPage';
+import { SettingsNew } from '../../pages/dashboard/SettingsNew';
+import { Pricing } from '../../pages/dashboard/Pricing';
 import { Profile } from '../../pages/dashboard/Profile';
 
 export function DashboardLayout() {
@@ -163,7 +164,8 @@ export function DashboardLayout() {
                     element={<PriceMatchPage />}
                   />
                   <Route path="tax-calculator" element={<TaxCalculator />} />
-                  <Route path="settings" element={<SettingsPage />} />
+                  <Route path="settings" element={<SettingsNew />} />
+                  <Route path="pricing" element={<Pricing />} />
                   <Route path="profile" element={<Profile />} />
                 </Routes>
               </div>

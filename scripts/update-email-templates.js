@@ -20,81 +20,64 @@ dotenv.config({ path: path.join(__dirname, '../.env') });
 
 // Get environment variables
 const supabaseUrl = process.env.VITE_SUPABASE_URL;
-const serviceRoleKey = process.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+const accessToken = process.env.SUPABASE_ACCESS_TOKEN;
 
-if (!supabaseUrl || !serviceRoleKey) {
+if (!supabaseUrl || !accessToken) {
   console.error('❌ Error: Missing environment variables');
-  console.error('Required: VITE_SUPABASE_URL, VITE_SUPABASE_SERVICE_ROLE_KEY');
-  console.error('\nTo get SERVICE_ROLE_KEY:');
-  console.error('1. Go to Supabase Dashboard');
-  console.error('2. Project Settings → API');
-  console.error('3. Copy "service_role" key (the long secret one)');
-  console.error('4. Add to .env: VITE_SUPABASE_SERVICE_ROLE_KEY=your_key_here');
+  console.error('Required: VITE_SUPABASE_URL, SUPABASE_ACCESS_TOKEN');
+  console.error('\nTo get SUPABASE_ACCESS_TOKEN:');
+  console.error('1. Go to https://supabase.com/dashboard/account/tokens');
+  console.error('2. Create a new personal access token');
+  console.error('3. Copy it and add to .env: SUPABASE_ACCESS_TOKEN=your_token_here');
   process.exit(1);
 }
 
-// Extract project ID from URL
-const projectId = supabaseUrl.split('//')[1].split('.')[0];
+// Extract project ref from URL
+const projectRef = supabaseUrl.split('//')[1].split('.')[0];
 
 // Read email templates
 const confirmationPath = path.join(__dirname, '../supabase/email-templates/confirmation.html');
 const resetPasswordPath = path.join(__dirname, '../supabase/email-templates/reset-password.html');
+const otpPath = path.join(__dirname, '../supabase/email-templates/otp.html');
 
-if (!fs.existsSync(confirmationPath) || !fs.existsSync(resetPasswordPath)) {
+if (!fs.existsSync(confirmationPath) || !fs.existsSync(resetPasswordPath) || !fs.existsSync(otpPath)) {
   console.error('❌ Error: Email template files not found');
   process.exit(1);
 }
 
 const confirmationTemplate = fs.readFileSync(confirmationPath, 'utf-8');
 const resetPasswordTemplate = fs.readFileSync(resetPasswordPath, 'utf-8');
+const otpTemplate = fs.readFileSync(otpPath, 'utf-8');
 
 console.log('📧 Updating Supabase email templates...\n');
 
-// Update templates via REST API
+// Update templates via Supabase Management API
 async function updateTemplates() {
   try {
-    // Update confirmation template
-    console.log('📤 Updating confirmation template...');
-    const confirmRes = await fetch(`${supabaseUrl}/auth/v1/admin/email-templates/confirm`, {
-      method: 'PUT',
+    console.log('📤 Updating email templates...');
+    
+    const updateRes = await fetch(`https://api.supabase.com/v1/projects/${projectRef}/config/auth`, {
+      method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
-        'apikey': serviceRoleKey,
-        'Authorization': `Bearer ${serviceRoleKey}`,
+        'Authorization': `Bearer ${accessToken}`,
       },
       body: JSON.stringify({
-        template: confirmationTemplate,
+        mailer_templates_confirmation_content: otpTemplate,
+        mailer_templates_recovery_content: resetPasswordTemplate,
       }),
     });
 
-    if (!confirmRes.ok) {
-      const error = await confirmRes.text();
-      console.error('❌ Failed to update confirmation template:', error);
+    if (!updateRes.ok) {
+      const error = await updateRes.text();
+      console.error('❌ Failed to update email templates:', error);
       process.exit(1);
     }
-    console.log('✅ Confirmation template updated successfully\n');
-
-    // Update reset password template
-    console.log('📤 Updating reset password template...');
-    const resetRes = await fetch(`${supabaseUrl}/auth/v1/admin/email-templates/recovery`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': serviceRoleKey,
-        'Authorization': `Bearer ${serviceRoleKey}`,
-      },
-      body: JSON.stringify({
-        template: resetPasswordTemplate,
-      }),
-    });
-
-    if (!resetRes.ok) {
-      const error = await resetRes.text();
-      console.error('❌ Failed to update reset password template:', error);
-      process.exit(1);
-    }
-    console.log('✅ Reset password template updated successfully\n');
-
+    
+    const result = await updateRes.json();
+    console.log('✅ Confirmation template updated successfully');
+    console.log('✅ Reset password template updated successfully');
+    console.log('✅ OTP template updated successfully\n');
     console.log('🎉 All email templates updated successfully!');
   } catch (error) {
     console.error('❌ Error updating templates:', error.message);

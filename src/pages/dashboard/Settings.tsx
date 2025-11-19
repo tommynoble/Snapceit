@@ -5,16 +5,17 @@ import { DashboardHeader } from '../../components/dashboard/DashboardHeader';
 import { 
   BellIcon, 
   GlobeAltIcon, 
-  SunIcon, 
   DocumentIcon, 
-  ClockIcon, 
-  CogIcon,
-  ArrowPathIcon,
-  CloudArrowUpIcon
+  ClockIcon,
+  CloudArrowUpIcon,
+  KeyIcon,
+  ArrowRightOnRectangleIcon,
+  TrashIcon
 } from '@heroicons/react/24/outline';
 import { settingsService, UserSettings } from '../../services/settingsService';
-import { useAuth } from '../../auth/CognitoAuthContext';
+import { useAuth } from '../../auth/SupabaseAuthContext';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../../lib/supabase';
 
 export function Settings() {
   const { showToast } = useToast();

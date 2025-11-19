@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../../auth/SupabaseAuthContext';
@@ -12,6 +12,9 @@ interface RegisterFormProps {
 
 const getErrorMessage = (error: any) => {
   const message = error.message?.toLowerCase() || '';
+  const status = error.status || error.statusCode || '';
+  
+  console.log('Auth Error Details:', { message, status, error }); // Debug log
   
   if (error.name === 'UsernameExistsException') {
     // Check if the user is unverified
@@ -22,7 +25,12 @@ const getErrorMessage = (error: any) => {
   }
   
   // Handle Supabase specific error messages
-  if (message.includes('already registered') || message.includes('user already exists')) {
+  if (message.includes('already registered') || message.includes('user already exists') || message.includes('duplicate')) {
+    return 'This email has already been registered. Please try logging in instead.';
+  }
+  
+  // Handle 422 status (Unprocessable Entity - usually duplicate email)
+  if (status === 422 || message.includes('user_already_exists')) {
     return 'This email has already been registered. Please try logging in instead.';
   }
   
@@ -48,7 +56,11 @@ export function RegisterForm({ onBack, heading = "Get started with Snapceit" }: 
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signup } = useAuth();
+  const [showCodeInput, setShowCodeInput] = useState(false);
+  const [verificationCode, setVerificationCode] = useState('');
+  const [signupEmail, setSignupEmail] = useState('');
+  const [cooldownSeconds, setCooldownSeconds] = useState(0);
+  const { signup, confirmSignUp } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -56,15 +68,32 @@ export function RegisterForm({ onBack, heading = "Get started with Snapceit" }: 
     setError('');
     setSuccessMessage('');
 
+    console.log('handleSubmit called, cooldownSeconds:', cooldownSeconds);
+
+    // Validate form first
+    if (!formData.email || !formData.password || !formData.confirmPassword) {
+      setError('Please fill in all fields');
+      return;
+    }
+
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
       return;
     }
 
+    // Check cooldown BEFORE making any API calls
+    if (cooldownSeconds > 0) {
+      console.log('Cooldown active, blocking signup');
+      setError(`For security purposes, you can only request this after ${cooldownSeconds} seconds.`);
+      return;
+    }
+
+    console.log('Cooldown check passed, proceeding with signup');
+
     setLoading(true);
 
     try {
-      console.log('Starting registration process...');
+      console.log('Starting signup process...');
       console.log('Form data:', {
         email: formData.email,
         hasPassword: !!formData.password
@@ -73,51 +102,53 @@ export function RegisterForm({ onBack, heading = "Get started with Snapceit" }: 
       const response = await signup(formData.email, formData.password);
       console.log('Registration response:', response);
       
-      // Check if email confirmation is required
-      if (response?.user && !response.user.confirmed_at) {
-        setSuccessMessage('Registration successful! Please check your email for the verification link. Click the link in the email to verify your account.');
-        // Clear the form after successful registration
-        setFormData({
-          email: '',
-          password: '',
-          confirmPassword: ''
+      // Show OTP code input screen
+      setSignupEmail(formData.email);
+      setShowCodeInput(true);
+      setError(''); // Clear any errors
+      setSuccessMessage('We\'ve sent a 6-digit verification code to your email. Enter it below to verify your account.');
+      
+      // Start 60-second cooldown
+      setCooldownSeconds(60);
+      const interval = setInterval(() => {
+        setCooldownSeconds(prev => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            return 0;
+          }
+          return prev - 1;
         });
-        // Don't navigate to verify-email page since Supabase uses magic links
-        // User will be redirected after clicking the link in their email
-      } else if (response?.user) {
-        // User is already confirmed (shouldn't happen with default Supabase settings)
-        setSuccessMessage('Registration successful! Redirecting to dashboard...');
-        setTimeout(() => {
-          navigate('/dashboard');
-        }, 2000);
-      }
+      }, 1000);
+      
+      // Clear the form
+      setFormData({
+        email: '',
+        password: '',
+        confirmPassword: ''
+      });
+      setLoading(false);
     } catch (err: any) {
       console.error('Registration error:', err);
-      if (err.name === 'UsernameExistsException') {
-        if (err.message.toLowerCase().includes('not confirmed')) {
-          // If user exists but is not confirmed, resend the verification code
-          try {
-            await signup(formData.email, formData.password);
-            setSuccessMessage('A new verification code has been sent to your email');
-            setTimeout(() => {
-              navigate('/verify-email', { 
-                state: { 
-                  email: formData.email,
-                } 
-              });
-            }, 2000);
-            return;
-          } catch (resendError) {
-            console.error('Error resending verification code:', resendError);
-            setError('Failed to resend verification code. Please try again.');
-          }
-        } else {
-          setError('This email is already registered and verified. Please try logging in instead.');
-        }
+      
+      // If it's a rate limit error (429), the OTP was still sent, so show the input screen
+      if (err.status === 429 || err.message?.includes('after')) {
+        setSignupEmail(formData.email);
+        setShowCodeInput(true);
+        setSuccessMessage('We\'ve sent a 6-digit verification code to your email. Enter it below to verify your account.');
+        setCooldownSeconds(60);
+        const interval = setInterval(() => {
+          setCooldownSeconds(prev => {
+            if (prev <= 1) {
+              clearInterval(interval);
+              return 0;
+            }
+            return prev - 1;
+          });
+        }, 1000);
       } else {
         setError(getErrorMessage(err));
       }
-    } finally {
+      
       setLoading(false);
     }
   };
@@ -130,6 +161,33 @@ export function RegisterForm({ onBack, heading = "Get started with Snapceit" }: 
     }));
   };
 
+  const handleVerifyCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    try {
+      if (!verificationCode.trim()) {
+        setError('Please enter the verification code');
+        setLoading(false);
+        return;
+      }
+
+      // Verify the OTP code
+      await confirmSignUp(signupEmail, verificationCode);
+      
+      setSuccessMessage('Email verified successfully! Redirecting to dashboard...');
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 2000);
+    } catch (err: any) {
+      console.error('Verification error:', err);
+      setError(err.message || 'Failed to verify code. Please try again.');
+      setLoading(false);
+    }
+  };
+
+
   return (
     <>
       {loading && <LoadingSpinner />}
@@ -140,7 +198,15 @@ export function RegisterForm({ onBack, heading = "Get started with Snapceit" }: 
           className="w-full max-w-xl mx-auto"
         >
           <div className="backdrop-blur-sm rounded-2xl p-6 sm:p-8">
-            <h2 className="text-2xl sm:text-3xl font-bold text-white/90 text-center mb-6">{heading}</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold text-white/90 text-center mb-6">
+              {showCodeInput ? 'Verify Your Email' : heading}
+            </h2>
+
+            {successMessage && (
+              <div className="mb-4 bg-green-500/10 border border-green-500/20 text-green-200 px-4 py-3 rounded-lg text-sm sm:text-base">
+                {successMessage}
+              </div>
+            )}
 
             {error && (
               <div className="mb-4 bg-red-500/10 border border-red-500/20 text-red-200 px-4 py-3 rounded-lg text-sm sm:text-base">
@@ -148,8 +214,57 @@ export function RegisterForm({ onBack, heading = "Get started with Snapceit" }: 
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {!successMessage ? (
+            {showCodeInput ? (
+              <form onSubmit={handleVerifyCode} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-white/80 mb-1.5">
+                    Verification Code
+                  </label>
+                  <input
+                    type="text"
+                    value={verificationCode}
+                    onChange={(e) => setVerificationCode(e.target.value.toUpperCase())}
+                    className="w-full px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/40 focus:border-transparent backdrop-blur-sm text-sm text-center tracking-widest"
+                    placeholder="000000"
+                    maxLength={6}
+                    required
+                    disabled={loading}
+                  />
+                  <p className="text-xs text-white/60 mt-2">Check your email for the 6-digit code</p>
+                </div>
+
+                <div className="space-y-3 pt-2">
+                  <motion.button
+                    type="submit"
+                    disabled={loading}
+                    className={`w-full py-3 px-4 rounded-lg text-white font-semibold transition-all duration-200 ${
+                      loading
+                        ? 'bg-purple-400 cursor-not-allowed'
+                        : 'bg-purple-600 hover:bg-purple-700'
+                    }`}
+                    whileHover={{ scale: loading ? 1 : 1.02 }}
+                    whileTap={{ scale: loading ? 1 : 0.98 }}
+                  >
+                    {loading ? 'Verifying...' : 'Verify Code'}
+                  </motion.button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowCodeInput(false);
+                      setVerificationCode('');
+                      setSuccessMessage('');
+                      setCooldownSeconds(0);
+                    }}
+                    className="w-full text-sm text-white/80 hover:text-white transition-colors"
+                  >
+                    Back to Sign Up
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {!successMessage ? (
                 <>
                   <div>
                     <label className="block text-sm font-medium text-white/80 mb-1.5">
@@ -268,7 +383,8 @@ export function RegisterForm({ onBack, heading = "Get started with Snapceit" }: 
                   </button>
                 </div>
               )}
-            </form>
+              </form>
+            )}
           </div>
         </motion.div>
       </div>

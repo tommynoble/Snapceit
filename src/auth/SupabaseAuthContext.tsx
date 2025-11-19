@@ -95,17 +95,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signup = async (email: string, password: string) => {
     try {
       setError(null);
-      const { data, error } = await supabase.auth.signUp({
+      // First, sign up the user
+      const { data: signupData, error: signupError } = await supabase.auth.signUp({
         email: email.toLowerCase(),
         password,
-        options: {
-          emailRedirectTo: 'http://localhost:5184/email-confirmed',
-        }
       });
 
-      if (error) throw error;
+      if (signupError) throw signupError;
 
-      return data;
+      // Then send OTP code to email
+      const { error: otpError } = await supabase.auth.signInWithOtp({
+        email: email.toLowerCase(),
+      });
+
+      if (otpError) throw otpError;
+
+      return signupData;
     } catch (error: any) {
       setError(error.message);
       throw error;
@@ -122,6 +127,49 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       if (error) throw error;
+
+      return data;
+    } catch (error: any) {
+      setError(error.message);
+      throw error;
+    }
+  };
+
+  const loginWithOtp = async (email: string) => {
+    try {
+      setError(null);
+      const { error: otpError } = await supabase.auth.signInWithOtp({
+        email: email.toLowerCase(),
+      });
+
+      if (otpError) throw otpError;
+
+      return { success: true };
+    } catch (error: any) {
+      setError(error.message);
+      throw error;
+    }
+  };
+
+  const verifyLoginOtp = async (email: string, token: string) => {
+    try {
+      setError(null);
+      const { data, error } = await supabase.auth.verifyOtp({
+        email,
+        token,
+        type: 'email'
+      });
+
+      if (error) throw error;
+
+      setCurrentUser(data.user);
+      setSession(data.session);
+
+      // Store tokens if needed
+      if (data.session) {
+        localStorage.setItem('accessToken', data.session.access_token);
+        localStorage.setItem('refreshToken', data.session.refresh_token);
+      }
 
       return data;
     } catch (error: any) {
@@ -184,6 +232,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     session,
     error,
     login,
+    loginWithOtp,
+    verifyLoginOtp,
     logout,
     signup,
     confirmSignUp,

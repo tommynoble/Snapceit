@@ -71,14 +71,20 @@ export const ReceiptProvider: React.FC<{ children: React.ReactNode }> = ({ child
         throw new Error('No user ID available');
       }
       
-      // Fetch from receipts_v2 using raw HTTP
+      // Get session token for RLS
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error('No session available');
+      }
+      
+      // Fetch from receipts_v2 using raw HTTP with session token
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/receipts_v2?user_id=eq.${currentUser.id}&order=created_at.desc`,
         {
           method: 'GET',
           headers: {
             'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            'Authorization': `Bearer ${session.access_token}`,
           },
         }
       );
@@ -103,6 +109,12 @@ export const ReceiptProvider: React.FC<{ children: React.ReactNode }> = ({ child
         throw new Error('Authentication required');
       }
 
+      // Get session token for RLS
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error('No session available');
+      }
+
       // Generate UUID client-side to avoid DB constraint issues
       const crypto = await import('crypto');
       const receiptId = crypto.randomUUID ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -120,7 +132,7 @@ export const ReceiptProvider: React.FC<{ children: React.ReactNode }> = ({ child
         status: 'pending'
       };
 
-      // Use raw HTTP with Prefer header to disable ON CONFLICT
+      // Use raw HTTP with session token for RLS
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/receipts_v2`,
         {
@@ -128,7 +140,7 @@ export const ReceiptProvider: React.FC<{ children: React.ReactNode }> = ({ child
           headers: {
             'Content-Type': 'application/json',
             'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            'Authorization': `Bearer ${session.access_token}`,
             'Prefer': 'return=minimal', // Disable ON CONFLICT
           },
           body: JSON.stringify([receiptData]),
@@ -202,9 +214,15 @@ export const ReceiptProvider: React.FC<{ children: React.ReactNode }> = ({ child
         throw new Error('No user ID available');
       }
 
+      // Get session token for RLS
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error('No session available');
+      }
+
       console.log('Attempting to delete receipt:', { id, userId: currentUser.id });
 
-      // Delete from receipts_v2 using raw HTTP
+      // Delete from receipts_v2 using raw HTTP with session token
       const url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/receipts_v2?id=eq.${id}&user_id=eq.${currentUser.id}`;
       console.log('Delete URL:', url);
 
@@ -212,7 +230,7 @@ export const ReceiptProvider: React.FC<{ children: React.ReactNode }> = ({ child
         method: 'DELETE',
         headers: {
           'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'Authorization': `Bearer ${session.access_token}`,
         },
       });
 
