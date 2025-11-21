@@ -20,11 +20,12 @@ export interface Receipt {
   category_id?: number;
   category_confidence?: number;
   ocr_confidence?: number; // Confidence from Textract extraction
-  tax?: {
-    total: number;
-    type?: string;
-  };
+  
+  // Tax fields (from Lambda extraction)
   subtotal?: number;
+  tax?: number; // Tax amount (simple number, not object)
+  tax_rate?: number; // Tax rate as decimal (0.06 = 6%)
+  
   paymentMethod?: string;
   address?: string;
   phone?: string;

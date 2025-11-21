@@ -30,20 +30,8 @@ import { Reports } from '../../pages/dashboard/Reports';
 export function DashboardLayout() {
   const [isUserProfileOpen, setIsUserProfileOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [showGreeting, setShowGreeting] = useState(true);
   const { logout, currentUser } = useAuth();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    // Show greeting on first load, hide after 1 minute
-    const hideTimer = setTimeout(() => {
-      setShowGreeting(false);
-    }, 60000); // 1 minute
-
-    return () => {
-      clearTimeout(hideTimer);
-    };
-  }, []);
 
   const handleLogout = async () => {
     try {
@@ -229,9 +217,9 @@ export function DashboardLayout() {
                           <div className="pl-0.75 md:pl-0 mb-6 md:mt-12">
                             <motion.h2
                               initial={{ opacity: 0, y: -10 }}
-                              animate={{ opacity: showGreeting ? 1 : 0, y: showGreeting ? 0 : -10 }}
+                              animate={{ opacity: 1, y: 0 }}
                               transition={{ duration: 0.6 }}
-                              className={`text-xl sm:text-3xl font-extrabold text-white pb-2 ${showGreeting ? 'border-b border-white/20' : ''}`}
+                              className="text-xl sm:text-3xl font-extrabold text-white pb-2 border-b border-white/20"
                             >
                               {greeting}
                             </motion.h2>

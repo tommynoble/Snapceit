@@ -492,7 +492,7 @@ export function RecentReceiptsCard() {
                     </div>
 
                     {/* Subtotal */}
-                    {selectedReceipt.subtotal && (
+                    {selectedReceipt.subtotal !== null && selectedReceipt.subtotal !== undefined && (
                       <div>
                         <label className="text-sm font-medium text-gray-600">Subtotal</label>
                         <div className="mt-1 p-3 bg-gray-50 rounded-lg border border-gray-200">
@@ -502,9 +502,9 @@ export function RecentReceiptsCard() {
                     )}
 
                     {/* Tax Amount */}
-                    {selectedReceipt.tax && (
+                    {selectedReceipt.tax !== null && selectedReceipt.tax !== undefined && (
                       <div>
-                        <label className="text-sm font-medium text-gray-600">Tax</label>
+                        <label className="text-sm font-medium text-gray-600">Tax / VAT</label>
                         <div className="mt-1 p-3 bg-blue-50 rounded-lg border border-blue-200">
                           <div className="flex items-center justify-between">
                             <p className="text-lg font-semibold text-blue-900">${(selectedReceipt.tax || 0).toFixed(2)}</p>
@@ -514,6 +514,16 @@ export function RecentReceiptsCard() {
                               </span>
                             )}
                           </div>
+                          {(selectedReceipt.tax_breakdown || selectedReceipt.taxBreakdown)?.length ? (
+                            <div className="mt-2 space-y-1">
+                              {(selectedReceipt.tax_breakdown || selectedReceipt.taxBreakdown).map((entry: any, idx: number) => (
+                                <div key={idx} className="flex items-center justify-between text-sm text-blue-800">
+                                  <span>{entry.label || `Tax ${idx + 1}`}{entry.rate ? ` (${(entry.rate * 100).toFixed(1)}%)` : ''}</span>
+                                  <span>${(entry.amount || 0).toFixed(2)}</span>
+                                </div>
+                              ))}
+                            </div>
+                          ) : null}
                         </div>
                       </div>
                     )}

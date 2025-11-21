@@ -42,6 +42,10 @@ const SUPABASE_URL = process.env.SUPABASE_URL;
 const MAX_ATTEMPTS = parseInt(process.env.MAX_ATTEMPTS || '5');
 const BATCH_SIZE = parseInt(process.env.BATCH_SIZE || '10');
 const PROCESSOR_VERSION = 'textract-worker-prod-v1';
+const AMOUNT_PATTERN = /[\$€£]?\s*(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2})?|\d+[.,]\d{2})\b/;
+const AMOUNT_GLOBAL = new RegExp(AMOUNT_PATTERN.source, 'g');
+const SUM_TOLERANCE_ABS = 0.05; // absolute cents tolerance when reconciling totals
+const SUM_TOLERANCE_REL = 0.01; // 1% relative tolerance when reconciling totals
 
 // Logging helper
 const log = {
@@ -49,6 +53,46 @@ const log = {
   error: (msg, data) => console.error(JSON.stringify({ level: 'ERROR', msg, ...data })),
   warn: (msg, data) => console.warn(JSON.stringify({ level: 'WARN', msg, ...data }))
 };
+
+/**
+ * Normalize currency strings with optional thousand separators into floats
+ */
+function parseAmount(raw) {
+  if (!raw) return null;
+  const numeric = raw.replace(/[^\d.,-]/g, '');
+  if (!numeric) return null;
+
+  const decimalMatch = numeric.match(/[.,](\d{2})$/);
+  const decimalSep = decimalMatch ? decimalMatch[0][0] : null;
+  const thousandSep = decimalSep === '.' ? ',' : decimalSep === ',' ? '.' : '';
+  const withoutThousands = thousandSep ? numeric.replace(new RegExp(`\\${thousandSep}`, 'g'), '') : numeric;
+  const normalized = decimalSep ? withoutThousands.replace(decimalSep, '.') : withoutThousands;
+  const value = parseFloat(normalized);
+
+  return Number.isFinite(value) ? value : null;
+}
+
+function extractAmounts(text) {
+  const matches = text.match(AMOUNT_GLOBAL) || [];
+  return matches
+    .map(match => parseAmount(match))
+    .filter(val => val !== null);
+}
+
+function sumArray(arr) {
+  return arr.reduce((a, b) => a + b, 0);
+}
+
+function reconcileTotals(subtotal, tax, total) {
+  if (subtotal !== null && tax !== null) {
+    const expectedTotal = subtotal + tax;
+    const tolerance = Math.max(SUM_TOLERANCE_ABS, expectedTotal * SUM_TOLERANCE_REL);
+    if (total === null || Math.abs(expectedTotal - total) <= tolerance) {
+      return { total: expectedTotal, reconciled: true };
+    }
+  }
+  return { total, reconciled: false };
+}
 
 /**
  * Get secrets from Secrets Manager (cache in memory for performance)
@@ -215,21 +259,29 @@ function extractTotal(textractResponse) {
       .map(b => b.Text);
 
     // Look for "Total" line and get the amount after it
+    // Skip "SUBTOTAL" lines - only match "TOTAL"
     let total = null;
+    let subtotalHint = null;
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].toUpperCase();
-      if (line.includes('TOTAL') || line.includes('TOTAL GERAL')) {
+      if (line.includes('SUBTOTAL') || line.includes('SUB-TOTAL') || line.includes('SUBTOT')) {
+        const subMatch = lines[i].match(AMOUNT_PATTERN);
+        if (subMatch) subtotalHint = parseAmount(subMatch[0]);
+        continue;
+      }
+
+      if ((line.includes('TOTAL') && !line.includes('SUBTOTAL')) || line.includes('TOTAL GERAL')) {
         // Try to find amount on same line
-        const match = lines[i].match(/[\$€£]?\s*(\d+[.,]\d{2})/);
+        const match = lines[i].match(AMOUNT_PATTERN);
         if (match) {
-          total = parseFloat(match[1].replace(',', '.'));
+          total = parseAmount(match[0]);
           break;
         }
         // Or on next line
         if (i + 1 < lines.length) {
-          const nextMatch = lines[i + 1].match(/[\$€£]?\s*(\d+[.,]\d{2})/);
+          const nextMatch = lines[i + 1].match(AMOUNT_PATTERN);
           if (nextMatch) {
-            total = parseFloat(nextMatch[1].replace(',', '.'));
+            total = parseAmount(nextMatch[0]);
             break;
           }
         }
@@ -239,14 +291,17 @@ function extractTotal(textractResponse) {
     // Fallback: get the largest amount (likely the total)
     if (!total) {
       const amounts = lines
-        .flatMap(line => {
-          const matches = line.match(/(\d+[.,]\d{2})/g) || [];
-          return matches.map(m => parseFloat(m.replace(',', '.')));
-        })
+        .flatMap(line => extractAmounts(line))
         .filter(n => n > 0);
       
       if (amounts.length > 0) {
-        total = Math.max(...amounts);
+        // Prefer an amount larger than subtotal hint if present
+        if (subtotalHint !== null) {
+          const largerThanSub = amounts.filter(a => a > subtotalHint);
+          total = largerThanSub.length ? Math.max(...largerThanSub) : Math.max(...amounts);
+        } else {
+          total = Math.max(...amounts);
+        }
       }
     }
 
@@ -322,8 +377,9 @@ function extractTax(textractResponse) {
       .map(b => b.Text);
 
     let subtotal = null;
-    let tax = null;
+    const taxBreakdown = [];
     let taxRate = null;
+    const taxKeywords = ['TAX', 'VAT', 'GST', 'IVA', 'SALES TAX', 'SERVICE CHARGE', 'LEVY', 'SURCHARGE', 'INCLUDED'];
 
     // Look for tax-related lines
     for (let i = 0; i < lines.length; i++) {
@@ -331,33 +387,47 @@ function extractTax(textractResponse) {
       
       // Look for subtotal
       if ((line.includes('SUBTOTAL') || line.includes('SUB-TOTAL') || line.includes('SUBTOT')) && !subtotal) {
-        const match = lines[i].match(/[\$€£]?\s*(\d+[.,]\d{2})/);
+        const match = lines[i].match(AMOUNT_PATTERN);
         if (match) {
-          subtotal = parseFloat(match[1].replace(',', '.'));
+          subtotal = parseAmount(match[0]);
         }
       }
       
       // Look for tax lines (TAX, VAT, GST, SALES TAX, etc.)
-      if ((line.includes('TAX') || line.includes('VAT') || line.includes('GST') || line.includes('IVA')) && !tax) {
-        // Try to find amount on same line
-        const match = lines[i].match(/[\$€£]?\s*(\d+[.,]\d{2})/);
-        if (match) {
-          tax = parseFloat(match[1].replace(',', '.'));
-          
-          // Try to extract tax rate if available (e.g., "6%" or "VAT 6%")
-          const rateMatch = lines[i].match(/(\d+(?:[.,]\d{1,2})?)\s*%/);
-          if (rateMatch) {
-            taxRate = parseFloat(rateMatch[1].replace(',', '.')) / 100;
+      if (taxKeywords.some(k => line.includes(k))) {
+        const candidateIndexes = [i, i + 1, i - 1].filter(idx => idx >= 0 && idx < lines.length);
+        let amount = null;
+        let lineRate = null;
+
+        for (const idx of candidateIndexes) {
+          const match = lines[idx].match(AMOUNT_PATTERN);
+          if (match) {
+            amount = parseAmount(match[0]);
+            if (amount !== null) break;
           }
         }
-        // Or try next line
-        if (!tax && i + 1 < lines.length) {
-          const nextMatch = lines[i + 1].match(/[\$€£]?\s*(\d+[.,]\d{2})/);
-          if (nextMatch) {
-            tax = parseFloat(nextMatch[1].replace(',', '.'));
+
+        // Try to extract tax rate if available (e.g., "6%" or "VAT 6%")
+        for (const idx of candidateIndexes) {
+          const rateMatch = lines[idx].match(/(\d+(?:[.,]\d{1,2})?)\s*%/);
+          if (rateMatch) {
+            lineRate = parseFloat(rateMatch[1].replace(',', '.')) / 100;
+            break;
           }
+        }
+
+        if (amount !== null) {
+          taxBreakdown.push({ amount, rate: lineRate });
         }
       }
+    }
+
+    const tax = taxBreakdown.length ? sumArray(taxBreakdown.map(t => t.amount)) : null;
+    const explicitRate = taxBreakdown.find(t => t.rate !== null)?.rate ?? null;
+    if (explicitRate !== null) {
+      taxRate = explicitRate;
+    } else if (tax !== null && subtotal !== null && subtotal > 0) {
+      taxRate = tax / subtotal;
     }
 
     return {
@@ -437,9 +507,11 @@ async function processReceipt(pgClient, supabase, queueRow) {
 
     // 3) Extract normalized fields
     const vendor = extractVendor(textractResponse);
-    const total = extractTotal(textractResponse);
+    const extractedTotal = extractTotal(textractResponse);
     const receiptDate = extractDate(textractResponse);
     const taxData = extractTax(textractResponse);
+    const reconciled = reconcileTotals(taxData.subtotal, taxData.tax, extractedTotal);
+    const total = reconciled.total;
     const ocrConfidence = computeConfidence(textractResponse);
 
     // 4) Store OCR JSON to S3 (durable artifact)
@@ -450,7 +522,8 @@ async function processReceipt(pgClient, supabase, queueRow) {
     const rawOcrData = {
       s3_key: ocrS3Key,
       confidence: ocrConfidence,
-      extracted_date: receiptDate
+      extracted_date: receiptDate,
+      reconciled_total: reconciled.reconciled ? total : undefined
     };
 
     const updatePayload = {
