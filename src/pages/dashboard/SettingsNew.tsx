@@ -193,13 +193,14 @@ export function SettingsNew() {
       <DashboardHeader
         title="Settings"
         description="Manage your account and preferences"
+        addDesktopTopPadding={true}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
         {/* Account Settings */}
         <div>
-          <div className="bg-white/5 backdrop-blur-lg rounded-xl overflow-hidden">
+          <div className="bg-white/5 backdrop-blur-lg rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-200">
             <div className="border-b border-white/10 p-6">
               <div className="flex items-center gap-2">
                 <div className="p-2 bg-purple-500/20 rounded-lg">
@@ -292,7 +293,7 @@ export function SettingsNew() {
 
         {/* Receipt Preferences */}
         <div>
-          <div className="bg-white/5 backdrop-blur-lg rounded-xl overflow-hidden">
+          <div className="bg-white/5 backdrop-blur-lg rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-200">
             <div className="border-b border-white/10 p-6">
               <div className="flex items-center gap-2">
                 <div className="p-2 bg-purple-500/20 rounded-lg">
@@ -369,7 +370,7 @@ export function SettingsNew() {
 
         {/* Billing */}
         <div>
-          <div className="bg-white/5 backdrop-blur-lg rounded-xl overflow-hidden">
+          <div className="bg-white/5 backdrop-blur-lg rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-200">
             <div className="border-b border-white/10 p-6">
               <div className="flex items-center gap-2">
                 <div className="p-2 bg-purple-500/20 rounded-lg">
@@ -422,7 +423,7 @@ export function SettingsNew() {
 
         {/* Data Download */}
         <div>
-          <div className="bg-white/5 backdrop-blur-lg rounded-xl overflow-hidden">
+          <div className="bg-white/5 backdrop-blur-lg rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-200">
             <div className="border-b border-white/10 p-6">
               <div className="flex items-center gap-2">
                 <div className="p-2 bg-purple-500/20 rounded-lg">

@@ -64,13 +64,14 @@ export const Pricing: React.FC = () => {
       <DashboardHeader
         title="Pricing Plans"
         description="Choose the perfect plan for your needs"
+        addDesktopTopPadding={true}
       />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {plans.map((plan) => (
           <div
             key={plan.name}
-            className={`relative bg-white/5 backdrop-blur-lg rounded-xl overflow-hidden transition-all ${
+            className={`relative bg-white/5 backdrop-blur-lg rounded-xl overflow-hidden transition-all shadow-md hover:shadow-lg duration-200 ${
               plan.highlighted
                 ? 'ring-2 ring-purple-500 md:scale-105'
                 : ''

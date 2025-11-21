@@ -23,43 +23,51 @@ export function MonthlySpendingCard() {
         backdropFilter: 'blur(10px)',
       }}
     >
-      <div className="flex flex-col space-y-6">
-        {/* Total Spending */}
+      <div className="flex items-center justify-between mb-2">
         <div>
-          <p className="text-sm font-medium text-white/80">Total Spending</p>
+          <p className="text-sm font-medium text-white/80">Monthly Spending</p>
           <h3 className="mt-1 text-2xl font-bold text-white">
             {stats.loading ? '-' : totalSpending}
           </h3>
-          <p className="text-sm text-white/60">
-            Total Tax: {stats.loading ? '-' : totalTax}
-          </p>
         </div>
+        <div className="rounded-full bg-gradient-to-r from-purple-500/20 to-purple-600/20 p-2">
+          <TrendingUp className="h-5 w-5 text-white" />
+        </div>
+      </div>
 
-        {/* Monthly Spending Trend */}
-        <div>
-          <p className="text-sm font-medium text-white/80">Monthly Spending</p>
+      <div 
+        className="overflow-y-auto mt-2" 
+        style={{ 
+          height: '120px',
+          scrollbarWidth: 'none'
+        }}
+      >
+        <div className="space-y-0">
           {!stats.loading && stats.monthlySpending.trend && (
-            <div className="mt-2 flex items-center">
-              <span className={`text-2xl font-bold ${stats.monthlySpending.trend.isPositive ? 'text-green-400' : 'text-red-400'}`}>
-                {stats.monthlySpending.trend.isPositive ? '↑' : '↓'} {Math.abs(stats.monthlySpending.trend.value)}%
-              </span>
-              <span className="ml-2 text-sm text-white/60">vs last month</span>
+            <div className="relative py-1.5 px-3 pb-1.5">
+              <div className="relative z-10">
+                <p className="text-[10px] text-white/70 uppercase tracking-wider">Monthly Trend</p>
+                <p className={`text-sm font-bold mt-0.5 ${stats.monthlySpending.trend.isPositive ? 'text-green-400' : 'text-red-400'}`}>
+                  {stats.monthlySpending.trend.isPositive ? '↑' : '↓'} {Math.abs(stats.monthlySpending.trend.value)}%
+                </p>
+              </div>
+              <div className="absolute bottom-0 left-3 right-3 h-px bg-white/10"></div>
+            </div>
+          )}
+
+          {!stats.loading && (
+            <div className="relative py-1.5 px-3 pt-2">
+              <div className="relative z-10">
+                <p className="text-[10px] text-white/70 uppercase tracking-wider">Tax Amount</p>
+                <p className="text-sm font-bold mt-0.5 text-blue-300">
+                  {totalTax}
+                </p>
+              </div>
             </div>
           )}
         </div>
       </div>
 
-      <div className="absolute top-6 right-6 rounded-full bg-gradient-to-r from-purple-500/20 to-purple-600/20 p-3">
-        <TrendingUp className="h-6 w-6 text-white" />
-      </div>
-
-      <div 
-        className="absolute inset-0 rounded-2xl transition-opacity duration-300 hover:opacity-100 opacity-0"
-        style={{
-          background: 'linear-gradient(45deg, rgba(168, 85, 247, 0.1), rgba(236, 72, 153, 0.1))',
-          boxShadow: '0 4px 30px rgba(0, 0, 0, 0.1)',
-        }}
-      />
     </motion.div>
   );
 }

@@ -133,11 +133,12 @@ export const Profile: React.FC = () => {
       <DashboardHeader 
         title="Profile" 
         description="Manage your account and view your receipt statistics"
+        addDesktopTopPadding={true}
       />
       
       {/* User Header Card */}
-      <div className="bg-white/5 backdrop-blur-lg rounded-xl p-8">
-        <div className="flex items-center gap-6">
+      <div className="bg-white/5 backdrop-blur-lg rounded-xl p-6 md:p-8 shadow-md hover:shadow-lg transition-shadow duration-200">
+        <div className="flex flex-col md:flex-row md:items-center gap-6">
           {/* Profile Picture with Upload */}
           <div className="relative group">
             {profilePicture ? (
@@ -190,7 +191,7 @@ export const Profile: React.FC = () => {
           </div>
           <button
             onClick={handleSignOut}
-            className="px-6 py-2 bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded-lg flex items-center gap-2 transition-colors"
+            className="w-full md:w-auto px-6 py-2 bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded-lg flex items-center justify-center md:justify-start gap-2 transition-colors"
           >
             <LogOut className="w-4 h-4" />
             Sign Out
@@ -200,7 +201,7 @@ export const Profile: React.FC = () => {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white/5 backdrop-blur-lg rounded-xl p-6">
+        <div className="bg-white/5 backdrop-blur-lg rounded-xl p-6 shadow-md hover:shadow-lg transition-shadow duration-200">
           <div className="flex items-center gap-4">
             <div className="bg-purple-500/40 p-3 rounded-lg">
               <Receipt className="w-6 h-6 text-purple-200" />
@@ -212,7 +213,7 @@ export const Profile: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white/5 backdrop-blur-lg rounded-xl p-6">
+        <div className="bg-white/5 backdrop-blur-lg rounded-xl p-6 shadow-md hover:shadow-lg transition-shadow duration-200">
           <div className="flex items-center gap-4">
             <div className="bg-blue-500/40 p-3 rounded-lg">
               <DollarSign className="w-6 h-6 text-blue-200" />
@@ -224,7 +225,7 @@ export const Profile: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white/5 backdrop-blur-lg rounded-xl p-6">
+        <div className="bg-white/5 backdrop-blur-lg rounded-xl p-6 shadow-md hover:shadow-lg transition-shadow duration-200">
           <div className="flex items-center gap-4">
             <div className="bg-green-500/40 p-3 rounded-lg">
               <Calendar className="w-6 h-6 text-green-200" />

@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Routes, Route, useNavigate } from 'react-router-dom';
 import { Menu } from 'lucide-react';
 import { DashboardHeader } from './DashboardHeader';
+import { useAuth } from '../../auth/SupabaseAuthContext';
 import { TotalReceiptsCard } from './stats/TotalReceiptsCard';
 import { MonthlySpendingCard } from './stats/MonthlySpendingCard';
 import { CategoriesCard } from './stats/CategoriesCard';
@@ -13,7 +14,6 @@ import { UserProfileModal } from './user/UserProfileModal';
 import { TaxDetailsCard } from './tax/TaxDetailsCard';
 import { PriceMatchModal } from './pricematch/PriceMatchModal';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAuth } from '../../auth/SupabaseAuthContext';
 import { Sidebar } from './Sidebar';
 import { DashboardNavbar } from './DashboardNavbar';
 import logo from '../../../images/logo.svg';
@@ -22,18 +22,41 @@ import { PriceMatchPage } from '../../pages/dashboard/PriceMatchPage';
 import { TemplatePreview } from '../../pages/dashboard/TemplatePreview';
 import { SettingsNew } from '../../pages/dashboard/SettingsNew';
 import { Pricing } from '../../pages/dashboard/Pricing';
+import { Expenses } from '../../pages/dashboard/Expenses';
 import { Profile } from '../../pages/dashboard/Profile';
+import { Receipts } from '../../pages/dashboard/Receipts';
+import { Reports } from '../../pages/dashboard/Reports';
 
 export function DashboardLayout() {
   const [isUserProfileOpen, setIsUserProfileOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { logout } = useAuth();
+  const [showGreeting, setShowGreeting] = useState(true);
+  const { logout, currentUser } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // Show greeting on first load, hide after 1 minute
+    const hideTimer = setTimeout(() => {
+      setShowGreeting(false);
+    }, 60000); // 1 minute
+
+    // Then show/hide every 3 minutes after
+    const interval = setInterval(() => {
+      setShowGreeting(prev => !prev);
+    }, 180000); // 3 minutes
+
+    return () => {
+      clearTimeout(hideTimer);
+      clearInterval(interval);
+    };
+  }, []);
 
   const handleLogout = async () => {
     try {
       await logout();
-      window.location.href = 'http://localhost:5184/';  // Redirect to main site
+      // Get the origin dynamically (works for localhost, snapceit.com, etc.)
+      const origin = window.location.origin;
+      window.location.href = origin;
     } catch (error) {
       console.error('Error logging out:', error);
     }
@@ -46,34 +69,102 @@ export function DashboardLayout() {
     navigate('/dashboard/profile');
   };
 
+  const greeting = useMemo(() => {
+    const hour = new Date().getHours();
+    
+    let timeGreeting = '';
+    if (hour < 12) timeGreeting = '🌅 Good morning';
+    else if (hour < 18) timeGreeting = '☀️ Good afternoon';
+    else timeGreeting = '🌙 Good evening';
+    
+    return `${timeGreeting}, there!`;
+  }, []);
+
+  const subheading = useMemo(() => {
+    const day = new Date().getDay();
+    const hour = new Date().getHours();
+    
+    const subheadings = [
+      'Track every receipt, master your spending',
+      'Your financial dashboard awaits',
+      'Smart expense tracking starts here',
+      'Organize receipts, optimize finances',
+      'See where your money goes',
+      'Upload receipts, gain insights',
+      'Your spending story in one place',
+      'Take control of your finances today',
+    ];
+    
+    return subheadings[Math.floor(Math.random() * subheadings.length)];
+  }, []);
+
   const DashboardContent = () => (
     <>
-      <div className="mt-8">
-        <DashboardHeader 
-          userName="Thomas"
-          onProfileClick={handleProfileClick}
-          onSettingsClick={() => navigate('/dashboard/settings')}
-          onLogout={handleLogout}
-        />
-      </div>
-      
       {/* Summary Cards */}
-      <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        <TaxDetailsCard />
-        <TotalReceiptsCard />
-        <MonthlySpendingCard />
-        <CategoriesCard />
+      <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0 }}
+        >
+          <TaxDetailsCard />
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+        >
+          <TotalReceiptsCard />
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+        >
+          <MonthlySpendingCard />
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+        >
+          <CategoriesCard />
+        </motion.div>
       </div>
 
       {/* Main Content */}
       <div className="mt-3 grid gap-3 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-3">
-          <UploadReceiptCard />
-          <RecentReceiptsCard />
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+          >
+            <UploadReceiptCard />
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.5 }}
+          >
+            <RecentReceiptsCard />
+          </motion.div>
         </div>
         <div className="space-y-3">
-          <SpendingOverviewCard />
-          <ReminderCard />
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.6 }}
+          >
+            <SpendingOverviewCard />
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.7 }}
+          >
+            <ReminderCard />
+          </motion.div>
         </div>
       </div>
     </>
@@ -92,12 +183,12 @@ export function DashboardLayout() {
       </div>
 
       {/* Mobile Menu Button */}
-      <div className="lg:hidden fixed top-4 right-4 z-50">
+      <div className="lg:hidden fixed top-4 right-4 z-50 mt-0.5">
         <button 
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="rounded-full p-2 text-white/80 hover:bg-white/10"
+          className="rounded-full p-3 text-white/80 hover:bg-white/10"
         >
-          <Menu size={24} />
+          <Menu size={28} />
         </button>
       </div>
 
@@ -131,21 +222,6 @@ export function DashboardLayout() {
       </AnimatePresence>
 
       <main className="lg:pl-64 flex flex-col flex-1 min-h-screen">
-        {/* Top navigation */}
-        <div className="px-4 sm:px-6">
-          <div className="max-w-7xl mx-auto px-0 sm:px-6 lg:px-6">
-            <div className="flex items-center justify-between py-3">
-              <div className="lg:hidden -ml-2">
-                <img src={logo} alt="Logo" className="h-16 w-auto" />
-              </div>
-              <DashboardNavbar 
-                onProfileClick={handleProfileClick}
-                onSettingsClick={() => navigate('/dashboard/settings')}
-                onLogout={handleLogout}
-              />
-            </div>
-          </div>
-        </div>
         <div className="px-4 sm:px-6">
           <div className="max-w-7xl mx-auto px-0 sm:px-6 lg:px-6">
             <div className="flex-1 overflow-auto">
@@ -153,20 +229,150 @@ export function DashboardLayout() {
                 <Routes>
                   <Route
                     path="/"
-                    element={<DashboardContent />}
+                    element={
+                      <>
+                        <div className="mt-8">
+                          <div className="pl-0.75 md:pl-0 mb-6 md:mt-12">
+                            <motion.h2
+                              initial={{ opacity: 0, y: -10 }}
+                              animate={{ opacity: showGreeting ? 1 : 0, y: showGreeting ? 0 : -10 }}
+                              transition={{ duration: 0.6 }}
+                              className={`text-xl sm:text-3xl font-extrabold text-white pb-2 ${showGreeting ? 'border-b border-white/20' : ''}`}
+                            >
+                              {greeting}
+                            </motion.h2>
+                          </div>
+                        </div>
+                        <DashboardContent />
+                      </>
+                    }
                   />
                   <Route
                     path="template-preview"
-                    element={<TemplatePreview />}
+                    element={
+                      <motion.div
+                        key={showGreeting ? 'visible' : 'hidden'}
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        transition={{ duration: 0.6 }}
+                      >
+                        <TemplatePreview />
+                      </motion.div>
+                    }
                   />
                   <Route
                     path="price-match"
-                    element={<PriceMatchPage />}
+                    element={
+                      <motion.div
+                        key={showGreeting ? 'visible' : 'hidden'}
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        transition={{ duration: 0.6 }}
+                      >
+                        <PriceMatchPage />
+                      </motion.div>
+                    }
                   />
-                  <Route path="tax-calculator" element={<TaxCalculator />} />
-                  <Route path="settings" element={<SettingsNew />} />
-                  <Route path="pricing" element={<Pricing />} />
-                  <Route path="profile" element={<Profile />} />
+                  <Route
+                    path="tax-calculator"
+                    element={
+                      <motion.div
+                        key={showGreeting ? 'visible' : 'hidden'}
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        transition={{ duration: 0.6 }}
+                      >
+                        <TaxCalculator />
+                      </motion.div>
+                    }
+                  />
+                  <Route
+                    path="settings"
+                    element={
+                      <motion.div
+                        key={showGreeting ? 'visible' : 'hidden'}
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        transition={{ duration: 0.6 }}
+                      >
+                        <SettingsNew />
+                      </motion.div>
+                    }
+                  />
+                  <Route
+                    path="pricing"
+                    element={
+                      <motion.div
+                        key={showGreeting ? 'visible' : 'hidden'}
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        transition={{ duration: 0.6 }}
+                      >
+                        <Pricing />
+                      </motion.div>
+                    }
+                  />
+                  <Route
+                    path="expenses"
+                    element={
+                      <motion.div
+                        key={showGreeting ? 'visible' : 'hidden'}
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        transition={{ duration: 0.6 }}
+                      >
+                        <Expenses />
+                      </motion.div>
+                    }
+                  />
+                  <Route
+                    path="profile"
+                    element={
+                      <motion.div
+                        key={showGreeting ? 'visible' : 'hidden'}
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        transition={{ duration: 0.6 }}
+                      >
+                        <Profile />
+                      </motion.div>
+                    }
+                  />
+                  <Route
+                    path="receipts"
+                    element={
+                      <motion.div
+                        key={showGreeting ? 'visible' : 'hidden'}
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        transition={{ duration: 0.6 }}
+                      >
+                        <Receipts />
+                      </motion.div>
+                    }
+                  />
+                  <Route
+                    path="reports"
+                    element={
+                      <motion.div
+                        key={showGreeting ? 'visible' : 'hidden'}
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        transition={{ duration: 0.6 }}
+                      >
+                        <Reports />
+                      </motion.div>
+                    }
+                  />
                 </Routes>
               </div>
             </div>
