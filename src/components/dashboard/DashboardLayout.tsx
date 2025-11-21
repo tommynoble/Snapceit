@@ -40,14 +40,8 @@ export function DashboardLayout() {
       setShowGreeting(false);
     }, 60000); // 1 minute
 
-    // Then show/hide every 3 minutes after
-    const interval = setInterval(() => {
-      setShowGreeting(prev => !prev);
-    }, 180000); // 3 minutes
-
     return () => {
       clearTimeout(hideTimer);
-      clearInterval(interval);
     };
   }, []);
 
@@ -251,7 +245,6 @@ export function DashboardLayout() {
                     path="template-preview"
                     element={
                       <motion.div
-                        key={showGreeting ? 'visible' : 'hidden'}
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
@@ -265,7 +258,6 @@ export function DashboardLayout() {
                     path="price-match"
                     element={
                       <motion.div
-                        key={showGreeting ? 'visible' : 'hidden'}
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
@@ -279,7 +271,6 @@ export function DashboardLayout() {
                     path="tax-calculator"
                     element={
                       <motion.div
-                        key={showGreeting ? 'visible' : 'hidden'}
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
@@ -293,7 +284,6 @@ export function DashboardLayout() {
                     path="settings"
                     element={
                       <motion.div
-                        key={showGreeting ? 'visible' : 'hidden'}
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
@@ -307,7 +297,6 @@ export function DashboardLayout() {
                     path="pricing"
                     element={
                       <motion.div
-                        key={showGreeting ? 'visible' : 'hidden'}
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
@@ -321,7 +310,6 @@ export function DashboardLayout() {
                     path="expenses"
                     element={
                       <motion.div
-                        key={showGreeting ? 'visible' : 'hidden'}
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
@@ -335,7 +323,6 @@ export function DashboardLayout() {
                     path="profile"
                     element={
                       <motion.div
-                        key={showGreeting ? 'visible' : 'hidden'}
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
@@ -349,7 +336,6 @@ export function DashboardLayout() {
                     path="receipts"
                     element={
                       <motion.div
-                        key={showGreeting ? 'visible' : 'hidden'}
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
@@ -363,7 +349,6 @@ export function DashboardLayout() {
                     path="reports"
                     element={
                       <motion.div
-                        key={showGreeting ? 'visible' : 'hidden'}
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
