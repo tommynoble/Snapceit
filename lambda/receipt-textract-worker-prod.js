@@ -313,6 +313,69 @@ function extractDate(textractResponse) {
 }
 
 /**
+ * Extract tax information from Textract response
+ */
+function extractTax(textractResponse) {
+  try {
+    const lines = textractResponse.Blocks
+      .filter(b => b.BlockType === 'LINE')
+      .map(b => b.Text);
+
+    let subtotal = null;
+    let tax = null;
+    let taxRate = null;
+
+    // Look for tax-related lines
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].toUpperCase();
+      
+      // Look for subtotal
+      if ((line.includes('SUBTOTAL') || line.includes('SUB-TOTAL') || line.includes('SUBTOT')) && !subtotal) {
+        const match = lines[i].match(/[\$€£]?\s*(\d+[.,]\d{2})/);
+        if (match) {
+          subtotal = parseFloat(match[1].replace(',', '.'));
+        }
+      }
+      
+      // Look for tax lines (TAX, VAT, GST, SALES TAX, etc.)
+      if ((line.includes('TAX') || line.includes('VAT') || line.includes('GST') || line.includes('IVA')) && !tax) {
+        // Try to find amount on same line
+        const match = lines[i].match(/[\$€£]?\s*(\d+[.,]\d{2})/);
+        if (match) {
+          tax = parseFloat(match[1].replace(',', '.'));
+          
+          // Try to extract tax rate if available (e.g., "6%" or "VAT 6%")
+          const rateMatch = lines[i].match(/(\d+(?:[.,]\d{1,2})?)\s*%/);
+          if (rateMatch) {
+            taxRate = parseFloat(rateMatch[1].replace(',', '.')) / 100;
+          }
+        }
+        // Or try next line
+        if (!tax && i + 1 < lines.length) {
+          const nextMatch = lines[i + 1].match(/[\$€£]?\s*(\d+[.,]\d{2})/);
+          if (nextMatch) {
+            tax = parseFloat(nextMatch[1].replace(',', '.'));
+          }
+        }
+      }
+    }
+
+    return {
+      subtotal,
+      tax,
+      taxRate
+    };
+  } catch (error) {
+    log.warn('Failed to extract tax', { error: error.message });
+    return {
+      subtotal: null,
+      tax: null,
+      taxRate: null
+    };
+  }
+}
+
+/**
  * Compute OCR confidence (simplified)
  */
 function computeConfidence(textractResponse) {
@@ -376,6 +439,7 @@ async function processReceipt(pgClient, supabase, queueRow) {
     const vendor = extractVendor(textractResponse);
     const total = extractTotal(textractResponse);
     const receiptDate = extractDate(textractResponse);
+    const taxData = extractTax(textractResponse);
     const ocrConfidence = computeConfidence(textractResponse);
 
     // 4) Store OCR JSON to S3 (durable artifact)
@@ -392,6 +456,9 @@ async function processReceipt(pgClient, supabase, queueRow) {
     const updatePayload = {
       merchant: vendor,
       total: total,
+      subtotal: taxData.subtotal,
+      tax: taxData.tax,
+      tax_rate: taxData.taxRate,
       raw_ocr: rawOcrData,
       status: 'ocr_done',
       updated_at: new Date().toISOString()
@@ -417,6 +484,9 @@ async function processReceipt(pgClient, supabase, queueRow) {
       receiptId,
       vendor,
       total,
+      subtotal: taxData.subtotal,
+      tax: taxData.tax,
+      taxRate: taxData.taxRate,
       receiptDate,
       ocrConfidence,
       ocrS3Key,

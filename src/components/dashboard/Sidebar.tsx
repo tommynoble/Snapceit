@@ -185,12 +185,13 @@ export function Sidebar({
             className="w-full flex items-center gap-3 px-4 py-3 bg-white/5 hover:bg-white/10 rounded-lg transition-colors border border-white/10"
             title="Profile Menu"
           >
-            <button
-              onClick={() => {
+            <div
+              onClick={(e) => {
+                e.stopPropagation();
                 navigate('/dashboard/profile');
                 setIsProfileDropdownOpen(false);
               }}
-              className="relative flex-shrink-0 hover:opacity-80 transition-opacity rounded-full"
+              className="relative flex-shrink-0 hover:opacity-80 transition-opacity rounded-full cursor-pointer"
             >
               {avatarUrl ? (
                 <img
@@ -204,7 +205,7 @@ export function Sidebar({
                   <span className="text-white/90 text-sm font-medium">{initials}</span>
                 </div>
               )}
-            </button>
+            </div>
             <div className="flex-1 min-w-0 text-left">
               <p className="text-sm font-medium text-white truncate">{currentUser?.user_metadata?.full_name || 'User'}</p>
               <p className="hidden sm:block text-xs text-white/60 truncate">{currentUser?.email}</p>
