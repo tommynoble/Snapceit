@@ -491,6 +491,33 @@ export function RecentReceiptsCard() {
                       </div>
                     </div>
 
+                    {/* Subtotal */}
+                    {selectedReceipt.subtotal && (
+                      <div>
+                        <label className="text-sm font-medium text-gray-600">Subtotal</label>
+                        <div className="mt-1 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                          <p className="text-lg font-semibold text-gray-900">${(selectedReceipt.subtotal || 0).toFixed(2)}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Tax Amount */}
+                    {selectedReceipt.tax && (
+                      <div>
+                        <label className="text-sm font-medium text-gray-600">Tax</label>
+                        <div className="mt-1 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                          <div className="flex items-center justify-between">
+                            <p className="text-lg font-semibold text-blue-900">${(selectedReceipt.tax || 0).toFixed(2)}</p>
+                            {selectedReceipt.tax_rate && (
+                              <span className="text-xs font-medium text-blue-700 bg-blue-100 px-2 py-1 rounded">
+                                {(selectedReceipt.tax_rate * 100).toFixed(1)}%
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Total Amount */}
                     <div>
                       <label className="text-sm font-medium text-gray-600">Total Amount</label>
