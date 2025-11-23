@@ -18,9 +18,11 @@ import {
 } from 'lucide-react';
 import { useReceipts } from './ReceiptContext';
 import { toast } from 'react-hot-toast';
+import { useCurrency } from '../../../hooks/useCurrency';
 
 export function RecentReceiptsCard() {
   const { receipts, deleteReceipt, updateReceipt, refreshReceipts } = useReceipts();
+  const { formatCurrency } = useCurrency();
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -496,18 +498,30 @@ export function RecentReceiptsCard() {
                       <div>
                         <label className="text-sm font-medium text-gray-600">Subtotal</label>
                         <div className="mt-1 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                          <p className="text-lg font-semibold text-gray-900">${(selectedReceipt.subtotal || 0).toFixed(2)}</p>
+                          <p className="text-lg font-semibold text-gray-900">
+                            {formatCurrency(selectedReceipt.subtotal || 0)}
+                          </p>
                         </div>
                       </div>
                     )}
 
                     {/* Tax Amount */}
-                    {selectedReceipt.tax !== null && selectedReceipt.tax !== undefined && (
+                    {(() => {
+                      const taxAmount = typeof selectedReceipt.tax_amount === 'number'
+                        ? selectedReceipt.tax_amount
+                        : (typeof selectedReceipt.tax === 'number' ? selectedReceipt.tax : null);
+                      return taxAmount !== null && taxAmount !== undefined;
+                    })() && (
                       <div>
                         <label className="text-sm font-medium text-gray-600">Tax / VAT</label>
                         <div className="mt-1 p-3 bg-blue-50 rounded-lg border border-blue-200">
                           <div className="flex items-center justify-between">
-                            <p className="text-lg font-semibold text-blue-900">${(selectedReceipt.tax || 0).toFixed(2)}</p>
+                            <p className="text-lg font-semibold text-blue-900">{(() => {
+                              const taxAmount = typeof selectedReceipt.tax_amount === 'number'
+                                ? selectedReceipt.tax_amount
+                                : (typeof selectedReceipt.tax === 'number' ? selectedReceipt.tax : 0);
+                              return formatCurrency(taxAmount);
+                            })()}</p>
                             {selectedReceipt.tax_rate && (
                               <span className="text-xs font-medium text-blue-700 bg-blue-100 px-2 py-1 rounded">
                                 {(selectedReceipt.tax_rate * 100).toFixed(1)}%
@@ -519,7 +533,7 @@ export function RecentReceiptsCard() {
                               {(selectedReceipt.tax_breakdown || selectedReceipt.taxBreakdown).map((entry: any, idx: number) => (
                                 <div key={idx} className="flex items-center justify-between text-sm text-blue-800">
                                   <span>{entry.label || `Tax ${idx + 1}`}{entry.rate ? ` (${(entry.rate * 100).toFixed(1)}%)` : ''}</span>
-                                  <span>${(entry.amount || 0).toFixed(2)}</span>
+                                  <span>{formatCurrency(entry.amount || 0)}</span>
                                 </div>
                               ))}
                             </div>
@@ -532,7 +546,9 @@ export function RecentReceiptsCard() {
                     <div>
                       <label className="text-sm font-medium text-gray-600">Total Amount</label>
                       <div className="mt-1 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                        <p className="text-2xl font-bold text-gray-900">${(selectedReceipt.total || 0).toFixed(2)}</p>
+                        <p className="text-2xl font-bold text-gray-900">
+                          {formatCurrency(selectedReceipt.total || 0)}
+                        </p>
                       </div>
                     </div>
 
@@ -541,7 +557,7 @@ export function RecentReceiptsCard() {
                       <label className="text-sm font-medium text-gray-600">Receipt Date</label>
                       <div className="mt-1 p-3 bg-gray-50 rounded-lg border border-gray-200">
                         <p className="text-sm text-gray-900">
-                          {selectedReceipt.date ? new Date(selectedReceipt.date).toLocaleDateString('en-US', {
+                          {(selectedReceipt.receipt_date || selectedReceipt.date) ? new Date(selectedReceipt.receipt_date || selectedReceipt.date).toLocaleDateString('en-US', {
                             year: 'numeric',
                             month: 'long',
                             day: 'numeric'

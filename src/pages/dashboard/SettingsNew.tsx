@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useToast } from '../../hooks/useToast';
 import { DashboardHeader } from '../../components/dashboard/DashboardHeader';
 import { 
@@ -12,12 +12,14 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useReceipts } from '../../components/dashboard/receipts/ReceiptContext';
 import JSZip from 'jszip';
+import { useSettings } from '../../hooks/useSettings';
 
 export function SettingsNew() {
   const { showToast } = useToast();
   const { currentUser } = useAuth();
   const { receipts } = useReceipts();
   const navigate = useNavigate();
+  const { settings, updateSettings } = useSettings();
   const [isDownloading, setIsDownloading] = useState(false);
 
   // Account Settings State
@@ -35,6 +37,12 @@ export function SettingsNew() {
 
   // Billing State
   const [plan, setPlan] = useState('free');
+  
+  // Sync UI with stored settings
+  useEffect(() => {
+    if (settings?.currency) setCurrency(settings.currency);
+    if (typeof settings?.autoScan === 'boolean') setAutoScan(settings.autoScan);
+  }, [settings]);
 
   // Change Password Handler
   const handleChangePassword = async (e: React.FormEvent) => {
@@ -311,7 +319,12 @@ export function SettingsNew() {
                 </label>
                 <select
                   value={currency}
-                  onChange={(e) => setCurrency(e.target.value)}
+                  onChange={async (e) => {
+                    const value = e.target.value;
+                    setCurrency(value);
+                    await updateSettings({ currency: value, defaultReceiptCurrency: value });
+                    showToast('Currency saved', 'success');
+                  }}
                   className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                 >
                   <option value="USD">USD ($)</option>

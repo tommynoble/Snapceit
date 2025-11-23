@@ -31,15 +31,33 @@ export function useSettings() {
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    // Temporarily disabled - using default settings until backend is ready
-    setSettings(DEFAULT_SETTINGS);
-    setLoading(false);
+    const load = async () => {
+      try {
+        const cached = localStorage.getItem('user_settings');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          setSettings({ ...DEFAULT_SETTINGS, ...parsed, userId: currentUser?.id || '' });
+        } else {
+          setSettings({ ...DEFAULT_SETTINGS, userId: currentUser?.id || '' });
+        }
+      } catch (err: any) {
+        setError(err);
+        setSettings({ ...DEFAULT_SETTINGS, userId: currentUser?.id || '' });
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
   }, [currentUser]);
 
   const updateSettings = async (updates: Partial<UserSettings>) => {
-    // Temporarily store locally until backend is ready
-    const updatedSettings = { ...settings, ...updates };
+    const updatedSettings = { ...settings, ...updates, userId: currentUser?.id || settings.userId };
     setSettings(updatedSettings);
+    try {
+      localStorage.setItem('user_settings', JSON.stringify(updatedSettings));
+    } catch (err: any) {
+      setError(err);
+    }
     return updatedSettings;
   };
 

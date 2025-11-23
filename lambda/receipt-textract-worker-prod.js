@@ -433,14 +433,16 @@ function extractTax(textractResponse) {
     return {
       subtotal,
       tax,
-      taxRate
+      taxRate,
+      taxBreakdown
     };
   } catch (error) {
     log.warn('Failed to extract tax', { error: error.message });
     return {
       subtotal: null,
       tax: null,
-      taxRate: null
+      taxRate: null,
+      taxBreakdown: []
     };
   }
 }
@@ -531,7 +533,10 @@ async function processReceipt(pgClient, supabase, queueRow) {
       total: total,
       subtotal: taxData.subtotal,
       tax: taxData.tax,
+      tax_amount: taxData.tax,
+      tax_breakdown: taxData.taxBreakdown && taxData.taxBreakdown.length ? taxData.taxBreakdown : null,
       tax_rate: taxData.taxRate,
+      receipt_date: receiptDate || null,
       raw_ocr: rawOcrData,
       status: 'ocr_done',
       updated_at: new Date().toISOString()
