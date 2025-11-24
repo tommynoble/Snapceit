@@ -204,10 +204,10 @@ export function DashboardLayout() {
       </AnimatePresence>
 
       <main className="lg:pl-64 flex flex-col flex-1 min-h-screen">
-        <div className="px-4 sm:px-6">
-          <div className="max-w-7xl mx-auto px-0 sm:px-6 lg:px-6">
+        <div className="px-0 sm:px-0 md:px-0">
+          <div className="max-w-full mx-0 px-0 sm:px-4 md:px-6">
             <div className="flex-1 overflow-auto">
-              <div className="container mx-auto p-2 sm:px-6">
+              <div className="container mx-0 p-2 sm:px-4 md:px-6">
                 <Routes>
                   <Route
                     path="/"

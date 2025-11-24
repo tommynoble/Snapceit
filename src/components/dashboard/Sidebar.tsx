@@ -52,9 +52,12 @@ export function Sidebar({
   return (
     <div className="fixed left-0 top-0 h-full w-64 bg-black/10 backdrop-blur-xl border-r border-white/10 flex flex-col shadow-[0_0_8px_rgba(255,255,255,0.03)]">
       {/* Logo */}
-      <div className="px-6 py-8">
+      <button 
+        onClick={() => navigate('/dashboard')}
+        className="px-6 py-8 hover:opacity-80 transition-opacity"
+      >
         <img src="/logo.svg" alt="Logo" className="h-16" />
-      </div>
+      </button>
 
       {/* Navigation */}
       <nav className="flex-1 px-4 pt-10">
@@ -76,7 +79,7 @@ export function Sidebar({
                   ${currentPath === item.path ? 'bg-white/20' : ''}`}
               >
                 <item.icon 
-                  size={20} 
+                  size={18} 
                   className="text-transparent bg-gradient-to-r from-[#00E5FF] to-[#2979FF] bg-clip-text stroke-[#00E5FF] group-hover:stroke-[#597FFB] transition-all" 
                 />
                 <span>{item.label}</span>
@@ -92,7 +95,7 @@ export function Sidebar({
                 ${currentPath === '/dashboard/receipts' ? 'bg-white/20' : ''}`}
             >
               <Receipt 
-                size={20} 
+                size={18} 
                 className="text-transparent bg-gradient-to-r from-[#00E5FF] to-[#2979FF] bg-clip-text stroke-[#00E5FF] group-hover:stroke-[#597FFB] transition-all" 
               />
               <span>Receipts</span>
@@ -107,7 +110,7 @@ export function Sidebar({
                 ${currentPath === '/dashboard/reports' ? 'bg-white/20' : ''}`}
             >
               <BarChart3 
-                size={20} 
+                size={18} 
                 className="text-transparent bg-gradient-to-r from-[#00E5FF] to-[#2979FF] bg-clip-text stroke-[#00E5FF] group-hover:stroke-[#597FFB] transition-all" 
               />
               <span>Reports</span>
@@ -127,7 +130,7 @@ export function Sidebar({
               >
                 <div className="flex items-center gap-3">
                   <Calculator 
-                    size={20} 
+                    size={18} 
                     className="text-transparent bg-gradient-to-r from-[#00E5FF] to-[#2979FF] bg-clip-text stroke-[#00E5FF] group-hover:stroke-[#597FFB] transition-all" 
                   />
                   <span>Prepare Taxes</span>

@@ -66,7 +66,7 @@ export function SpendingOverviewCard() {
       transition={{ duration: 0.2 }}
       className="rounded-2xl bg-white/10 backdrop-blur-lg p-6 shadow-lg hover:shadow-xl transition-shadow duration-200 h-[400px]"
     >
-      <h3 className="text-lg font-semibold text-white mb-4">Top Merchants by Spending</h3>
+      <h3 className="text-lg font-semibold text-white mb-3 pb-3 border-b border-white/10">Top Merchants by Spending</h3>
       
       <div className="h-[300px] w-full">
         <ResponsiveContainer width="100%" height="100%">

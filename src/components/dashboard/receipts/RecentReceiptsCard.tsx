@@ -41,39 +41,98 @@ export function RecentReceiptsCard() {
     'Car and Truck Expenses': { icon: Car, color: 'text-blue-500', bgColor: 'bg-blue-100' },
     'Office Expenses': { icon: Briefcase, color: 'text-purple-500', bgColor: 'bg-purple-100' },
     'Travel': { icon: Globe, color: 'text-teal-500', bgColor: 'bg-teal-100' },
-    'Meals': { icon: Utensils, color: 'text-orange-500', bgColor: 'bg-orange-100' },
+    'Meals': { icon: Utensils, color: 'text-green-500', bgColor: 'bg-green-100' },
     'Utilities': { icon: Zap, color: 'text-yellow-500', bgColor: 'bg-yellow-100' },
     'Taxes and Licenses': { icon: FileText, color: 'text-emerald-500', bgColor: 'bg-emerald-100' },
-    'Supplies': { icon: ShoppingBag, color: 'text-indigo-500', bgColor: 'bg-indigo-100' },
+    'Supplies': { icon: ShoppingBag, color: 'text-orange-500', bgColor: 'bg-orange-100' },
     'Other': { icon: ReceiptIcon, color: 'text-gray-500', bgColor: 'bg-gray-100' }
   };
 
-  const getCategoryIcon = (category: string) => {
-    const config = categoryIcons[category] || categoryIcons['Other'];
+  const getCategoryIcon = (category: string | null | undefined) => {
+    const config = categoryIcons[category || 'Other'] || categoryIcons['Other'];
     const Icon = config.icon;
+    
+    // If no category (not categorized yet), use purple
+    if (!category) {
+      return (
+        <div className={`p-2.5 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center`}>
+          <Icon className={`h-5 w-5 text-white`} />
+        </div>
+      );
+    }
+    
+    const categoryGradients: { [key: string]: string } = {
+      'Travel': 'from-teal-500 to-teal-700',
+      'Meals': 'from-green-500 to-green-700',
+      'Supplies': 'from-orange-500 to-orange-700',
+      'Car and Truck Expenses': 'from-blue-500 to-blue-700',
+      'Advertising': 'from-pink-500 to-pink-700',
+      'Office Expenses': 'from-purple-500 to-purple-700',
+      'Utilities': 'from-yellow-500 to-yellow-700',
+      'Taxes and Licenses': 'from-emerald-500 to-emerald-700',
+      'Other': 'from-gray-500 to-gray-700'
+    };
+    
+    const gradient = categoryGradients[category] || categoryGradients['Other'];
+    
     return (
-      <div className={`p-2.5 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center`}>
+      <div className={`p-2.5 rounded-full bg-gradient-to-br ${gradient} flex items-center justify-center`}>
         <Icon className={`h-5 w-5 text-white`} />
       </div>
     );
   };
 
   // Get confidence badge with color coding
-  const getConfidenceBadge = (confidence?: number) => {
+  const getConfidenceBadge = (confidence?: number, category?: string) => {
     if (!confidence) return null;
     
+    // Use category color if provided, otherwise use confidence-based colors
     let bgColor = 'bg-red-100';
     let textColor = 'text-red-800';
     let label = 'Low';
     
-    if (confidence >= 0.75) {
-      bgColor = 'bg-green-100';
-      textColor = 'text-green-800';
+    if (category) {
+      // Use category colors
+      if (category === 'Travel') {
+        bgColor = 'bg-teal-100';
+        textColor = 'text-teal-800';
+      } else if (category === 'Meals') {
+        bgColor = 'bg-green-100';
+        textColor = 'text-green-800';
+      } else if (category === 'Supplies') {
+        bgColor = 'bg-orange-100';
+        textColor = 'text-orange-800';
+      } else if (category === 'Car and Truck Expenses') {
+        bgColor = 'bg-blue-100';
+        textColor = 'text-blue-800';
+      } else if (category === 'Advertising') {
+        bgColor = 'bg-pink-100';
+        textColor = 'text-pink-800';
+      } else if (category === 'Office Expenses') {
+        bgColor = 'bg-purple-100';
+        textColor = 'text-purple-800';
+      } else if (category === 'Utilities') {
+        bgColor = 'bg-yellow-100';
+        textColor = 'text-yellow-800';
+      } else if (category === 'Taxes and Licenses') {
+        bgColor = 'bg-emerald-100';
+        textColor = 'text-emerald-800';
+      } else {
+        bgColor = 'bg-gray-100';
+        textColor = 'text-gray-800';
+      }
       label = 'High';
-    } else if (confidence >= 0.65) {
-      bgColor = 'bg-yellow-100';
-      textColor = 'text-yellow-800';
-      label = 'Medium';
+    } else {
+      // Fallback to confidence-based colors if no category
+      if (confidence >= 0.75) {
+        bgColor = 'bg-green-100';
+        textColor = 'text-green-800';
+        label = 'High';
+      } else if (confidence >= 0.65) {
+        bgColor = 'bg-yellow-100';
+        textColor = 'text-yellow-800';
+        label = 'Medium';
+      }
     }
     
     return (
@@ -245,7 +304,7 @@ export function RecentReceiptsCard() {
       animate={{ opacity: 1, y: 0 }}
       className="rounded-2xl bg-white p-6 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.01]"
     >
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-3 pb-3 border-b border-gray-100">
         <h3 className="text-lg font-semibold text-gray-900">Recent Receipts</h3>
         {selectedReceipts.size > 0 && (
           <div className="flex gap-2">
@@ -282,7 +341,7 @@ export function RecentReceiptsCard() {
                 setSelectedReceipt(receipt);
               }
             }}
-            className={`group relative flex items-center justify-between rounded-lg border p-4 hover:bg-gray-50 cursor-pointer
+            className={`group relative flex items-center justify-between rounded-lg border p-4 hover:bg-gray-50 cursor-pointer shadow-sm
               ${selectedReceipts.has(receipt.id || receipt.receiptId) ? 'border-purple-500 bg-purple-50' : 'border-gray-200'}
               ${isMultiSelectMode ? 'hover:border-purple-500' : ''}`}
           >
@@ -308,14 +367,24 @@ export function RecentReceiptsCard() {
                       Processing...
                     </span>
                   )}
-                  {receipt.status === 'ocr_done' && (
-                    <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-800">
-                      ✅ Processed
+                  {receipt.status === 'categorized' && receipt.category && (
+                    <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
+                      receipt.category === 'Travel' ? 'bg-teal-100 text-teal-800' :
+                      receipt.category === 'Meals' ? 'bg-green-100 text-green-800' :
+                      receipt.category === 'Supplies' ? 'bg-orange-100 text-orange-800' :
+                      receipt.category === 'Car and Truck Expenses' ? 'bg-blue-100 text-blue-800' :
+                      receipt.category === 'Advertising' ? 'bg-pink-100 text-pink-800' :
+                      receipt.category === 'Office Expenses' ? 'bg-purple-100 text-purple-800' :
+                      receipt.category === 'Utilities' ? 'bg-yellow-100 text-yellow-800' :
+                      receipt.category === 'Taxes and Licenses' ? 'bg-emerald-100 text-emerald-800' :
+                      'bg-gray-100 text-gray-800'
+                    } opacity-80`}>
+                      {receipt.category}
                     </span>
                   )}
-                  {receipt.status === 'categorized' && receipt.category && (
-                    <span className="inline-flex items-center rounded-full bg-purple-100 px-2 py-1 text-xs font-medium text-purple-800">
-                      {receipt.category}
+                  {receipt.status === 'categorized' && !receipt.category && (
+                    <span className="inline-flex items-center rounded-full bg-purple-100 px-2 py-1 text-xs font-medium text-purple-800 opacity-80">
+                      Uncategorized
                     </span>
                   )}
                   
@@ -326,7 +395,7 @@ export function RecentReceiptsCard() {
                   
                   {/* Category Confidence (after categorized) */}
                   {receipt.category_confidence && receipt.status === 'categorized' && (
-                    getConfidenceBadge(receipt.category_confidence)
+                    getConfidenceBadge(receipt.category_confidence, receipt.category)
                   )}
                   
                   {/* Review chip for low confidence */}
@@ -418,33 +487,33 @@ export function RecentReceiptsCard() {
       </div>
 
       {viewModalOpen && selectedReceipt && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="relative bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+            className="relative bg-white rounded-2xl shadow-2xl max-w-6xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-hidden flex flex-col"
           >
             <button
               onClick={() => {
                 setViewModalOpen(false);
                 setSelectedReceipt(null);
               }}
-              className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full z-10"
+              className="absolute top-3 right-3 sm:top-4 sm:right-4 p-2 hover:bg-gray-100 rounded-full z-10 transition-colors"
             >
               <X className="h-5 w-5" />
             </button>
             
             <div className="flex flex-col lg:flex-row h-full overflow-hidden">
               {/* Left side - Receipt Image */}
-              <div className="w-full lg:w-1/2 p-6 border-b lg:border-b-0 lg:border-r border-gray-200 overflow-y-auto">
-                <h2 className="text-xl font-semibold mb-4">Receipt Image</h2>
-                <div className="flex items-center justify-center">
+              <div className="w-full lg:w-1/2 p-4 sm:p-6 border-b lg:border-b-0 lg:border-r border-gray-200 overflow-y-auto bg-gray-200">
+                <h2 className="text-xl font-semibold mb-4 pb-4 border-b border-gray-300">Receipt Image</h2>
+                <div className="flex items-center justify-center p-4">
                   {selectedReceipt?.imageUrl || selectedReceipt?.image_url || selectedReceipt?.preview ? (
                     <img
                       src={selectedReceipt?.imageUrl || selectedReceipt?.image_url || selectedReceipt?.preview}
                       alt="Receipt"
-                      className="w-4/5 h-auto rounded-lg object-contain shadow-md"
+                      className="w-4/5 h-auto rounded-lg object-contain shadow-2xl hover:shadow-3xl transition-shadow duration-300"
                     />
                   ) : (
                     <div className="text-center py-12 text-gray-500">
@@ -456,40 +525,98 @@ export function RecentReceiptsCard() {
               </div>
 
               {/* Right side - Extracted Fields */}
-              <div className="w-full lg:w-1/2 p-6 overflow-y-auto">
+              <div className="w-full lg:w-1/2 p-4 sm:p-6 overflow-y-auto bg-white">
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl font-semibold">
-                    {selectedReceipt.status === 'pending' ? 'Processing Receipt...' : 'Extracted Information'}
+                  <h2 className="text-lg sm:text-xl font-bold text-gray-900">
+                    {selectedReceipt.status === 'pending' ? 'Processing Receipt...' : 'Details'}
                   </h2>
                 </div>
 
                 {/* Show extracted fields only if processed */}
                 {(selectedReceipt.status === 'ocr_done' || selectedReceipt.status === 'categorized') ? (
                   <div className="space-y-5">
-                    {/* Status */}
-                    <div className="bg-gradient-to-r from-green-50 to-green-100 p-4 rounded-lg border border-green-200">
-                      <div className="text-sm font-medium text-green-600 mb-1">Processing Status</div>
-                      <div className="flex items-center gap-2">
-                        {selectedReceipt.status === 'ocr_done' && (
-                          <>
-                            <div className="h-2 w-2 bg-green-500 rounded-full"></div>
-                            <span className="text-sm text-green-700 font-medium">✅ Processed</span>
-                          </>
-                        )}
-                        {selectedReceipt.status === 'categorized' && (
-                          <>
-                            <div className="h-2 w-2 bg-emerald-500 rounded-full"></div>
-                            <span className="text-sm text-emerald-700 font-medium">🎯 Categorized</span>
-                          </>
+                    {/* Status & Category (Unified) */}
+                    {selectedReceipt.status === 'categorized' && selectedReceipt.category ? (
+                      <div className={`p-6 rounded-xl border-0 shadow-lg ${
+                        selectedReceipt.category === 'Travel' ? 'bg-gradient-to-br from-teal-500 to-teal-700' :
+                        selectedReceipt.category === 'Meals' ? 'bg-gradient-to-br from-green-500 to-green-700' :
+                        selectedReceipt.category === 'Supplies' ? 'bg-gradient-to-br from-orange-500 to-orange-700' :
+                        selectedReceipt.category === 'Car and Truck Expenses' ? 'bg-gradient-to-br from-blue-500 to-blue-700' :
+                        selectedReceipt.category === 'Advertising' ? 'bg-gradient-to-br from-pink-500 to-pink-700' :
+                        selectedReceipt.category === 'Office Expenses' ? 'bg-gradient-to-br from-purple-500 to-purple-700' :
+                        selectedReceipt.category === 'Utilities' ? 'bg-gradient-to-br from-yellow-500 to-yellow-700' :
+                        selectedReceipt.category === 'Taxes and Licenses' ? 'bg-gradient-to-br from-emerald-500 to-emerald-700' :
+                        'bg-gradient-to-br from-gray-500 to-gray-700'
+                      }`}>
+                        <div className="flex items-center gap-2 mb-4">
+                          <div className="h-3 w-3 bg-white rounded-full animate-pulse opacity-70"></div>
+                          <span className="text-sm text-white font-semibold tracking-wide">CATEGORIZED</span>
+                        </div>
+                        <div className="mb-5 flex items-center gap-2">
+                          {(() => {
+                            const config = categoryIcons[selectedReceipt.category] || categoryIcons['Other'];
+                            const Icon = config.icon;
+                            return <Icon className="h-6 w-6 text-white" />;
+                          })()}
+                          <p className="text-2xl font-bold text-white">{selectedReceipt.category}</p>
+                        </div>
+                        {selectedReceipt.category_confidence && (
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-white text-opacity-80 font-medium">Confidence</span>
+                              <span className="text-sm font-bold text-white">
+                                {(selectedReceipt.category_confidence * 100).toFixed(0)}%
+                              </span>
+                            </div>
+                            <div className={`w-full rounded-full h-2.5 overflow-hidden ${
+                              selectedReceipt.category === 'Meals' ? 'bg-green-500' :
+                              selectedReceipt.category === 'Supplies' ? 'bg-orange-500' :
+                              selectedReceipt.category === 'Car and Truck Expenses' ? 'bg-blue-500' :
+                              selectedReceipt.category === 'Advertising' ? 'bg-pink-500' :
+                              selectedReceipt.category === 'Office Expenses' ? 'bg-purple-500' :
+                              selectedReceipt.category === 'Utilities' ? 'bg-yellow-500' :
+                              selectedReceipt.category === 'Taxes and Licenses' ? 'bg-emerald-500' :
+                              'bg-gray-500'
+                            }`}>
+                              <div
+                                className={`h-2.5 rounded-full transition-all duration-500 bg-gradient-to-r ${
+                                  selectedReceipt.category_confidence >= 0.75 ? 'from-white to-white opacity-100' :
+                                  selectedReceipt.category_confidence >= 0.65 ? 'from-white to-white opacity-80' :
+                                  'from-white to-white opacity-60'
+                                }`}
+                                style={{ width: `${selectedReceipt.category_confidence * 100}%` }}
+                              ></div>
+                            </div>
+                          </div>
                         )}
                       </div>
-                    </div>
+                    ) : selectedReceipt.status === 'categorized' && !selectedReceipt.category ? (
+                      <div className="bg-gradient-to-br from-purple-500 to-purple-700 p-6 rounded-xl border-0 shadow-lg">
+                        <div className="flex items-center gap-2 mb-4">
+                          <div className="h-3 w-3 bg-white rounded-full animate-pulse opacity-70"></div>
+                          <span className="text-sm text-white font-semibold tracking-wide">UNCATEGORIZED</span>
+                        </div>
+                        <div className="mb-5 flex items-center gap-2">
+                          <p className="text-2xl font-bold text-white">Uncategorized</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="bg-gradient-to-br from-green-500 to-green-600 p-6 rounded-xl border-0 shadow-lg">
+                        <div className="flex items-center gap-2">
+                          <div className="h-3 w-3 bg-emerald-300 rounded-full animate-pulse"></div>
+                          <span className="text-sm text-green-100 font-semibold tracking-wide">PROCESSING</span>
+                        </div>
+                        {selectedReceipt.status === 'ocr_done' && (
+                          <p className="text-white font-medium mt-2">✅ OCR Complete</p>
+                        )}
+                      </div>
+                    )}
 
                     {/* Vendor */}
                     <div>
-                      <label className="text-sm font-medium text-gray-600">Vendor / Merchant</label>
-                      <div className="mt-1 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                        <p className="text-lg font-semibold text-gray-900">{selectedReceipt.merchant || 'Unknown'}</p>
+                      <label className="text-xs sm:text-sm font-medium text-gray-600">Vendor / Merchant</label>
+                      <div className="mt-1 p-2 sm:p-3 bg-gray-50 rounded-lg border border-gray-200">
+                        <p className="text-base sm:text-lg font-semibold text-gray-900">{selectedReceipt.merchant || 'Unknown'}</p>
                       </div>
                     </div>
 
@@ -497,9 +624,9 @@ export function RecentReceiptsCard() {
                     {/* Subtotal */}
                     {selectedReceipt.subtotal !== null && selectedReceipt.subtotal !== undefined && (
                       <div>
-                        <label className="text-sm font-medium text-gray-600">Subtotal</label>
-                        <div className="mt-1 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                          <p className="text-lg font-semibold text-gray-900">
+                        <label className="text-xs sm:text-sm font-medium text-gray-600">Subtotal</label>
+                        <div className="mt-1 p-2 sm:p-3 bg-gray-50 rounded-lg border border-gray-200">
+                          <p className="text-base sm:text-lg font-semibold text-gray-900">
                             {formatCurrency(selectedReceipt.subtotal || 0)}
                           </p>
                         </div>
@@ -514,10 +641,10 @@ export function RecentReceiptsCard() {
                       return taxAmount !== null && taxAmount !== undefined;
                     })() && (
                       <div>
-                        <label className="text-sm font-medium text-gray-600">Tax / VAT</label>
-                        <div className="mt-1 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                        <label className="text-xs sm:text-sm font-medium text-gray-600">Tax / VAT</label>
+                        <div className="mt-1 p-2 sm:p-3 bg-blue-50 rounded-lg border border-blue-200">
                           <div className="flex items-center justify-between">
-                            <p className="text-lg font-semibold text-blue-900">{(() => {
+                            <p className="text-base sm:text-lg font-semibold text-blue-900">{(() => {
                               const taxAmount = typeof selectedReceipt.tax_amount === 'number'
                                 ? selectedReceipt.tax_amount
                                 : (typeof selectedReceipt.tax === 'number' ? selectedReceipt.tax : 0);
@@ -545,9 +672,9 @@ export function RecentReceiptsCard() {
 
                     {/* Total Amount */}
                     <div>
-                      <label className="text-sm font-medium text-gray-600">Total Amount</label>
-                      <div className="mt-1 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                        <p className="text-2xl font-bold text-gray-900">
+                      <label className="text-xs sm:text-sm font-medium text-gray-600">Total Amount</label>
+                      <div className="mt-1 p-2 sm:p-3 bg-gray-50 rounded-lg border border-gray-200">
+                        <p className="text-xl sm:text-2xl font-bold text-gray-900">
                           {formatCurrency(selectedReceipt.total || 0)}
                         </p>
                       </div>
@@ -555,9 +682,9 @@ export function RecentReceiptsCard() {
 
                     {/* Receipt Date */}
                     <div>
-                      <label className="text-sm font-medium text-gray-600">Receipt Date</label>
-                      <div className="mt-1 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                        <p className="text-sm text-gray-900">
+                      <label className="text-xs sm:text-sm font-medium text-gray-600">Receipt Date</label>
+                      <div className="mt-1 p-2 sm:p-3 bg-gray-50 rounded-lg border border-gray-200">
+                        <p className="text-xs sm:text-sm text-gray-900">
                           {(selectedReceipt.receipt_date || selectedReceipt.date) ? new Date(selectedReceipt.receipt_date || selectedReceipt.date).toLocaleDateString('en-US', {
                             year: 'numeric',
                             month: 'long',
@@ -591,39 +718,6 @@ export function RecentReceiptsCard() {
                       </div>
                     )}
 
-                    {/* Category */}
-                    {selectedReceipt.category && (
-                      <div>
-                        <label className="text-sm font-medium text-gray-600">Category</label>
-                        <div className="mt-1 p-3 bg-purple-50 rounded-lg border border-purple-200">
-                          <p className="text-sm font-medium text-purple-900">{selectedReceipt.category}</p>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Category Confidence */}
-                    {selectedReceipt.category_confidence && (
-                      <div>
-                        <label className="text-sm font-medium text-gray-600">Category Confidence</label>
-                        <div className="mt-1 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                          <div className="flex items-center gap-2">
-                            <div className="flex-1 bg-gray-200 rounded-full h-2">
-                              <div
-                                className={`h-2 rounded-full transition-all ${
-                                  selectedReceipt.category_confidence >= 0.75 ? 'bg-green-500' :
-                                  selectedReceipt.category_confidence >= 0.65 ? 'bg-yellow-500' :
-                                  'bg-red-500'
-                                }`}
-                                style={{ width: `${selectedReceipt.category_confidence * 100}%` }}
-                              ></div>
-                            </div>
-                            <span className="text-sm font-semibold text-gray-900">
-                              {(selectedReceipt.category_confidence * 100).toFixed(1)}%
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center py-12 text-center">

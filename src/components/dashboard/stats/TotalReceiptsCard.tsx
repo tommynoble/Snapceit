@@ -59,7 +59,7 @@ export function TotalReceiptsCard() {
         backdropFilter: 'blur(10px)',
       }}
     >
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between mb-3 pb-3 border-b border-white/10">
         <div>
           <p className="text-sm font-medium text-white/80">Total Spending</p>
           <h3 className="mt-1 text-2xl font-bold text-white">

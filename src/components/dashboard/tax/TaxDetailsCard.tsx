@@ -15,7 +15,7 @@ export function TaxDetailsCard() {
       transition={{ duration: 0.2 }}
       className="relative p-5 rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-lg shadow-md bg-white"
     >
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between mb-3 pb-3 border-b border-gray-100">
         <div>
           <p className="text-sm font-medium text-gray-600">Tax Summary</p>
           <h3 className="mt-1 text-2xl font-bold text-gray-900">

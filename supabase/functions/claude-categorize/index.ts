@@ -100,13 +100,30 @@ async function callClaude(prompt: string): Promise<any> {
     const data = await response.json();
     const content = data.content[0].text;
 
+    console.info("Claude raw content", {
+      model: data.model,
+      stop_reason: data.stop_reason,
+      text: content.substring(0, 400)
+    });
+
     // Parse JSON response
     const jsonMatch = content.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
+      console.warn("No JSON found in Claude response", {
+        text_preview: content.substring(0, 400)
+      });
       throw new Error("No JSON found in Claude response");
     }
 
-    return JSON.parse(jsonMatch[0]);
+    try {
+      return JSON.parse(jsonMatch[0]);
+    } catch (e) {
+      console.warn("Failed to parse JSON from Claude response", {
+        text_preview: jsonMatch[0].substring(0, 400),
+        error: String(e)
+      });
+      throw e;
+    }
   } catch (error) {
     if (error.name === "AbortError") {
       throw new Error("Claude API timeout");
@@ -190,6 +207,12 @@ serve(async (req) => {
 
     // Strip PII from vendor
     const cleanVendor = stripPII(vendorInfo);
+    console.info("Claude categorize input summary", {
+      receipt_id,
+      vendor: cleanVendor,
+      total: totalInfo,
+      date: dateInfo
+    });
 
     // Build detailed receipt context with all extracted fields
     let receiptContext = `Receipt Details:
@@ -245,18 +268,19 @@ Allowed categories (name → id):
 - Other Expenses: 23
 
 Guidance:
-- Prefer Meals for restaurants, cafes, bars, food service, seafood establishments.
-- Prefer Supplies for retail goods/merchandise (e.g., Walmart, Marshalls, hardware stores).
-- Travel for flights/hotels/transport; taxis/ride share can be Travel or Car/Truck depending on usage.
-- Utilities for telecom/ISP/power/phone services.
-- Office Expense for software/SaaS/shipping/office-related services.
-- Repairs and Maintenance for repairs, auto service, parts.
-- Other Expenses only if nothing else fits.
+- Meals: restaurants, cafes, bars, food service, dining establishments
+- Supplies: retail stores, supermarkets, hardware stores, office supplies, merchandise
+- Travel: flights, hotels, transportation, lodging
+- Utilities: telecom, ISP, power, phone services
+- Office Expense: software, SaaS, shipping, office services
+- Repairs and Maintenance: repairs, auto service, maintenance
+- Car and Truck Expenses: gas, fuel, vehicle maintenance
+- Other Expenses: anything that doesn't fit above
 
 Receipt Data:
 ${receiptContext}${ocrSection}
 
-If the receipt is clearly consumer/retail and not a service, lean Supplies. Keep confidence realistic (0.5–0.9). Do not return free-form categories. Return ONLY valid JSON.`;
+Analyze the vendor name and receipt items to determine the best category. Be confident (0.65–0.95) if the category is clear. Return ONLY valid JSON.`;
 
     // Call Claude with timeout
     let claudeResult;
@@ -294,6 +318,12 @@ If the receipt is clearly consumer/retail and not a service, lean Supplies. Keep
     }
 
     const category_id = CATEGORY_MAP[category];
+    console.info("Claude parsed result", {
+      receipt_id,
+      category,
+      category_id,
+      confidence
+    });
 
     // Log prediction with reasoning
     await upsertPrediction(

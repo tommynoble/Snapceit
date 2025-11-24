@@ -65,7 +65,7 @@ export const DashboardNavbar = ({ onProfileClick, onSettingsClick, onLogout }: D
               onClick={toggleSearch}
               className="p-2 hover:bg-white/5 rounded-full transition-colors"
             >
-              <Search className="h-[18px] w-[18px] text-white/70" />
+              <Search className="h-4 w-4 text-white/70" />
             </button>
             
             <AnimatePresence>
@@ -107,16 +107,16 @@ export const DashboardNavbar = ({ onProfileClick, onSettingsClick, onLogout }: D
           </div>
 
           <button className="p-2 hover:bg-white/5 rounded-full transition-colors">
-            <HelpCircle className="h-[18px] w-[18px] text-white/70" />
+            <HelpCircle className="h-4 w-4 text-white/70" />
           </button>
           
           <button className="p-2 hover:bg-white/5 rounded-full transition-colors relative">
-            <Bell className="h-[18px] w-[18px] text-white/70" />
+            <Bell className="h-4 w-4 text-white/70" />
             <span className="absolute top-1 right-1 h-1.5 w-1.5 bg-[#4FDDE6] rounded-full"></span>
           </button>
           
           <button className="p-2 hover:bg-white/5 rounded-full transition-colors">
-            <Sun className="h-[18px] w-[18px] text-white/70" />
+            <Sun className="h-4 w-4 text-white/70" />
           </button>
           
           <div className="relative pr-8">

@@ -197,6 +197,18 @@ serve(async (req) => {
       rulesConfidence: best?.confidence || null
     });
 
+    // Log what we are sending to Claude to verify inputs match direct calls
+    console.info("Claude request input summary", {
+      receipt_id,
+      merchant: receipt.merchant,
+      vendor_text: receipt.vendor_text,
+      total: receipt.total,
+      subtotal: receipt.subtotal,
+      tax: receipt.tax,
+      status: receipt.status,
+      line_item_count: items?.length ?? 0
+    });
+
     try {
       const claudeResponse = await fetch(
         `${Deno.env.get("SUPABASE_URL")}/functions/v1/claude-categorize`,
@@ -326,11 +338,16 @@ serve(async (req) => {
       );
     }
 
-    // If nothing matched at all, mark for review
-    const { error } = await supabase.from("receipts_v2").update({ status: "ocr_done" }).eq("id", receipt_id);
+    // If nothing matched at all, mark as categorized but with no category (uncategorized)
+    const { error } = await supabase.from("receipts_v2").update({ 
+      status: "categorized",
+      category_id: null,
+      category: null,
+      category_confidence: null
+    }).eq("id", receipt_id);
     if (error) throw error;
 
-    return new Response(JSON.stringify({ ok: false, reason: "no_match" }), { status: 200 });
+    return new Response(JSON.stringify({ ok: true, reason: "uncategorized", receipt_id }), { status: 200 });
 
   } catch (e) {
     console.error(e);

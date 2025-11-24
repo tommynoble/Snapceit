@@ -104,7 +104,7 @@ export function ReminderCard() {
       transition={{ duration: 0.2 }}
       className="rounded-2xl bg-white p-6 shadow-md hover:shadow-xl transition-shadow duration-200"
     >
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">Reminders</h3>
+      <h3 className="text-lg font-semibold text-gray-900 mb-3 pb-3 border-b border-gray-200">Reminders</h3>
       
       <div className="space-y-4">
         {/* Receipt Status Reminder */}

@@ -216,7 +216,7 @@ export function UploadReceiptCard() {
 
   return (
     <div className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-all duration-200 transform hover:scale-[1.01]">
-      <h2 className="text-2xl font-semibold mb-4">Upload Receipt</h2>
+      <h2 className="text-2xl font-semibold mb-4 pb-4 border-b border-gray-100">Upload Receipt</h2>
       
       {!isVerifying ? (
         <div
