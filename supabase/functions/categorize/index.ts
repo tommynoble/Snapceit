@@ -192,102 +192,104 @@ serve(async (req) => {
 
     // ALWAYS try Claude (for testing - will revert later)
     // TODO: Revert to threshold-based logic after testing
-    {
-      console.info("Rules confidence low or null, attempting Claude fallback", {
-        receipt_id,
-        rulesConfidence: best?.confidence || null
-      });
+    console.info("Attempting Claude fallback", {
+      receipt_id,
+      rulesConfidence: best?.confidence || null
+    });
 
-      try {
-        const claudeResponse = await fetch(
-          `${Deno.env.get("SUPABASE_URL")}/functions/v1/claude-categorize`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`
-            },
-            body: JSON.stringify({ receipt_id })
-          }
-        );
+    try {
+      const claudeResponse = await fetch(
+        `${Deno.env.get("SUPABASE_URL")}/functions/v1/claude-categorize`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`
+          },
+          body: JSON.stringify({ receipt_id })
+        }
+      );
 
-        if (claudeResponse.ok) {
-          const claudeData = await claudeResponse.json();
-          if (claudeData.ok && claudeData.category_id) {
-            console.info("Claude categorization successful", {
+      if (claudeResponse.ok) {
+        const claudeData = await claudeResponse.json();
+        console.info("Claude response received", {
+          receipt_id,
+          claudeOk: claudeData.ok,
+          hasCategoryId: !!claudeData.category_id
+        });
+        
+        if (claudeData.ok && claudeData.category_id) {
+          console.info("Claude categorization successful", {
+            receipt_id,
+            category: claudeData.category,
+            confidence: claudeData.confidence,
+            method: "claude"
+          });
+          // Record prediction and finalize receipt with Claude result
+          await upsertPrediction(
+            "receipt",
+            receipt_id,
+            claudeData.category_id,
+            claudeData.confidence ?? 0.65,
+            "claude",
+            `claude@${claudeData.version || "v1"}`,
+            { reasoning: claudeData.reasoning || null }
+          );
+          await finalizeReceipt(receipt_id, claudeData.category_id, claudeData.confidence ?? 0.65, claudeData.category);
+          return new Response(
+            JSON.stringify({
+              ok: true,
               receipt_id,
+              category_id: claudeData.category_id,
               category: claudeData.category,
               confidence: claudeData.confidence,
               method: "claude"
-            });
-            // Record prediction and finalize receipt with Claude result
-            await upsertPrediction(
-              "receipt",
-              receipt_id,
-              claudeData.category_id,
-              claudeData.confidence ?? 0.65,
-              "claude",
-              `claude@${claudeData.version || "v1"}`,
-              { reasoning: claudeData.reasoning || null }
-            );
-            await finalizeReceipt(receipt_id, claudeData.category_id, claudeData.confidence ?? 0.65, claudeData.category);
-            return new Response(
-              JSON.stringify({
-                ok: true,
-                receipt_id,
-                category_id: claudeData.category_id,
-                category: claudeData.category,
-                confidence: claudeData.confidence,
-                method: "claude"
-              }),
-              { status: 200 }
-            );
-          }
+            }),
+            { status: 200 }
+          );
         } else {
-          console.warn("Claude fallback failed", {
+          console.warn("Claude returned invalid response", {
             receipt_id,
-            status: claudeResponse.status
+            claudeData
           });
         }
-      } catch (claudeError) {
-        console.warn("Claude fallback error", {
+      } else {
+        console.warn("Claude HTTP error", {
           receipt_id,
-          error: String(claudeError)
+          status: claudeResponse.status,
+          statusText: claudeResponse.statusText
         });
       }
-
-      // If Claude also failed or low confidence, fall back to rules result if available
-      if (best) {
-        const categoryName = getCategoryName(best.category_id, rules);
-        await finalizeReceipt(receipt_id, best.category_id, best.confidence, categoryName);
-        return new Response(
-          JSON.stringify({
-            ok: true,
-            receipt_id,
-            category_id: best.category_id,
-            category: categoryName,
-            confidence: best.confidence,
-            method: best.method,
-            note: "Claude fallback failed, using rules result"
-          }),
-          { status: 200 }
-        );
-      }
-
-      // If nothing matched at all, mark for review
-      const { error } = await supabase.from("receipts_v2").update({ status: "ocr_done" }).eq("id", receipt_id);
-      if (error) throw error;
-
-      return new Response(JSON.stringify({ ok: false, reason: "no_match" }), { status: 200 });
+    } catch (claudeError) {
+      console.warn("Claude fetch error", {
+        receipt_id,
+        error: String(claudeError)
+      });
     }
 
+    // If Claude also failed or low confidence, fall back to rules result if available
     if (best) {
-      // Record ensemble decision
-      await upsertPrediction("receipt", receipt_id, best.category_id, best.confidence, "ensemble", `ensemble@${rules.version}`, { picked: best.method });
       const categoryName = getCategoryName(best.category_id, rules);
       await finalizeReceipt(receipt_id, best.category_id, best.confidence, categoryName);
-      return new Response(JSON.stringify({ ok: true, receipt_id, category_id: best.category_id, category: categoryName, confidence: best.confidence, method: best.method }), { status: 200 });
+      return new Response(
+        JSON.stringify({
+          ok: true,
+          receipt_id,
+          category_id: best.category_id,
+          category: categoryName,
+          confidence: best.confidence,
+          method: best.method,
+          note: "Claude fallback failed, using rules result"
+        }),
+        { status: 200 }
+      );
     }
+
+    // If nothing matched at all, mark for review
+    const { error } = await supabase.from("receipts_v2").update({ status: "ocr_done" }).eq("id", receipt_id);
+    if (error) throw error;
+
+    return new Response(JSON.stringify({ ok: false, reason: "no_match" }), { status: 200 });
 
   } catch (e) {
     console.error(e);
