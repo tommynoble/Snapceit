@@ -313,9 +313,9 @@ export function RecentReceiptsCard() {
                       ✅ Processed
                     </span>
                   )}
-                  {receipt.status === 'categorized' && (
-                    <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-1 text-xs font-medium text-emerald-800">
-                      🎯 Categorized
+                  {receipt.status === 'categorized' && receipt.category && (
+                    <span className="inline-flex items-center rounded-full bg-purple-100 px-2 py-1 text-xs font-medium text-purple-800">
+                      {receipt.category}
                     </span>
                   )}
                   
