@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Routes, Route, useNavigate } from 'react-router-dom';
+import { Routes, Route, useNavigate, Navigate } from 'react-router-dom';
 import { Menu } from 'lucide-react';
 import { DashboardHeader } from './DashboardHeader';
 import { useAuth } from '../../auth/SupabaseAuthContext';
@@ -345,6 +345,11 @@ export function DashboardLayout() {
                         <Reports />
                       </motion.div>
                     }
+                  />
+                  {/* Catch-all 404 route - redirect to homepage */}
+                  <Route
+                    path="*"
+                    element={<Navigate to="/" replace />}
                   />
                 </Routes>
               </div>

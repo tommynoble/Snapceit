@@ -493,6 +493,7 @@ export function RecentReceiptsCard() {
                       </div>
                     </div>
 
+
                     {/* Subtotal */}
                     {selectedReceipt.subtotal !== null && selectedReceipt.subtotal !== undefined && (
                       <div>

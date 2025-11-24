@@ -1,0 +1,72 @@
+[
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440001",
+    "merchant": "Apple Store",
+    "total": 3442.77,
+    "subtotal": 2799.00,
+    "tax": 643.77,
+    "receipt_date": "2025-04-09",
+    "status": "ocr_done",
+    "description": "MacBook Pro - should match rules (Supplies)"
+  },
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440002",
+    "merchant": "Shell Gas Station",
+    "total": 65.50,
+    "subtotal": 65.50,
+    "tax": 0,
+    "receipt_date": "2025-11-20",
+    "status": "ocr_done",
+    "description": "Fuel - should match rules (Car and Truck Expenses)"
+  },
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440003",
+    "merchant": "AWS",
+    "total": 245.99,
+    "subtotal": 245.99,
+    "tax": 0,
+    "receipt_date": "2025-11-15",
+    "status": "ocr_done",
+    "description": "Cloud services - should match rules (Office Expense)"
+  },
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440004",
+    "merchant": "Marriott Hotels",
+    "total": 189.00,
+    "subtotal": 165.00,
+    "tax": 24.00,
+    "receipt_date": "2025-11-10",
+    "status": "ocr_done",
+    "description": "Hotel stay - should match rules (Travel)"
+  },
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440005",
+    "merchant": "McDonald's",
+    "total": 12.50,
+    "subtotal": 12.50,
+    "tax": 0,
+    "receipt_date": "2025-11-22",
+    "status": "ocr_done",
+    "description": "Lunch - should match rules (Meals)"
+  },
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440006",
+    "merchant": "XYZ Corp",
+    "total": 500.00,
+    "subtotal": 500.00,
+    "tax": 0,
+    "receipt_date": "2025-11-21",
+    "status": "ocr_done",
+    "description": "Unknown vendor - should trigger Claude fallback"
+  },
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440007",
+    "merchant": "Store",
+    "total": 75.00,
+    "subtotal": 75.00,
+    "tax": 0,
+    "receipt_date": "2025-11-19",
+    "status": "ocr_done",
+    "description": "Ambiguous vendor - should trigger Claude fallback"
+  }
+]

@@ -1,0 +1,143 @@
+[
+  {
+    "receipt": {
+      "id": "550e8400-e29b-41d4-a716-446655440001",
+      "merchant": "Apple Store",
+      "total": 3442.77,
+      "subtotal": 2799,
+      "tax": 643.77,
+      "receipt_date": "2025-04-09",
+      "status": "ocr_done",
+      "description": "MacBook Pro - should match rules (Supplies)"
+    },
+    "status": 200,
+    "data": {
+      "ok": true,
+      "receipt_id": "550e8400-e29b-41d4-a716-446655440001",
+      "category_id": 17,
+      "category": "Supplies",
+      "confidence": 0.75,
+      "method": "rule"
+    },
+    "success": true
+  },
+  {
+    "receipt": {
+      "id": "550e8400-e29b-41d4-a716-446655440002",
+      "merchant": "Shell Gas Station",
+      "total": 65.5,
+      "subtotal": 65.5,
+      "tax": 0,
+      "receipt_date": "2025-11-20",
+      "status": "ocr_done",
+      "description": "Fuel - should match rules (Car and Truck Expenses)"
+    },
+    "status": 200,
+    "data": {
+      "ok": true,
+      "receipt_id": "550e8400-e29b-41d4-a716-446655440002",
+      "category_id": 2,
+      "category": "Car and Truck Expenses",
+      "confidence": 0.85,
+      "method": "rule"
+    },
+    "success": true
+  },
+  {
+    "receipt": {
+      "id": "550e8400-e29b-41d4-a716-446655440003",
+      "merchant": "AWS",
+      "total": 245.99,
+      "subtotal": 245.99,
+      "tax": 0,
+      "receipt_date": "2025-11-15",
+      "status": "ocr_done",
+      "description": "Cloud services - should match rules (Office Expense)"
+    },
+    "status": 500,
+    "data": {
+      "error": "[object Object]"
+    },
+    "success": false
+  },
+  {
+    "receipt": {
+      "id": "550e8400-e29b-41d4-a716-446655440004",
+      "merchant": "Marriott Hotels",
+      "total": 189,
+      "subtotal": 165,
+      "tax": 24,
+      "receipt_date": "2025-11-10",
+      "status": "ocr_done",
+      "description": "Hotel stay - should match rules (Travel)"
+    },
+    "status": 200,
+    "data": {
+      "ok": true,
+      "receipt_id": "550e8400-e29b-41d4-a716-446655440004",
+      "category_id": 19,
+      "category": "Travel",
+      "confidence": 0.8,
+      "method": "rule"
+    },
+    "success": true
+  },
+  {
+    "receipt": {
+      "id": "550e8400-e29b-41d4-a716-446655440005",
+      "merchant": "McDonald's",
+      "total": 12.5,
+      "subtotal": 12.5,
+      "tax": 0,
+      "receipt_date": "2025-11-22",
+      "status": "ocr_done",
+      "description": "Lunch - should match rules (Meals)"
+    },
+    "status": 200,
+    "data": {
+      "ok": true,
+      "receipt_id": "550e8400-e29b-41d4-a716-446655440005",
+      "category_id": 20,
+      "category": "Meals",
+      "confidence": 0.78,
+      "method": "rule"
+    },
+    "success": true
+  },
+  {
+    "receipt": {
+      "id": "550e8400-e29b-41d4-a716-446655440006",
+      "merchant": "XYZ Corp",
+      "total": 500,
+      "subtotal": 500,
+      "tax": 0,
+      "receipt_date": "2025-11-21",
+      "status": "ocr_done",
+      "description": "Unknown vendor - should trigger Claude fallback"
+    },
+    "status": 200,
+    "data": {
+      "ok": false,
+      "reason": "no_match"
+    },
+    "success": false
+  },
+  {
+    "receipt": {
+      "id": "550e8400-e29b-41d4-a716-446655440007",
+      "merchant": "Store",
+      "total": 75,
+      "subtotal": 75,
+      "tax": 0,
+      "receipt_date": "2025-11-19",
+      "status": "ocr_done",
+      "description": "Ambiguous vendor - should trigger Claude fallback"
+    },
+    "status": 200,
+    "data": {
+      "ok": false,
+      "reason": "no_match"
+    },
+    "success": false
+  }
+]

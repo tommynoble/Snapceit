@@ -37,34 +37,47 @@ function loadRules(): RulesPack {
       vendors: [],
       keywords: [],
       categoryMap: {
-        "Other": 9,
-        "Groceries": 10,
-        "Fuel": 11,
-        "Transport": 12,
-        "Software": 13,
-        "Meals": 15,
-        "Travel": 7,
-        "Shopping": 3,
-        "Utilities": 5,
-        "Healthcare": 6,
-        "Entertainment": 4,
-        "Business": 8,
-        "Lodging": 14,
-        "Phone & Internet": 16,
-        "Office Supplies": 17,
-        "Repairs & Maintenance": 18,
-        "Subscriptions": 19,
-        "Food & Dining": 1,
-        "Transportation": 2
+        // Schedule C-aligned defaults
+        "Advertising": 1,
+        "Car and Truck Expenses": 2,
+        "Commissions and Fees": 3,
+        "Contract Labor": 4,
+        "Depletion": 5,
+        "Depreciation": 6,
+        "Employee Benefit Programs": 7,
+        "Insurance (other than health)": 8,
+        "Interest - Mortgage": 9,
+        "Interest - Other": 10,
+        "Legal and Professional Services": 11,
+        "Office Expense": 12,
+        "Pension and Profit-Sharing Plans": 13,
+        "Rent or Lease - Vehicles and Equipment": 14,
+        "Rent or Lease - Other Business Property": 15,
+        "Repairs and Maintenance": 16,
+        "Supplies": 17,
+        "Taxes and Licenses": 18,
+        "Travel": 19,
+        "Meals": 20,
+        "Utilities": 21,
+        "Wages": 22,
+        "Other Expenses": 23
       }
     };
   }
   return JSON.parse(raw);
 }
 
+function getCategoryName(categoryId: number, rules: RulesPack): string {
+  // Reverse lookup: find category name by ID
+  for (const [name, id] of Object.entries(rules.categoryMap)) {
+    if (id === categoryId) return name;
+  }
+  return "Other";
+}
+
 async function fetchReceipt(receipt_id: string) {
   const { data: r, error } = await supabase
-    .from("receipts")
+    .from("receipts_v2")
     .select("*")
     .eq("id", receipt_id)
     .single();
@@ -148,12 +161,13 @@ async function upsertPrediction(
   if (error) throw error;
 }
 
-async function finalizeReceipt(receipt_id: string, category_id: number, confidence: number) {
+async function finalizeReceipt(receipt_id: string, category_id: number, confidence: number, category_name?: string) {
   const { error } = await supabase
-    .from("receipts")
+    .from("receipts_v2")
     .update({ 
       category_id, 
       category_confidence: confidence, 
+      category: category_name,
       status: "categorized", 
       updated_at: new Date().toISOString() 
     })
@@ -176,18 +190,104 @@ serve(async (req) => {
       await upsertPrediction("receipt", receipt_id, best.category_id, best.confidence, "rule", `rules@${rules.version}`, best.details);
     }
 
+    // ALWAYS try Claude (for testing - will revert later)
+    // TODO: Revert to threshold-based logic after testing
+    {
+      console.info("Rules confidence low or null, attempting Claude fallback", {
+        receipt_id,
+        rulesConfidence: best?.confidence || null
+      });
+
+      try {
+        const claudeResponse = await fetch(
+          `${Deno.env.get("SUPABASE_URL")}/functions/v1/claude-categorize`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`
+            },
+            body: JSON.stringify({ receipt_id })
+          }
+        );
+
+        if (claudeResponse.ok) {
+          const claudeData = await claudeResponse.json();
+          if (claudeData.ok && claudeData.category_id) {
+            console.info("Claude categorization successful", {
+              receipt_id,
+              category: claudeData.category,
+              confidence: claudeData.confidence,
+              method: "claude"
+            });
+            // Record prediction and finalize receipt with Claude result
+            await upsertPrediction(
+              "receipt",
+              receipt_id,
+              claudeData.category_id,
+              claudeData.confidence ?? 0.65,
+              "claude",
+              `claude@${claudeData.version || "v1"}`,
+              { reasoning: claudeData.reasoning || null }
+            );
+            await finalizeReceipt(receipt_id, claudeData.category_id, claudeData.confidence ?? 0.65, claudeData.category);
+            return new Response(
+              JSON.stringify({
+                ok: true,
+                receipt_id,
+                category_id: claudeData.category_id,
+                category: claudeData.category,
+                confidence: claudeData.confidence,
+                method: "claude"
+              }),
+              { status: 200 }
+            );
+          }
+        } else {
+          console.warn("Claude fallback failed", {
+            receipt_id,
+            status: claudeResponse.status
+          });
+        }
+      } catch (claudeError) {
+        console.warn("Claude fallback error", {
+          receipt_id,
+          error: String(claudeError)
+        });
+      }
+
+      // If Claude also failed or low confidence, fall back to rules result if available
+      if (best) {
+        const categoryName = getCategoryName(best.category_id, rules);
+        await finalizeReceipt(receipt_id, best.category_id, best.confidence, categoryName);
+        return new Response(
+          JSON.stringify({
+            ok: true,
+            receipt_id,
+            category_id: best.category_id,
+            category: categoryName,
+            confidence: best.confidence,
+            method: best.method,
+            note: "Claude fallback failed, using rules result"
+          }),
+          { status: 200 }
+        );
+      }
+
+      // If nothing matched at all, mark for review
+      const { error } = await supabase.from("receipts_v2").update({ status: "ocr_done" }).eq("id", receipt_id);
+      if (error) throw error;
+
+      return new Response(JSON.stringify({ ok: false, reason: "no_match" }), { status: 200 });
+    }
+
     if (best) {
       // Record ensemble decision
       await upsertPrediction("receipt", receipt_id, best.category_id, best.confidence, "ensemble", `ensemble@${rules.version}`, { picked: best.method });
-      await finalizeReceipt(receipt_id, best.category_id, best.confidence);
-      return new Response(JSON.stringify({ ok: true, receipt_id, category_id: best.category_id, confidence: best.confidence }), { status: 200 });
+      const categoryName = getCategoryName(best.category_id, rules);
+      await finalizeReceipt(receipt_id, best.category_id, best.confidence, categoryName);
+      return new Response(JSON.stringify({ ok: true, receipt_id, category_id: best.category_id, category: categoryName, confidence: best.confidence, method: best.method }), { status: 200 });
     }
-
-    // If nothing matched, mark for review
-    const { error } = await supabase.from("receipts").update({ status: "ocr_done" }).eq("id", receipt_id);
-    if (error) throw error;
-
-    return new Response(JSON.stringify({ ok: false, reason: "no_match" }), { status: 200 });
 
   } catch (e) {
     console.error(e);

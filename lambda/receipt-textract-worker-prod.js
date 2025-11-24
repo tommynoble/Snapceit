@@ -221,28 +221,51 @@ function extractVendor(textractResponse) {
     const lines = textractResponse.Blocks
       .filter(b => b.BlockType === 'LINE')
       .map(b => b.Text.trim())
-      .filter(b => b.length > 0)
-      .slice(0, 5); // First 5 lines likely contain vendor
+      .filter(b => b.length > 0);
 
-    let vendor = lines[0] || 'Unknown Vendor';
+    // RULE: The FIRST line is almost always the brand name
+    // Examples: "Marshalls", "Shell", "Lidl", "McDonald's", "Amazon"
+    // Skip only if it's clearly not a vendor (numbers, very short, etc)
     
-    // Clean up vendor name
-    vendor = vendor
-      .replace(/SUPERSTORE/gi, '')
-      .replace(/SUPERCENTER/gi, '')
-      .replace(/STORE/gi, '')
-      .replace(/INC\.|LLC\.|CO\./gi, '')
-      .replace(/-/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim()
-      .toUpperCase();
+    for (const line of lines.slice(0, 5)) {
+      if (line.length < 2) continue; // Need at least 2 chars
+      
+      const letters = (line.match(/[A-Z]/gi) || []).length;
+      const digits = (line.match(/\d/g) || []).length;
+      const letterRatio = letters / line.length;
+      
+      // Skip if mostly numbers/special chars
+      if (letterRatio < 0.5) continue;
+      
+      // Skip common non-vendor lines
+      if (/^(RECEIPT|INVOICE|BILL|STATEMENT|QUOTE|ORDER|REGULAR|SALE|TRANSACTION|PURCHASE|THANK YOU)$/i.test(line)) {
+        continue;
+      }
+      
+      // This is the vendor!
+      let vendor = line;
+      
+      // Clean up vendor name
+      vendor = vendor
+        .replace(/SUPERSTORE/gi, '')
+        .replace(/SUPERCENTER/gi, '')
+        .replace(/STORE/gi, '')
+        .replace(/INC\.|LLC\.|CO\./gi, '')
+        .replace(/-/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .toUpperCase();
+      
+      // Capitalize properly
+      vendor = vendor.split(' ')
+        .map(word => word.charAt(0) + word.slice(1).toLowerCase())
+        .join(' ');
+      
+      return vendor || 'Unknown Vendor';
+    }
     
-    // Capitalize properly
-    vendor = vendor.split(' ')
-      .map(word => word.charAt(0) + word.slice(1).toLowerCase())
-      .join(' ');
-    
-    return vendor || 'Unknown Vendor';
+    // Fallback if no vendor found in first 5 lines
+    return 'Unknown Vendor';
   } catch (error) {
     log.warn('Failed to extract vendor', { error: error.message });
     return 'Unknown Vendor';
@@ -305,7 +328,10 @@ function extractTotal(textractResponse) {
       }
     }
 
-    return total;
+    // If subtotal and tax exist and total is missing or less than subtotal, reconcile
+    const taxData = extractTax(textractResponse);
+    const reconciliation = reconcileTotals(taxData.subtotal, taxData.tax, total);
+    return reconciliation.total;
   } catch (error) {
     log.warn('Failed to extract total', { error: error.message });
     return null;
@@ -323,9 +349,11 @@ function extractDate(textractResponse) {
 
     // Try multiple date formats
     const datePatterns = [
-      { pattern: /(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})/, format: 'DDMMYYYYsep' }, // DD/MM/YYYY
-      { pattern: /(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2})/, format: 'DDMMYY' }, // DD.MM.YY (European)
-      { pattern: /(\d{4})[\/\-\.](\d{1,2})[\/\-\.](\d{1,2})/, format: 'YYYYMMDD' }, // YYYY/MM/DD
+      { pattern: /(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})(?:\s+\d{1,2}:\d{2})?/, format: 'DDMMYYYYsep' }, // DD/MM/YYYY
+      { pattern: /(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2})(?:\s+\d{1,2}:\d{2})?/, format: 'DDMMYY' }, // DD.MM.YY (European)
+      { pattern: /(\d{4})[\/\-\.](\d{1,2})[\/\-\.](\d{1,2})(?:\s+\d{1,2}:\d{2})?/, format: 'YYYYMMDD' }, // YYYY/MM/DD
+      { pattern: /(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})(?:\s+\d{1,2}:\d{2})?/, format: 'MMDDYYYY' }, // MM/DD/YYYY (disambiguated below)
+      { pattern: /(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2})(?:\s+\d{1,2}:\d{2})?/, format: 'MMDDYY' }, // MM/DD/YY (disambiguated below)
     ];
 
     for (const line of lines) {
@@ -346,6 +374,14 @@ function extractDate(textractResponse) {
             year = parseInt(match[1], 10);
             month = parseInt(match[2], 10);
             day = parseInt(match[3], 10);
+          } else if (format === 'MMDDYYYY') {
+            month = parseInt(match[1], 10);
+            day = parseInt(match[2], 10);
+            year = parseInt(match[3], 10);
+          } else if (format === 'MMDDYY') {
+            month = parseInt(match[1], 10);
+            day = parseInt(match[2], 10);
+            year = 2000 + parseInt(match[3], 10);
           }
           
           // Validate date ranges
@@ -400,9 +436,11 @@ function extractTax(textractResponse) {
         let lineRate = null;
 
         for (const idx of candidateIndexes) {
-          const match = lines[idx].match(AMOUNT_PATTERN);
-          if (match) {
-            amount = parseAmount(match[0]);
+          const matches = lines[idx].match(AMOUNT_GLOBAL) || [];
+          if (matches.length > 0) {
+            // Prefer the rightmost amount on the line (tax amounts often appear last)
+            const picked = matches[matches.length - 1];
+            amount = parseAmount(picked);
             if (amount !== null) break;
           }
         }
@@ -550,7 +588,73 @@ async function processReceipt(pgClient, supabase, queueRow) {
 
     if (updateError) throw new Error(`Supabase update failed: ${updateError.message}`);
 
-    // 6) Mark queue item as processed
+    // 6) Trigger categorization via Edge Function
+    try {
+      const categoryResponse = await fetch(
+        `${process.env.SUPABASE_URL}/functions/v1/categorize`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`
+          },
+          body: JSON.stringify({
+            receipt_id: receiptId,
+            min_confidence: 0.65
+          })
+        }
+      );
+
+      if (categoryResponse.ok) {
+        const categoryData = await categoryResponse.json();
+        
+        // Check if categorization actually succeeded (ok: true in response)
+        if (categoryData.ok && categoryData.category_id) {
+          log.info('Categorization successful', {
+            receiptId,
+            category_id: categoryData.category_id,
+            category: categoryData.category,
+            confidence: categoryData.confidence,
+            method: categoryData.method
+          });
+
+          // Update receipt with category info
+          const { error: categoryError } = await supabase
+            .from('receipts_v2')
+            .update({
+              category_id: categoryData.category_id,
+              category: categoryData.category,
+              category_confidence: categoryData.confidence,
+              status: 'categorized',
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', receiptId);
+
+          if (categoryError) {
+            log.warn('Failed to update category', { receiptId, error: categoryError.message });
+          }
+        } else {
+          // Categorization returned no match
+          log.warn('Categorization returned no match', {
+            receiptId,
+            reason: categoryData.reason
+          });
+        }
+      } else {
+        log.warn('Categorization failed', {
+          receiptId,
+          status: categoryResponse.status,
+          statusText: categoryResponse.statusText
+        });
+      }
+    } catch (categoryError) {
+      log.warn('Error calling categorization function', {
+        receiptId,
+        error: categoryError.message
+      });
+    }
+
+    // 7) Mark queue item as processed
     await pgClient.query(
       `UPDATE public.receipt_queue 
        SET processed = TRUE, processor = $1, processed_at = NOW(), last_error = NULL

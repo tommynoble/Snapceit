@@ -12,8 +12,8 @@ serve(async (req) => {
 
     // Fetch all receipts with status 'ocr_done' (ready for categorization)
     const { data: receipts, error: fetchError } = await supabase
-      .from("receipts")
-      .select("id, user_id, vendor_text, total_amount, currency, receipt_date, country")
+      .from("receipts_v2")
+      .select("id")
       .eq("status", "ocr_done")
       .limit(100); // Process 100 at a time
 

@@ -1,202 +1,213 @@
 {
-  "version": "2025-11-08",
-  "description": "Rules engine configuration for receipt categorization. Edit this to add/update vendor and keyword patterns.",
+  "version": "2025-11-23-schedule-c",
+  "description": "Rules engine configuration for receipt categorization with Schedule C tax deduction categories.",
   "categoryMap": {
-    "Food & Dining": 1,
-    "Transportation": 2,
-    "Shopping": 3,
-    "Entertainment": 4,
-    "Utilities": 5,
-    "Healthcare": 6,
-    "Travel": 7,
-    "Business": 8,
-    "Other": 9,
-    "Groceries": 10,
-    "Fuel": 11,
-    "Transport": 12,
-    "Software": 13,
-    "Lodging": 14,
-    "Meals": 15,
-    "Phone & Internet": 16,
-    "Office Supplies": 17,
-    "Repairs & Maintenance": 18,
-    "Subscriptions": 19
+    "Advertising": 1,
+    "Car and Truck Expenses": 2,
+    "Commissions and Fees": 3,
+    "Contract Labor": 4,
+    "Depletion": 5,
+    "Depreciation": 6,
+    "Employee Benefit Programs": 7,
+    "Insurance (other than health)": 8,
+    "Interest - Mortgage": 9,
+    "Interest - Other": 10,
+    "Legal and Professional Services": 11,
+    "Office Expense": 12,
+    "Pension and Profit-Sharing Plans": 13,
+    "Rent or Lease - Vehicles and Equipment": 14,
+    "Rent or Lease - Other Business Property": 15,
+    "Repairs and Maintenance": 16,
+    "Supplies": 17,
+    "Taxes and Licenses": 18,
+    "Travel": 19,
+    "Meals": 20,
+    "Utilities": 21,
+    "Wages": 22,
+    "Other Expenses": 23
   },
   "vendors": [
     {
       "type": "vendor",
+      "pattern": "(walmart|wall.?mart|costco|target|kroger|safeway|whole foods|trader joe|apple|best buy|new frontiers|marketplace|marshalls|tj maxx|ross|burlington|kmart|natural marketplace)",
+      "category": "Supplies",
+      "confidence": 0.75,
+      "region": "US/AU"
+    },
+    {
+      "type": "vendor",
       "pattern": "(tesco|sainsbury|asda|aldi|lidl|morrisons|waitrose)",
-      "category": "Groceries",
-      "confidence": 0.78,
-      "region": "GB"
+      "category": "Supplies",
+      "confidence": 0.75,
+      "region": "GB/EU"
     },
     {
       "type": "vendor",
-      "pattern": "(whole foods|trader joe|kroger|safeway|publix)",
-      "category": "Groceries",
-      "confidence": 0.75,
+      "pattern": "(shell|bp|esso|texaco|total|chevron|exxon|mobil|sunoco|speedway)",
+      "category": "Car and Truck Expenses",
+      "confidence": 0.85,
+      "region": "GB/US"
+    },
+    {
+      "type": "vendor",
+      "pattern": "(uber|bolt|lyft|taxi|cab|uber eats|doordash|grubhub)",
+      "category": "Car and Truck Expenses",
+      "confidence": 0.8,
+      "region": "GB/US"
+    },
+    {
+      "type": "vendor",
+      "pattern": "(aws|digitalocean|namecheap|godaddy|cloudflare|heroku|vercel|stripe|twilio)",
+      "category": "Office Expense",
+      "confidence": 0.82,
       "region": "US"
     },
     {
       "type": "vendor",
-      "pattern": "(shell|bp|esso|texaco|total|chevron|exxon|mobil)",
-      "category": "Fuel",
+      "pattern": "(premier inn|travelodge|marriott|hilton|ibis|holiday inn|best western|airbnb|booking)",
+      "category": "Travel",
       "confidence": 0.8,
       "region": "GB/US"
     },
     {
       "type": "vendor",
-      "pattern": "(uber|bolt|lyft|taxi|cab)",
-      "category": "Transport",
-      "confidence": 0.75,
-      "region": "GB/US"
-    },
-    {
-      "type": "vendor",
-      "pattern": "(aws|digitalocean|namecheap|godaddy|cloudflare|heroku|vercel)",
-      "category": "Software",
-      "confidence": 0.8,
-      "region": "US"
-    },
-    {
-      "type": "vendor",
-      "pattern": "(premier inn|travelodge|marriott|hilton|ibis|holiday inn|best western)",
-      "category": "Lodging",
-      "confidence": 0.8,
-      "region": "GB/US"
-    },
-    {
-      "type": "vendor",
-      "pattern": "(mcdonald|kfc|burger king|starbucks|costa|pret|subway|chipotle)",
+      "pattern": "(mcdonald|kfc|burger king|starbucks|costa|pret|subway|chipotle|panera|wendy|pizza|restaurant|cafe|diner|bistro|real seafood|^real$)",
       "category": "Meals",
-      "confidence": 0.72,
-      "region": "GB/US"
-    },
-    {
-      "type": "vendor",
-      "pattern": "(vodafone|o2|ee|bt|virgin media|xfinity|verizon|at&t|t-mobile)",
-      "category": "Phone & Internet",
       "confidence": 0.78,
       "region": "GB/US"
     },
     {
       "type": "vendor",
-      "pattern": "(staples|office depot|ryman|officeworks)",
-      "category": "Office Supplies",
-      "confidence": 0.75,
+      "pattern": "(vodafone|o2|ee|bt|virgin media|xfinity|verizon|at&t|t-mobile|comcast)",
+      "category": "Utilities",
+      "confidence": 0.8,
       "region": "GB/US"
     },
     {
       "type": "vendor",
-      "pattern": "(boots|superdrug|lloyds pharmacy|walgreens|cvs)",
-      "category": "Healthcare",
-      "confidence": 0.7,
+      "pattern": "(staples|office depot|ryman|officeworks|office max)",
+      "category": "Office Expense",
+      "confidence": 0.8,
       "region": "GB/US"
+    },
+    {
+      "type": "vendor",
+      "pattern": "(geico|state farm|progressive|allstate|farmers|aaa insurance)",
+      "category": "Insurance (other than health)",
+      "confidence": 0.85,
+      "region": "US"
     },
     {
       "type": "vendor",
       "pattern": "(amazon|ebay|asos|next|marks & spencer|john lewis)",
-      "category": "Shopping",
+      "category": "Supplies",
       "confidence": 0.65,
       "region": "GB/US"
     },
     {
       "type": "vendor",
-      "pattern": "(netflix|spotify|disney|hulu|prime video|apple tv)",
-      "category": "Entertainment",
+      "pattern": "(netflix|spotify|disney|hulu|prime video|apple tv|adobe|microsoft)",
+      "category": "Office Expense",
       "confidence": 0.8,
+      "region": "GB/US"
+    },
+    {
+      "type": "vendor",
+      "pattern": "(delta|united|american|southwest|british airways|lufthansa|ryanair)",
+      "category": "Travel",
+      "confidence": 0.85,
       "region": "GB/US"
     }
   ],
   "keywords": [
     {
       "type": "keyword",
-      "pattern": "diesel|petrol|gasoline|fuel|unleaded|premium",
-      "category": "Fuel",
-      "confidence": 0.7,
-      "description": "Fuel-related keywords"
+      "pattern": "diesel|petrol|gasoline|fuel|unleaded|premium|oil change|tire|maintenance",
+      "category": "Car and Truck Expenses",
+      "confidence": 0.75,
+      "description": "Fuel and vehicle maintenance keywords"
     },
     {
       "type": "keyword",
-      "pattern": "ride|trip fare|airport transfer|taxi|cab|transport",
-      "category": "Transport",
-      "confidence": 0.67,
+      "pattern": "ride|trip fare|airport transfer|taxi|cab|transport|parking|toll",
+      "category": "Car and Truck Expenses",
+      "confidence": 0.72,
       "description": "Transportation keywords"
     },
     {
       "type": "keyword",
-      "pattern": "domain|hosting|ssl|server|compute|cdn|saas|license|software",
-      "category": "Software",
-      "confidence": 0.72,
+      "pattern": "domain|hosting|ssl|server|compute|cdn|saas|license|software|api|cloud",
+      "category": "Office Expense",
+      "confidence": 0.78,
       "description": "Software/hosting keywords"
     },
     {
       "type": "keyword",
-      "pattern": "hotel|inn|suite|resort|lodging|bnb|accommodation|motel",
-      "category": "Lodging",
-      "confidence": 0.7,
+      "pattern": "hotel|inn|suite|resort|lodging|bnb|accommodation|motel|airbnb",
+      "category": "Travel",
+      "confidence": 0.78,
       "description": "Lodging keywords"
     },
     {
       "type": "keyword",
-      "pattern": "meal|food|restaurant|cafe|dine|takeaway|lunch|dinner|breakfast",
+      "pattern": "meal|food|restaurant|cafe|dine|takeaway|lunch|dinner|breakfast|catering",
       "category": "Meals",
-      "confidence": 0.65,
+      "confidence": 0.72,
       "description": "Meals/dining keywords"
     },
     {
       "type": "keyword",
-      "pattern": "subscription|renewal|auto[- ]renew|monthly plan|annual plan",
-      "category": "Subscriptions",
-      "confidence": 0.72,
+      "pattern": "subscription|renewal|auto[- ]renew|monthly plan|annual plan|membership",
+      "category": "Office Expense",
+      "confidence": 0.75,
       "description": "Subscription keywords"
     },
     {
       "type": "keyword",
-      "pattern": "paper|ink|toner|pen|notebook|staple|desk|chair|office",
-      "category": "Office Supplies",
-      "confidence": 0.68,
+      "pattern": "paper|ink|toner|pen|notebook|staple|desk|chair|office|supplies",
+      "category": "Office Expense",
+      "confidence": 0.75,
       "description": "Office supply keywords"
     },
     {
       "type": "keyword",
-      "pattern": "repair|maintenance|service call|labour|parts|fix|plumber|electrician",
-      "category": "Repairs & Maintenance",
-      "confidence": 0.7,
+      "pattern": "repair|maintenance|service call|labour|parts|fix|plumber|electrician|hvac",
+      "category": "Repairs and Maintenance",
+      "confidence": 0.78,
       "description": "Repair/maintenance keywords"
     },
     {
       "type": "keyword",
-      "pattern": "electricity|gas bill|water bill|utility|meter|power|electric",
+      "pattern": "electricity|gas bill|water bill|utility|meter|power|electric|internet|phone",
       "category": "Utilities",
-      "confidence": 0.72,
+      "confidence": 0.8,
       "description": "Utilities keywords"
     },
     {
       "type": "keyword",
-      "pattern": "grocery|groceries|supermarket|produce|fresh|meat|dairy",
-      "category": "Groceries",
-      "confidence": 0.75,
+      "pattern": "grocery|groceries|supermarket|produce|fresh|meat|dairy|food items",
+      "category": "Supplies",
+      "confidence": 0.78,
       "description": "Grocery keywords"
     },
     {
       "type": "keyword",
-      "pattern": "flight|airline|airport|hotel|vacation|travel|trip",
+      "pattern": "flight|airline|airport|hotel|vacation|travel|trip|resort|cruise",
       "category": "Travel",
-      "confidence": 0.68,
+      "confidence": 0.75,
       "description": "Travel keywords"
     },
     {
       "type": "keyword",
-      "pattern": "pharmacy|medicine|prescription|medical|doctor|health|clinic",
-      "category": "Healthcare",
-      "confidence": 0.7,
+      "pattern": "pharmacy|medicine|prescription|medical|doctor|health|clinic|hospital",
+      "category": "Other Expenses",
+      "confidence": 0.72,
       "description": "Healthcare keywords"
     },
     {
       "type": "keyword",
-      "pattern": "movie|cinema|theatre|ticket|concert|event|entertainment",
-      "category": "Entertainment",
+      "pattern": "movie|cinema|theatre|ticket|concert|event|entertainment|show",
+      "category": "Other Expenses",
       "confidence": 0.65,
       "description": "Entertainment keywords"
     }
