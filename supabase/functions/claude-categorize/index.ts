@@ -210,22 +210,52 @@ serve(async (req) => {
 - OCR Confidence: ${rawOcr.confidence}`;
     }
 
-    const prompt = `You are a tax categorization expert. Categorize this receipt into ONE of these Schedule C business expense categories:
-
-${categoryNames}
-
-${receiptContext}${ocrSection}
-
-Based on the vendor name, items, amounts, and any other context clues, determine the most appropriate Schedule C business expense category.
-
-Respond with ONLY valid JSON (no markdown, no explanation):
+    const prompt = `You are an expert receipt categorizer for business expenses. Output only strict JSON with these fields:
 {
-  "category": "Category Name",
-  "confidence": 0.75,
-  "reasoning": "Brief explanation of why this category"
+  "category": "<one of the Schedule C names>",
+  "category_id": <matching id>,
+  "confidence": 0.0–1.0,
+  "reasoning": "<short rationale>"
 }
 
-Confidence should be 0.6-0.85. Reasoning should be 1-2 sentences.`;
+Allowed categories (name → id):
+- Advertising: 1
+- Car and Truck Expenses: 2
+- Commissions and Fees: 3
+- Contract Labor: 4
+- Depletion: 5
+- Depreciation: 6
+- Employee Benefit Programs: 7
+- Insurance (other than health): 8
+- Interest - Mortgage: 9
+- Interest - Other: 10
+- Legal and Professional Services: 11
+- Office Expense: 12
+- Pension and Profit-Sharing Plans: 13
+- Rent or Lease - Vehicles and Equipment: 14
+- Rent or Lease - Other Business Property: 15
+- Repairs and Maintenance: 16
+- Supplies: 17
+- Taxes and Licenses: 18
+- Travel: 19
+- Meals: 20
+- Utilities: 21
+- Wages: 22
+- Other Expenses: 23
+
+Guidance:
+- Prefer Meals for restaurants, cafes, bars, food service, seafood establishments.
+- Prefer Supplies for retail goods/merchandise (e.g., Walmart, Marshalls, hardware stores).
+- Travel for flights/hotels/transport; taxis/ride share can be Travel or Car/Truck depending on usage.
+- Utilities for telecom/ISP/power/phone services.
+- Office Expense for software/SaaS/shipping/office-related services.
+- Repairs and Maintenance for repairs, auto service, parts.
+- Other Expenses only if nothing else fits.
+
+Receipt Data:
+${receiptContext}${ocrSection}
+
+If the receipt is clearly consumer/retail and not a service, lean Supplies. Keep confidence realistic (0.5–0.9). Do not return free-form categories. Return ONLY valid JSON.`;
 
     // Call Claude with timeout
     let claudeResult;
