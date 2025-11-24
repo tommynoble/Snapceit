@@ -246,16 +246,34 @@ serve(async (req) => {
             method: "claude"
           });
           // Record prediction and finalize receipt with Claude result
-          await upsertPrediction(
-            "receipt",
-            receipt_id,
-            claudeData.category_id,
-            claudeData.confidence ?? 0.65,
-            "claude",
-            `claude@${claudeData.version || "v1"}`,
-            { reasoning: claudeData.reasoning || null }
-          );
-          await finalizeReceipt(receipt_id, claudeData.category_id, claudeData.confidence ?? 0.65, claudeData.category);
+          try {
+            await upsertPrediction(
+              "receipt",
+              receipt_id,
+              claudeData.category_id,
+              claudeData.confidence ?? 0.65,
+              "llm",
+              `claude@${claudeData.version || "v1"}`,
+              { reasoning: claudeData.reasoning || null }
+            );
+            console.info("Prediction recorded", { receipt_id });
+          } catch (predError) {
+            console.warn("Failed to record prediction", {
+              receipt_id,
+              error: String(predError)
+            });
+          }
+          
+          try {
+            await finalizeReceipt(receipt_id, claudeData.category_id, claudeData.confidence ?? 0.65, claudeData.category);
+            console.info("Receipt finalized", { receipt_id });
+          } catch (finalError) {
+            console.warn("Failed to finalize receipt", {
+              receipt_id,
+              error: String(finalError)
+            });
+          }
+          
           return new Response(
             JSON.stringify({
               ok: true,

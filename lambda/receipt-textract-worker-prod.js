@@ -557,14 +557,15 @@ async function processReceipt(pgClient, supabase, queueRow) {
     // 4) Store OCR JSON to S3 (durable artifact)
     const ocrS3Key = await storeOcrArtifact(receiptId, textractResponse);
 
-    // 5) Update Supabase idempotently (only if not already processed)
+    // 5) Extract raw OCR text for Claude
+    const rawOcrText = textractResponse.Blocks
+      .filter(b => b.BlockType === 'LINE')
+      .map(b => b.Text)
+      .join('\n');
+
+    // 6) Update Supabase idempotently (only if not already processed)
     // NOTE: We now write into receipts_v2 (new table) and only touch columns that exist there
-    const rawOcrData = {
-      s3_key: ocrS3Key,
-      confidence: ocrConfidence,
-      extracted_date: receiptDate,
-      reconciled_total: reconciled.reconciled ? total : undefined
-    };
+    const rawOcrData = rawOcrText || null;
 
     const updatePayload = {
       merchant: vendor,
@@ -588,7 +589,7 @@ async function processReceipt(pgClient, supabase, queueRow) {
 
     if (updateError) throw new Error(`Supabase update failed: ${updateError.message}`);
 
-    // 6) Trigger categorization via Edge Function
+    // 7) Trigger categorization via Edge Function
     try {
       const categoryResponse = await fetch(
         `${process.env.SUPABASE_URL}/functions/v1/categorize`,
@@ -654,7 +655,7 @@ async function processReceipt(pgClient, supabase, queueRow) {
       });
     }
 
-    // 7) Mark queue item as processed
+    // 8) Mark queue item as processed
     await pgClient.query(
       `UPDATE public.receipt_queue 
        SET processed = TRUE, processor = $1, processed_at = NOW(), last_error = NULL

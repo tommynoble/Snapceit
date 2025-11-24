@@ -116,21 +116,21 @@ async function callClaude(prompt: string): Promise<any> {
 }
 
 async function upsertPrediction(
-  subject: string,
-  receipt_id: string,
+  subject_type: "receipt" | "line_item",
+  subject_id: string,
   category_id: number,
   confidence: number,
-  method: string,
-  model: string,
+  method: "rule" | "ml" | "llm" | "ensemble",
+  version: string,
   details: any
 ) {
-  const { error } = await supabase.from("predictions").upsert({
-    subject,
-    receipt_id,
+  const { error } = await supabase.from("predictions").insert({
+    subject_type,
+    subject_id,
     category_id,
     confidence,
     method,
-    model,
+    version,
     details,
     created_at: new Date().toISOString()
   });
@@ -204,10 +204,11 @@ serve(async (req) => {
 
     // Add raw OCR data if available
     let ocrSection = "";
-    if (rawOcr && rawOcr.s3_key) {
-      ocrSection = `\nRaw Textract Data:
-- S3 Key: ${rawOcr.s3_key}
-- OCR Confidence: ${rawOcr.confidence}`;
+    if (rawOcr) {
+      // rawOcr is now the actual OCR text (string), not metadata object
+      const ocrText = typeof rawOcr === 'string' ? rawOcr : JSON.stringify(rawOcr);
+      ocrSection = `\nRaw Textract Lines:
+${ocrText}`;
     }
 
     const prompt = `You are an expert receipt categorizer for business expenses. Output only strict JSON with these fields:
@@ -300,8 +301,8 @@ If the receipt is clearly consumer/retail and not a service, lean Supplies. Keep
       receipt_id,
       category_id,
       confidence,
-      "claude",
-      CLAUDE_MODEL,
+      "llm",
+      `claude@${CLAUDE_MODEL}`,
       { 
         vendor: cleanVendor, 
         total: totalInfo,
