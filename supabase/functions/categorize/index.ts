@@ -108,38 +108,55 @@ function normalizeText(s?: string) {
     .trim();
 }
 
-function applyRules(rules: RulesPack, vendor_text: string, items: Array<{description: string}>) {
+function applyRules(rules: RulesPack, vendor_text: string, items: Array<{description?: string; name?: string; text?: string}> | null | undefined) {
   const hits: Array<{category_id:number; confidence:number; method:string; details:any}> = [];
 
   const vnorm = normalizeText(vendor_text);
   for (const rule of rules.vendors) {
-    const re = new RegExp(rule.pattern, "i");
-    if (re.test(vnorm)) {
-      const catId = rules.categoryMap[rule.category];
-      if (catId) {
-        hits.push({ 
-          category_id: catId, 
-          confidence: rule.confidence ?? 0.7, 
-          method: "rule", 
-          details: {source:"vendor", pattern:rule.pattern} 
-        });
+    try {
+      const re = new RegExp(rule.pattern, "i");
+      if (re.test(vnorm)) {
+        const catId = rules.categoryMap[rule.category];
+        if (catId) {
+          hits.push({ 
+            category_id: catId, 
+            confidence: rule.confidence ?? 0.7, 
+            method: "rule", 
+            details: {source:"vendor", pattern:rule.pattern} 
+          });
+        }
       }
+    } catch (e) {
+      console.warn("Vendor rule regex error", { pattern: rule.pattern, error: String(e) });
     }
   }
 
-  const bag = normalizeText(items.map(i => i.description).join(" "));
+  // Safely extract item descriptions
+  let bag = "";
+  if (items && Array.isArray(items)) {
+    const itemTexts = items
+      .map(i => i.description || i.name || i.text || "")
+      .filter(t => t)
+      .join(" ");
+    bag = normalizeText(itemTexts);
+  }
+
   for (const rule of rules.keywords) {
-    const re = new RegExp(`\\b(${rule.pattern})\\b`, "i");
-    if (re.test(bag) || re.test(vnorm)) {
-      const catId = rules.categoryMap[rule.category];
-      if (catId) {
-        hits.push({ 
-          category_id: catId, 
-          confidence: rule.confidence ?? 0.65, 
-          method: "rule", 
-          details: {source:"keyword", pattern:rule.pattern} 
-        });
+    try {
+      const re = new RegExp(`\\b(${rule.pattern})\\b`, "i");
+      if (re.test(bag) || re.test(vnorm)) {
+        const catId = rules.categoryMap[rule.category];
+        if (catId) {
+          hits.push({ 
+            category_id: catId, 
+            confidence: rule.confidence ?? 0.65, 
+            method: "rule", 
+            details: {source:"keyword", pattern:rule.pattern} 
+          });
+        }
       }
+    } catch (e) {
+      console.warn("Keyword rule regex error", { pattern: rule.pattern, error: String(e) });
     }
   }
 
@@ -182,6 +199,7 @@ serve(async (req) => {
 
     const rules = loadRules();
     const { receipt, items } = await fetchReceipt(receipt_id);
+    let claudeDebug: any = null;
 
     // Apply rules - handle different column names
     const vendorText = receipt.vendor_text || receipt.merchant || receipt.merchant_name || "";
@@ -224,6 +242,10 @@ serve(async (req) => {
 
       // Get response body as text first for logging
       const claudeText = await claudeResponse.text();
+      claudeDebug = {
+        status: claudeResponse.status,
+        body: claudeText.substring(0, 500)
+      };
       console.info("Claude fallback response", {
         receipt_id,
         status: claudeResponse.status,
@@ -241,6 +263,7 @@ serve(async (req) => {
             body: claudeText
           });
           claudeData = {};
+          claudeDebug = { ...claudeDebug, parseError: String(parseError) };
         }
 
         console.info("Claude response parsed", {
@@ -286,6 +309,15 @@ serve(async (req) => {
             });
           }
           
+          claudeDebug = {
+            ...claudeDebug,
+            parsed: {
+              ok: claudeData.ok,
+              category_id: claudeData.category_id,
+              category: claudeData.category,
+              confidence: claudeData.confidence
+            }
+          };
           return new Response(
             JSON.stringify({
               ok: true,
@@ -304,6 +336,7 @@ serve(async (req) => {
             reason: claudeData.reason,
             error: claudeData.error
           });
+          claudeDebug = { ...claudeDebug, parsed: claudeData };
         }
       } else {
         console.warn("Claude HTTP error", {
@@ -312,12 +345,14 @@ serve(async (req) => {
           statusText: claudeResponse.statusText,
           body: claudeText.substring(0, 500)
         });
+        claudeDebug = { ...claudeDebug, statusText: claudeResponse.statusText };
       }
     } catch (claudeError) {
       console.warn("Claude fetch error", {
         receipt_id,
         error: String(claudeError)
       });
+      claudeDebug = { ...(claudeDebug ?? {}), fetchError: String(claudeError) };
     }
 
     // If Claude also failed or low confidence, fall back to rules result if available
@@ -332,7 +367,8 @@ serve(async (req) => {
           category: categoryName,
           confidence: best.confidence,
           method: best.method,
-          note: "Claude fallback failed, using rules result"
+          note: "Claude fallback failed, using rules result",
+          claude_debug: claudeDebug
         }),
         { status: 200 }
       );
@@ -347,10 +383,16 @@ serve(async (req) => {
     }).eq("id", receipt_id);
     if (error) throw error;
 
-    return new Response(JSON.stringify({ ok: true, reason: "uncategorized", receipt_id }), { status: 200 });
+    return new Response(JSON.stringify({ ok: true, reason: "uncategorized", receipt_id, claude_debug: claudeDebug }), { status: 200 });
 
   } catch (e) {
-    console.error(e);
-    return new Response(JSON.stringify({ error: String(e) }), { status: 500 });
+    const errorMsg = e instanceof Error ? e.message : String(e);
+    const errorStack = e instanceof Error ? e.stack : "";
+    console.error("Categorize function error", {
+      error: errorMsg,
+      stack: errorStack,
+      type: typeof e
+    });
+    return new Response(JSON.stringify({ error: errorMsg }), { status: 500 });
   }
 });

@@ -286,32 +286,43 @@ Analyze the vendor name and receipt items to determine the best category. Be con
     let claudeResult;
     try {
       claudeResult = await callClaude(prompt);
+      console.info("Claude call succeeded", { receipt_id });
     } catch (error) {
-      console.warn("Claude call failed", { receipt_id, error: error.message });
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      console.warn("Claude call failed", { receipt_id, error: errorMsg });
       // Return null to signal fallback to rules
       return new Response(
         JSON.stringify({
           ok: false,
           reason: "claude_failed",
-          error: error.message
+          error: errorMsg
         }),
         { status: 200 }
       );
     }
 
     // Validate Claude response
-    const category = claudeResult.category;
-    const confidence = Math.min(claudeResult.confidence || 0.7, 0.85); // Cap at 0.85
+    const category = claudeResult?.category;
+    const confidence = Math.min(claudeResult?.confidence || 0.7, 0.85); // Cap at 0.85
+
+    console.info("Claude response validation", {
+      receipt_id,
+      category,
+      hasCategory: !!category,
+      inMap: category ? !!CATEGORY_MAP[category] : false
+    });
 
     if (!category || !CATEGORY_MAP[category]) {
       console.warn("Invalid category from Claude", {
         receipt_id,
-        category
+        category,
+        availableCategories: Object.keys(CATEGORY_MAP)
       });
       return new Response(
         JSON.stringify({
           ok: false,
-          reason: "invalid_category"
+          reason: "invalid_category",
+          category
         }),
         { status: 200 }
       );

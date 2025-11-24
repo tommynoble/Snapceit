@@ -1,5 +1,5 @@
 {
-  "version": "2025-11-23-schedule-c",
+  "version": "2025-11-24-schedule-c-v2",
   "description": "Rules engine configuration for receipt categorization with Schedule C tax deduction categories.",
   "categoryMap": {
     "Advertising": 1,
@@ -117,6 +117,27 @@
       "category": "Travel",
       "confidence": 0.85,
       "region": "GB/US"
+    },
+    {
+      "type": "vendor",
+      "pattern": "(stop.?shop|stopshop)",
+      "category": "Supplies",
+      "confidence": 0.75,
+      "region": "US"
+    },
+    {
+      "type": "vendor",
+      "pattern": "(home depot|homedepot|lowes|lowe)",
+      "category": "Supplies",
+      "confidence": 0.8,
+      "region": "US"
+    },
+    {
+      "type": "vendor",
+      "pattern": "(steakhouse|steak house|epic|tasteradar|taste radar|pub|tavern|bar.?grill)",
+      "category": "Meals",
+      "confidence": 0.78,
+      "region": "US/GB"
     }
   ],
   "keywords": [
