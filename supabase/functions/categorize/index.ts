@@ -210,12 +210,32 @@ serve(async (req) => {
         }
       );
 
+      // Get response body as text first for logging
+      const claudeText = await claudeResponse.text();
+      console.info("Claude fallback response", {
+        receipt_id,
+        status: claudeResponse.status,
+        body: claudeText.substring(0, 500) // Log first 500 chars
+      });
+
       if (claudeResponse.ok) {
-        const claudeData = await claudeResponse.json();
-        console.info("Claude response received", {
+        let claudeData;
+        try {
+          claudeData = JSON.parse(claudeText);
+        } catch (parseError) {
+          console.warn("Failed to parse Claude response JSON", {
+            receipt_id,
+            error: String(parseError),
+            body: claudeText
+          });
+          claudeData = {};
+        }
+
+        console.info("Claude response parsed", {
           receipt_id,
           claudeOk: claudeData.ok,
-          hasCategoryId: !!claudeData.category_id
+          hasCategoryId: !!claudeData.category_id,
+          category: claudeData.category
         });
         
         if (claudeData.ok && claudeData.category_id) {
@@ -248,16 +268,19 @@ serve(async (req) => {
             { status: 200 }
           );
         } else {
-          console.warn("Claude returned invalid response", {
+          console.warn("Claude returned ok:false or missing category_id", {
             receipt_id,
-            claudeData
+            claudeOk: claudeData.ok,
+            reason: claudeData.reason,
+            error: claudeData.error
           });
         }
       } else {
         console.warn("Claude HTTP error", {
           receipt_id,
           status: claudeResponse.status,
-          statusText: claudeResponse.statusText
+          statusText: claudeResponse.statusText,
+          body: claudeText.substring(0, 500)
         });
       }
     } catch (claudeError) {
