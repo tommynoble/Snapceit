@@ -332,7 +332,14 @@ export function RecentReceiptsCard() {
       className="rounded-2xl bg-white p-6 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.01]"
     >
       <div className="flex items-center justify-between mb-3 pb-3 border-b border-gray-100">
-        <h3 className="text-lg font-semibold text-gray-900">Recent Receipts</h3>
+        <div className="flex items-center gap-2">
+          <h3 className="text-lg font-semibold text-gray-900">Recent Receipts</h3>
+          {isMultiSelectMode && (
+            <span className="text-sm font-medium text-purple-600 bg-purple-100 px-2 py-1 rounded-full">
+              Select Mode
+            </span>
+          )}
+        </div>
         {selectedReceipts.size > 0 && (
           <div className="flex gap-2">
             <button
