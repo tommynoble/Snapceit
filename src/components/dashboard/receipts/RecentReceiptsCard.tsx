@@ -235,18 +235,45 @@ export function RecentReceiptsCard() {
 
   const handleDeleteConfirm = async () => {
     try {
-      // Check for both id and receiptId
-      const id = selectedReceipt?.receiptId || selectedReceipt?.id;
-      if (!selectedReceipt || !id) {
-        console.error('No receipt selected:', selectedReceipt);
-        toast.error('No receipt selected');
-        return;
-      }
+      // Handle bulk delete if multiple receipts selected
+      if (selectedReceipts.size > 0) {
+        let successCount = 0;
+        let failureCount = 0;
 
-      console.log('Deleting receipt with ID:', id); // Debug log
-      await deleteReceipt(id);
-      await refreshReceipts(); // Refresh the receipts list after deletion
-      toast.success('Receipt deleted successfully');
+        for (const receiptId of selectedReceipts) {
+          try {
+            await deleteReceipt(receiptId);
+            successCount++;
+          } catch (error) {
+            console.error('Error deleting receipt:', receiptId, error);
+            failureCount++;
+          }
+        }
+
+        await refreshReceipts();
+        
+        if (failureCount === 0) {
+          toast.success(`${successCount} receipt${successCount !== 1 ? 's' : ''} deleted successfully`);
+        } else {
+          toast.error(`Deleted ${successCount}, failed to delete ${failureCount}`);
+        }
+        
+        setSelectedReceipts(new Set());
+        setIsMultiSelectMode(false);
+      } else if (selectedReceipt) {
+        // Handle single delete
+        const id = selectedReceipt?.receiptId || selectedReceipt?.id;
+        if (!id) {
+          console.error('No receipt selected:', selectedReceipt);
+          toast.error('No receipt selected');
+          return;
+        }
+
+        console.log('Deleting receipt with ID:', id);
+        await deleteReceipt(id);
+        await refreshReceipts();
+        toast.success('Receipt deleted successfully');
+      }
     } catch (error) {
       console.error('Error deleting receipt:', error);
       toast.error('Failed to delete receipt');
@@ -316,7 +343,10 @@ export function RecentReceiptsCard() {
               Copy ({selectedReceipts.size})
             </button>
             <button
-              onClick={() => handleDeleteClick(null)}
+              onClick={() => {
+                setDeleteModalOpen(true);
+                setActiveMenu(null);
+              }}
               className="flex items-center gap-2 px-3 py-1 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg"
             >
               <Trash2 size={16} />
@@ -345,6 +375,15 @@ export function RecentReceiptsCard() {
               ${selectedReceipts.has(receipt.id || receipt.receiptId) ? 'border-purple-500 bg-purple-50' : 'border-gray-200'}
               ${isMultiSelectMode ? 'hover:border-purple-500' : ''}`}
           >
+            {isMultiSelectMode && (
+              <input
+                type="checkbox"
+                checked={selectedReceipts.has(receipt.id || receipt.receiptId)}
+                onChange={() => handleReceiptClick(receipt)}
+                onClick={(e) => e.stopPropagation()}
+                className="w-4 h-4 text-purple-600 rounded cursor-pointer"
+              />
+            )}
             <div className="flex items-center gap-4">
               {getCategoryIcon(receipt.category)}
               <div>
