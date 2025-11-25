@@ -9,15 +9,26 @@ import {
   Car, 
   Utensils, 
   Briefcase, 
-  Globe, 
+  Plane, 
   Zap, 
   Megaphone, 
   FileText,
-  AlertTriangle
+  AlertTriangle,
+  DollarSign,
+  Home
 } from 'lucide-react';
 import { useReceipts } from './ReceiptContext';
 import { toast } from 'react-hot-toast';
 import { useCurrency } from '../../../hooks/useCurrency';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Checkbox } from '@/components/ui/checkbox';
 
 export function RecentReceiptsCard() {
   const { receipts, deleteReceipt, updateReceipt, refreshReceipts } = useReceipts();
@@ -30,7 +41,7 @@ export function RecentReceiptsCard() {
   const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
-  // Category icon mapping
+  // Category icon mapping - using widely accepted, accurate icons
   const categoryIcons: { [key: string]: { 
     icon: React.ComponentType<any>, 
     color: string,
@@ -38,11 +49,11 @@ export function RecentReceiptsCard() {
   }} = {
     'Advertising': { icon: Megaphone, color: 'text-pink-500', bgColor: 'bg-pink-100' },
     'Car and Truck Expenses': { icon: Car, color: 'text-blue-500', bgColor: 'bg-blue-100' },
-    'Office Expenses': { icon: Briefcase, color: 'text-purple-500', bgColor: 'bg-purple-100' },
-    'Travel': { icon: Globe, color: 'text-teal-500', bgColor: 'bg-teal-100' },
+    'Office Expenses': { icon: Briefcase, color: 'text-indigo-500', bgColor: 'bg-indigo-100' },
+    'Travel': { icon: Plane, color: 'text-cyan-500', bgColor: 'bg-cyan-100' },
     'Meals': { icon: Utensils, color: 'text-green-500', bgColor: 'bg-green-100' },
     'Utilities': { icon: Zap, color: 'text-yellow-500', bgColor: 'bg-yellow-100' },
-    'Taxes and Licenses': { icon: FileText, color: 'text-emerald-500', bgColor: 'bg-emerald-100' },
+    'Taxes and Licenses': { icon: DollarSign, color: 'text-red-500', bgColor: 'bg-red-100' },
     'Supplies': { icon: ShoppingBag, color: 'text-orange-500', bgColor: 'bg-orange-100' },
     'Other': { icon: ReceiptIcon, color: 'text-gray-500', bgColor: 'bg-gray-100' }
   };
@@ -61,14 +72,14 @@ export function RecentReceiptsCard() {
     }
     
     const categoryGradients: { [key: string]: string } = {
-      'Travel': 'from-teal-500 to-teal-700',
+      'Travel': 'from-cyan-500 to-cyan-700',
       'Meals': 'from-green-500 to-green-700',
       'Supplies': 'from-orange-500 to-orange-700',
       'Car and Truck Expenses': 'from-blue-500 to-blue-700',
       'Advertising': 'from-pink-500 to-pink-700',
-      'Office Expenses': 'from-purple-500 to-purple-700',
+      'Office Expenses': 'from-indigo-500 to-indigo-700',
       'Utilities': 'from-yellow-500 to-yellow-700',
-      'Taxes and Licenses': 'from-emerald-500 to-emerald-700',
+      'Taxes and Licenses': 'from-red-500 to-red-700',
       'Other': 'from-gray-500 to-gray-700'
     };
     
@@ -93,8 +104,8 @@ export function RecentReceiptsCard() {
     if (category) {
       // Use category colors
       if (category === 'Travel') {
-        bgColor = 'bg-teal-100';
-        textColor = 'text-teal-800';
+        bgColor = 'bg-cyan-100';
+        textColor = 'text-cyan-800';
       } else if (category === 'Meals') {
         bgColor = 'bg-green-100';
         textColor = 'text-green-800';
@@ -108,14 +119,14 @@ export function RecentReceiptsCard() {
         bgColor = 'bg-pink-100';
         textColor = 'text-pink-800';
       } else if (category === 'Office Expenses') {
-        bgColor = 'bg-purple-100';
-        textColor = 'text-purple-800';
+        bgColor = 'bg-indigo-100';
+        textColor = 'text-indigo-800';
       } else if (category === 'Utilities') {
         bgColor = 'bg-yellow-100';
         textColor = 'text-yellow-800';
       } else if (category === 'Taxes and Licenses') {
-        bgColor = 'bg-emerald-100';
-        textColor = 'text-emerald-800';
+        bgColor = 'bg-red-100';
+        textColor = 'text-red-800';
       } else {
         bgColor = 'bg-gray-100';
         textColor = 'text-gray-800';
@@ -142,27 +153,15 @@ export function RecentReceiptsCard() {
   };
 
   // Handle shift key press
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.shiftKey) {
-        setIsMultiSelectMode(true);
+  const toggleSelectMode = () => {
+    setIsMultiSelectMode((prev) => {
+      if (prev) {
+        // Leaving select mode clears selections
+        setSelectedReceipts(new Set());
       }
-    };
-
-    const handleKeyUp = (e: KeyboardEvent) => {
-      if (!e.shiftKey) {
-        setIsMultiSelectMode(false);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('keyup', handleKeyUp);
-
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keyup', handleKeyUp);
-    };
-  }, []);
+      return !prev;
+    });
+  };
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -194,13 +193,18 @@ export function RecentReceiptsCard() {
     console.log('Current receipts:', receipts); // Debug log
   }, [receipts]);
 
+  const getReceiptId = (receipt: any) => receipt?.receiptId || receipt?.id;
+
   const handleReceiptClick = (receipt: any) => {
+    const id = getReceiptId(receipt);
+    if (!id) return;
+
     if (isMultiSelectMode) {
       const newSelected = new Set(selectedReceipts);
-      if (newSelected.has(receipt.receiptId)) {
-        newSelected.delete(receipt.receiptId);
+      if (newSelected.has(id)) {
+        newSelected.delete(id);
       } else {
-        newSelected.add(receipt.receiptId);
+        newSelected.add(id);
       }
       setSelectedReceipts(newSelected);
     } else {
@@ -306,67 +310,87 @@ export function RecentReceiptsCard() {
       ref={cardRef}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="rounded-2xl bg-white p-6 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.01]"
+      className="rounded-2xl bg-white p-5 sm:p-6 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.01]"
     >
-      <div className="flex items-center justify-between mb-3 pb-3 border-b border-gray-100">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3 pb-3 border-b border-gray-100">
+        <div className="flex flex-wrap items-center gap-2">
           <h3 className="text-lg font-semibold text-gray-900">Recent Receipts</h3>
-          {isMultiSelectMode && (
-            <span className="text-sm font-medium text-purple-600 bg-purple-100 px-2 py-1 rounded-full">
-              Select Mode
+          <button
+            onClick={toggleSelectMode}
+            className={`text-sm font-medium px-3 py-1 rounded-full border transition-colors ${
+              isMultiSelectMode
+                ? 'bg-purple-600 text-white border-purple-600'
+                : 'bg-gray-100 text-gray-700 border-gray-200 hover:border-purple-200 hover:text-purple-700'
+            }`}
+          >
+            {isMultiSelectMode ? 'Exit Select Mode' : 'Select Mode'}
+          </button>
+          {isMultiSelectMode && selectedReceipts.size > 0 && (
+            <span className="text-xs font-semibold text-purple-700 bg-purple-50 px-2 py-1 rounded-full">
+              {selectedReceipts.size} selected
             </span>
           )}
         </div>
         {selectedReceipts.size > 0 && (
-          <button
-            onClick={() => {
-              setDeleteModalOpen(true);
-              setActiveMenu(null);
-            }}
-            className="flex items-center gap-2 px-3 py-1 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg"
-          >
-            <Trash2 size={16} />
-            Delete ({selectedReceipts.size})
-          </button>
+          <div className="flex justify-end">
+            <button
+              onClick={() => {
+                setDeleteModalOpen(true);
+                setActiveMenu(null);
+              }}
+              className="flex items-center gap-2 px-3 py-1 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg"
+            >
+              <Trash2 size={16} />
+              Delete ({selectedReceipts.size})
+            </button>
+          </div>
         )}
       </div>
 
-      <div className="h-[400px] overflow-y-auto pr-2 space-y-4 scrollbar-thin scrollbar-thumb-purple-200 scrollbar-track-transparent">
+      <div className="h-[400px] overflow-y-auto pr-1 sm:pr-2 space-y-3 sm:space-y-4 scrollbar-thin scrollbar-thumb-purple-200 scrollbar-track-transparent">
         {receipts.map((receipt, index) => (
           <motion.div
-            key={receipt.id || receipt.receiptId || index}
+            key={getReceiptId(receipt) || index}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
-            onClick={() => {
+            onClick={(e: React.MouseEvent) => {
+              e.stopPropagation();
+              // Don't handle card click if checkbox or menu was clicked
+              const target = e.target as HTMLElement;
+              if (target.closest('[role="checkbox"]') || target.closest('button')) {
+                return;
+              }
               if (isMultiSelectMode) {
+                // In multi-select mode, clicking card toggles it
                 handleReceiptClick(receipt);
               } else {
                 setViewModalOpen(true);
                 setSelectedReceipt(receipt);
               }
             }}
-            className={`group relative flex items-center justify-between rounded-lg border p-4 hover:bg-gray-50 cursor-pointer shadow-sm
+            className={`group relative flex items-center justify-between rounded-lg border p-3 sm:p-4 hover:bg-gray-50 cursor-pointer shadow-sm
               ${selectedReceipts.has(receipt.receiptId) ? 'border-purple-500 bg-purple-50' : 'border-gray-200'}
+              ${selectedReceipts.has(getReceiptId(receipt)) ? 'border-purple-500 bg-purple-50' : 'border-gray-200'}
               ${isMultiSelectMode ? 'hover:border-purple-500' : ''}`}
           >
             {isMultiSelectMode && (
-              <input
-                type="checkbox"
-                checked={selectedReceipts.has(receipt.receiptId)}
-                onChange={() => handleReceiptClick(receipt)}
-                onClick={(e) => e.stopPropagation()}
-                className="w-4 h-4 text-purple-600 rounded cursor-pointer"
-              />
+              <div className="mr-3 flex-shrink-0">
+                <Checkbox
+                  checked={selectedReceipts.has(getReceiptId(receipt))}
+                  onCheckedChange={() => handleReceiptClick(receipt)}
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </div>
             )}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3 sm:gap-4">
               {getCategoryIcon(receipt.category)}
               <div>
-                <div className="font-medium text-gray-900">
+                <div className="font-medium text-gray-900 text-base sm:text-lg">
                   ${(receipt.total || 0).toFixed(2)}
                 </div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <div className="text-sm text-gray-500">
+                <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                  <div className="text-sm text-gray-500 max-w-[180px] sm:max-w-none truncate">
                     {receipt.merchant && receipt.merchant !== 'Unknown Merchant' 
                       ? receipt.merchant 
                       : (receipt.status === 'pending' || receipt.status === 'ocr_done')
@@ -383,14 +407,14 @@ export function RecentReceiptsCard() {
                   )}
                   {receipt.status === 'categorized' && receipt.category && (
                     <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
-                      receipt.category === 'Travel' ? 'bg-teal-100 text-teal-800' :
+                      receipt.category === 'Travel' ? 'bg-cyan-100 text-cyan-800' :
                       receipt.category === 'Meals' ? 'bg-green-100 text-green-800' :
                       receipt.category === 'Supplies' ? 'bg-orange-100 text-orange-800' :
                       receipt.category === 'Car and Truck Expenses' ? 'bg-blue-100 text-blue-800' :
                       receipt.category === 'Advertising' ? 'bg-pink-100 text-pink-800' :
-                      receipt.category === 'Office Expenses' ? 'bg-purple-100 text-purple-800' :
+                      receipt.category === 'Office Expenses' ? 'bg-indigo-100 text-indigo-800' :
                       receipt.category === 'Utilities' ? 'bg-yellow-100 text-yellow-800' :
-                      receipt.category === 'Taxes and Licenses' ? 'bg-emerald-100 text-emerald-800' :
+                      receipt.category === 'Taxes and Licenses' ? 'bg-red-100 text-red-800' :
                       'bg-gray-100 text-gray-800'
                     } opacity-80`}>
                       {receipt.category}
@@ -501,33 +525,33 @@ export function RecentReceiptsCard() {
       </div>
 
       {viewModalOpen && selectedReceipt && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4">
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-start lg:items-center justify-center px-0 sm:px-4 py-0 sm:py-6 overflow-y-auto">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="relative bg-white rounded-2xl shadow-2xl max-w-6xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-hidden flex flex-col"
+            className="relative bg-white rounded-2xl sm:rounded-2xl shadow-2xl w-full max-w-full lg:max-w-6xl max-h-[100vh] lg:max-h-[90vh] overflow-hidden flex flex-col"
           >
             <button
               onClick={() => {
                 setViewModalOpen(false);
                 setSelectedReceipt(null);
               }}
-              className="absolute top-3 right-3 sm:top-4 sm:right-4 p-2 hover:bg-gray-100 rounded-full z-10 transition-colors"
+              className="absolute top-3 right-3 sm:top-4 sm:right-4 p-2 hover:bg-gray-100 rounded-full z-20 transition-colors"
             >
               <X className="h-5 w-5" />
             </button>
             
-            <div className="flex flex-col lg:flex-row h-full overflow-hidden">
+            <div className="flex flex-col h-full overflow-y-auto lg:flex-row lg:overflow-hidden">
               {/* Left side - Receipt Image */}
-              <div className="w-full lg:w-1/2 p-4 sm:p-6 border-b lg:border-b-0 lg:border-r border-gray-200 overflow-y-auto bg-gray-200">
+              <div className="w-full lg:w-1/2 p-4 sm:p-6 border-b lg:border-b-0 lg:border-r border-gray-200 bg-gray-200">
                 <h2 className="text-xl font-semibold mb-4 pb-4 border-b border-gray-300">Receipt Image</h2>
-                <div className="flex items-center justify-center p-4">
+                <div className="flex items-center justify-center p-2 sm:p-4 max-h-[65vh] overflow-hidden lg:max-h-none">
                   {selectedReceipt?.imageUrl || selectedReceipt?.image_url || selectedReceipt?.preview ? (
                     <img
                       src={selectedReceipt?.imageUrl || selectedReceipt?.image_url || selectedReceipt?.preview}
                       alt="Receipt"
-                      className="w-4/5 h-auto rounded-lg object-contain shadow-2xl hover:shadow-3xl transition-shadow duration-300"
+                      className="w-full max-w-[520px] h-auto rounded-lg object-contain shadow-2xl hover:shadow-3xl transition-shadow duration-300"
                     />
                   ) : (
                     <div className="text-center py-12 text-gray-500">
@@ -539,7 +563,7 @@ export function RecentReceiptsCard() {
               </div>
 
               {/* Right side - Extracted Fields */}
-              <div className="w-full lg:w-1/2 p-4 sm:p-6 overflow-y-auto bg-white">
+              <div className="w-full lg:w-1/2 p-4 sm:p-6 bg-white lg:overflow-y-auto lg:max-h-full relative z-10 -mt-6 sm:-mt-8 lg:mt-0 rounded-t-3xl lg:rounded-none shadow-lg lg:shadow-none">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-lg sm:text-xl font-bold text-gray-900">
                     {selectedReceipt.status === 'pending' ? 'Processing Receipt...' : 'Details'}
@@ -552,14 +576,14 @@ export function RecentReceiptsCard() {
                     {/* Status & Category (Unified) */}
                     {selectedReceipt.status === 'categorized' && selectedReceipt.category ? (
                       <div className={`p-6 rounded-xl border-0 shadow-lg ${
-                        selectedReceipt.category === 'Travel' ? 'bg-gradient-to-br from-teal-500 to-teal-700' :
+                        selectedReceipt.category === 'Travel' ? 'bg-gradient-to-br from-cyan-500 to-cyan-700' :
                         selectedReceipt.category === 'Meals' ? 'bg-gradient-to-br from-green-500 to-green-700' :
                         selectedReceipt.category === 'Supplies' ? 'bg-gradient-to-br from-orange-500 to-orange-700' :
                         selectedReceipt.category === 'Car and Truck Expenses' ? 'bg-gradient-to-br from-blue-500 to-blue-700' :
                         selectedReceipt.category === 'Advertising' ? 'bg-gradient-to-br from-pink-500 to-pink-700' :
-                        selectedReceipt.category === 'Office Expenses' ? 'bg-gradient-to-br from-purple-500 to-purple-700' :
+                        selectedReceipt.category === 'Office Expenses' ? 'bg-gradient-to-br from-indigo-500 to-indigo-700' :
                         selectedReceipt.category === 'Utilities' ? 'bg-gradient-to-br from-yellow-500 to-yellow-700' :
-                        selectedReceipt.category === 'Taxes and Licenses' ? 'bg-gradient-to-br from-emerald-500 to-emerald-700' :
+                        selectedReceipt.category === 'Taxes and Licenses' ? 'bg-gradient-to-br from-red-500 to-red-700' :
                         'bg-gradient-to-br from-gray-500 to-gray-700'
                       }`}>
                         <div className="flex items-center gap-2 mb-4">
@@ -587,9 +611,9 @@ export function RecentReceiptsCard() {
                               selectedReceipt.category === 'Supplies' ? 'bg-orange-500' :
                               selectedReceipt.category === 'Car and Truck Expenses' ? 'bg-blue-500' :
                               selectedReceipt.category === 'Advertising' ? 'bg-pink-500' :
-                              selectedReceipt.category === 'Office Expenses' ? 'bg-purple-500' :
+                              selectedReceipt.category === 'Office Expenses' ? 'bg-indigo-500' :
                               selectedReceipt.category === 'Utilities' ? 'bg-yellow-500' :
-                              selectedReceipt.category === 'Taxes and Licenses' ? 'bg-emerald-500' :
+                              selectedReceipt.category === 'Taxes and Licenses' ? 'bg-red-500' :
                               'bg-gray-500'
                             }`}>
                               <div
@@ -779,58 +803,42 @@ export function RecentReceiptsCard() {
         </div>
       )}
 
-      {deleteModalOpen && (
-        <div 
-          className="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50"
-          onClick={() => setDeleteModalOpen(false)}
-        >
-          <div 
-            className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="relative transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:p-6"
-            >
-              <div className="sm:flex sm:items-start">
-                <div className="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
-                  <AlertTriangle className="h-6 w-6 text-red-600" />
-                </div>
-                <div className="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left">
-                  <h3 className="text-lg font-semibold leading-6 text-gray-900">
-                    Delete Receipt
-                  </h3>
-                  <div className="mt-2">
-                    <p className="text-sm text-gray-500">
-                      Are you sure you want to delete {selectedReceipts.size > 0 ? `these ${selectedReceipts.size} receipts` : 'this receipt'}? This action cannot be undone.
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div className="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse gap-3">
-                <button
-                  type="button"
-                  onClick={handleDeleteConfirm}
-                  className="inline-flex w-full justify-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 sm:w-auto"
-                >
-                  Delete
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setDeleteModalOpen(false);
-                    setSelectedReceipt(null);
-                  }}
-                  className="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
-                >
-                  Cancel
-                </button>
-              </div>
-            </motion.div>
+      <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <div className="flex items-start gap-4">
+            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-red-100">
+              <AlertTriangle className="h-6 w-6 text-red-600" />
+            </div>
+            <div className="flex-1">
+              <DialogHeader>
+                <DialogTitle>Delete Receipt</DialogTitle>
+                <DialogDescription>
+                  Are you sure you want to delete {selectedReceipts.size > 0 ? `these ${selectedReceipts.size} receipts` : 'this receipt'}? This action cannot be undone.
+                </DialogDescription>
+              </DialogHeader>
+            </div>
           </div>
-        </div>
-      )}
+          <DialogFooter className="gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                setDeleteModalOpen(false);
+                setSelectedReceipt(null);
+              }}
+              className="inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:w-auto"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleDeleteConfirm}
+              className="inline-flex w-full justify-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 sm:w-auto"
+            >
+              Delete
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </motion.div>
   );
 }

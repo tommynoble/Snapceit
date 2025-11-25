@@ -245,13 +245,12 @@ function extractVendor(textractResponse) {
       // This is the vendor!
       let vendor = line;
       
-      // Clean up vendor name
+      // Clean up vendor name - be careful not to remove important parts
       vendor = vendor
         .replace(/SUPERSTORE/gi, '')
         .replace(/SUPERCENTER/gi, '')
-        .replace(/STORE/gi, '')
+        .replace(/\bSTORE\b/gi, '') // Only remove standalone "STORE", not part of name
         .replace(/INC\.|LLC\.|CO\./gi, '')
-        .replace(/-/g, ' ')
         .replace(/\s+/g, ' ')
         .trim()
         .toUpperCase();
@@ -311,19 +310,42 @@ function extractTotal(textractResponse) {
       }
     }
 
-    // Fallback: get the largest amount (likely the total)
+    // Fallback: find total by looking at amounts near the end of receipt
     if (!total) {
-      const amounts = lines
-        .flatMap(line => extractAmounts(line))
-        .filter(n => n > 0);
+      const amountsWithIndex = [];
       
-      if (amounts.length > 0) {
-        // Prefer an amount larger than subtotal hint if present
-        if (subtotalHint !== null) {
-          const largerThanSub = amounts.filter(a => a > subtotalHint);
-          total = largerThanSub.length ? Math.max(...largerThanSub) : Math.max(...amounts);
+      for (let i = 0; i < lines.length; i++) {
+        const amounts = extractAmounts(lines[i]);
+        for (const amt of amounts) {
+          if (amt > 0) {
+            amountsWithIndex.push({ amount: amt, lineIndex: i });
+          }
+        }
+      }
+      
+      if (amountsWithIndex.length > 0) {
+        // Prefer amounts from the last 20% of the receipt (where totals usually are)
+        const lastLineIndex = lines.length - 1;
+        const recentThreshold = Math.max(0, lastLineIndex - Math.ceil(lines.length * 0.2));
+        
+        const recentAmounts = amountsWithIndex.filter(a => a.lineIndex >= recentThreshold);
+        
+        if (recentAmounts.length > 0) {
+          // Among recent amounts, prefer one that's reasonable (not too small, not absurdly large)
+          const candidates = recentAmounts
+            .map(a => a.amount)
+            .sort((a, b) => b - a); // Sort descending
+          
+          // If we have a subtotal hint, prefer amounts close to it or slightly larger
+          if (subtotalHint !== null) {
+            const reasonableAmounts = candidates.filter(a => a >= subtotalHint * 0.8 && a <= subtotalHint * 1.5);
+            total = reasonableAmounts.length > 0 ? reasonableAmounts[0] : candidates[0];
+          } else {
+            total = candidates[0];
+          }
         } else {
-          total = Math.max(...amounts);
+          // Fall back to largest amount if nothing near end
+          total = Math.max(...amountsWithIndex.map(a => a.amount));
         }
       }
     }
@@ -346,6 +368,11 @@ function extractDate(textractResponse) {
     const lines = textractResponse.Blocks
       .filter(b => b.BlockType === 'LINE')
       .map(b => b.Text);
+
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const twoYearsAgo = currentYear - 2;
+    const validDates = [];
 
     // Try multiple date formats
     const datePatterns = [
@@ -390,10 +417,26 @@ function extractDate(textractResponse) {
             continue; // Skip invalid dates
           }
           
-          // Return ISO format: YYYY-MM-DD
-          return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+          // Reject dates older than 2 years (likely old receipts or OCR errors)
+          if (year < twoYearsAgo) {
+            log.warn('Date too old, skipping', { year, month, day, twoYearsAgo });
+            continue;
+          }
+          
+          const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+          validDates.push({ dateStr, year, month, day });
         }
       }
+    }
+
+    // Prefer the most recent valid date
+    if (validDates.length > 0) {
+      validDates.sort((a, b) => {
+        if (a.year !== b.year) return b.year - a.year;
+        if (a.month !== b.month) return b.month - a.month;
+        return b.day - a.day;
+      });
+      return validDates[0].dateStr;
     }
 
     return null;

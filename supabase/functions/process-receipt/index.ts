@@ -407,8 +407,8 @@ Allowed categories (name → id):
 - Other Expenses: 23
 
 Guidance:
-- Meals: restaurants, cafes, bars, food service, dining establishments
-- Supplies: retail stores, supermarkets, hardware stores, office supplies, merchandise
+- Meals: restaurants, cafes, bars, food service, dining establishments, grocery stores, supermarkets (when buying food items)
+- Supplies: office supplies, stationery, hardware, non-food retail merchandise, equipment
 - Travel: flights, hotels, transportation, lodging
 - Utilities: telecom, ISP, power, phone services
 - Office Expense: software, SaaS, shipping, office services

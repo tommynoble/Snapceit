@@ -248,7 +248,7 @@ export const ReceiptProvider: React.FC<{ children: React.ReactNode }> = ({ child
       console.log('Receipt deleted successfully:', id);
       
       // Update local state
-      setReceipts(prev => prev.filter(r => r.id !== id));
+      setReceipts(prev => prev.filter(r => r.id !== id && (r as any).receiptId !== id));
     } catch (error) {
       console.error('Error deleting receipt:', error);
       throw error;

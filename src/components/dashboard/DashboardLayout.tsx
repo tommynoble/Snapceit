@@ -9,6 +9,7 @@ import { CategoriesCard } from './stats/CategoriesCard';
 import { UploadReceiptCard } from './upload/UploadReceiptCard';
 import { SpendingOverviewCard } from './spending/SpendingOverviewCard';
 import { RecentReceiptsCard } from './receipts/RecentReceiptsCard';
+import { ReceiptChatCard } from './receipts/ReceiptChatCard';
 import { ReminderCard } from './reminders/ReminderCard';
 import { UserProfileModal } from './user/UserProfileModal';
 import { TaxDetailsCard } from './tax/TaxDetailsCard';
@@ -146,6 +147,13 @@ export function DashboardLayout() {
             transition={{ duration: 0.5, delay: 0.7 }}
           >
             <ReminderCard />
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.8 }}
+          >
+            <ReceiptChatCard />
           </motion.div>
         </div>
       </div>
