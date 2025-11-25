@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
+import {
   Receipt as ReceiptIcon, 
   MoreVertical, 
   Trash2, 
@@ -14,11 +14,14 @@ import {
   Zap, 
   Megaphone, 
   FileText,
-  AlertTriangle
+  AlertTriangle,
+  Sparkles,
+  Loader
 } from 'lucide-react';
 import { useReceipts } from './ReceiptContext';
 import { toast } from 'react-hot-toast';
 import { useCurrency } from '../../../hooks/useCurrency';
+import { supabase } from '../../../lib/supabase';
 
 export function RecentReceiptsCard() {
   const { receipts, deleteReceipt, updateReceipt, refreshReceipts } = useReceipts();
@@ -29,7 +32,7 @@ export function RecentReceiptsCard() {
   const [selectedReceipt, setSelectedReceipt] = useState<any>(null);
   const [selectedReceipts, setSelectedReceipts] = useState<Set<string>>(new Set());
   const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
-  const cardRef = useRef<HTMLDivElement>(null);
+  const [aiCategorizing, setAiCategorizing] = useState<string | null>(null);
 
   // Category icon mapping
   const categoryIcons: { [key: string]: { 
@@ -297,6 +300,120 @@ export function RecentReceiptsCard() {
     }
   };
 
+  // Handle AI categorization
+  const handleAiCategorize = async (receipt: any) => {
+    const receiptId = receipt.id || receipt.receiptId;
+    if (!receiptId) {
+      toast.error('Invalid receipt');
+      return;
+    }
+
+    setAiCategorizing(receiptId);
+    try {
+      // Call Claude directly from frontend
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'x-api-key': process.env.REACT_APP_CLAUDE_API_KEY || '',
+          'anthropic-version': '2023-06-01',
+          'content-type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: 'claude-opus-4-1',
+          max_tokens: 256,
+          temperature: 0,
+          messages: [
+            {
+              role: 'user',
+              content: `You are an expert receipt categorizer for business expenses. Output only strict JSON with these fields:
+{
+  "category": "<one of the Schedule C names>",
+  "category_id": <matching id>,
+  "confidence": 0.0–1.0,
+  "reasoning": "<short rationale>"
+}
+
+Allowed categories (name → id):
+- Advertising: 1
+- Car and Truck Expenses: 2
+- Commissions and Fees: 3
+- Contract Labor: 4
+- Depletion: 5
+- Depreciation: 6
+- Employee Benefit Programs: 7
+- Insurance (other than health): 8
+- Interest - Mortgage: 9
+- Interest - Other: 10
+- Legal and Professional Services: 11
+- Office Expense: 12
+- Pension and Profit-Sharing Plans: 13
+- Rent or Lease - Vehicles and Equipment: 14
+- Rent or Lease - Other Business Property: 15
+- Repairs and Maintenance: 16
+- Supplies: 17
+- Taxes and Licenses: 18
+- Travel: 19
+- Meals: 20
+- Utilities: 21
+- Wages: 22
+- Other Expenses: 23
+
+Receipt Details:
+- Vendor: ${receipt.merchant || 'Unknown'}
+- Total: ${receipt.total || 'Unknown'}
+- Date: ${receipt.receipt_date || receipt.date || 'Unknown'}
+- Raw OCR: ${receipt.raw_ocr || 'Not available'}
+
+Analyze the vendor name and receipt details to determine the best category. Be confident (0.65–0.95) if the category is clear. Return ONLY valid JSON.`
+            }
+          ]
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(`Claude API error: ${response.status} - ${error}`);
+      }
+
+      const data = await response.json();
+      const content = data.content[0].text;
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      
+      if (!jsonMatch) {
+        throw new Error('No JSON found in Claude response');
+      }
+
+      const result = JSON.parse(jsonMatch[0]);
+      
+      if (!result.category || !result.category_id) {
+        throw new Error('Invalid category from Claude');
+      }
+
+      // Update receipt in database
+      const { error: updateError } = await supabase
+        .from('receipts_v2')
+        .update({
+          category: result.category,
+          category_id: result.category_id,
+          category_confidence: Math.min(result.confidence, 0.95),
+          status: 'categorized',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', receiptId);
+
+      if (updateError) throw updateError;
+
+      // Refresh receipts
+      await refreshReceipts();
+      toast.success(`✨ Categorized as ${result.category}`);
+    } catch (error) {
+      console.error('AI categorization error:', error);
+      toast.error('Failed to categorize with AI');
+    } finally {
+      setAiCategorizing(null);
+    }
+  };
+
   return (
     <motion.div
       ref={cardRef}
@@ -383,9 +500,26 @@ export function RecentReceiptsCard() {
                     </span>
                   )}
                   {receipt.status === 'categorized' && !receipt.category && (
-                    <span className="inline-flex items-center rounded-full bg-purple-100 px-2 py-1 text-xs font-medium text-purple-800 opacity-80">
-                      Uncategorized
-                    </span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleAiCategorize(receipt);
+                      }}
+                      disabled={aiCategorizing === receipt.id}
+                      className="inline-flex items-center gap-1 rounded-full bg-purple-100 px-2 py-1 text-xs font-medium text-purple-800 hover:bg-purple-200 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                      {aiCategorizing === receipt.id ? (
+                        <>
+                          <Loader className="h-3 w-3 animate-spin" />
+                          AI Categorizing...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="h-3 w-3" />
+                          Uncategorized
+                        </>
+                      )}
+                    </button>
                   )}
                   
                   {/* OCR Confidence (during ocr_done phase) */}
