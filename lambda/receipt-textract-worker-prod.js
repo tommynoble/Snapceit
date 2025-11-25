@@ -659,7 +659,45 @@ async function processReceipt(pgClient, supabase, queueRow) {
 
     if (updateError) throw new Error(`Supabase update failed: ${updateError.message}`);
 
-    // 7) Mark queue item as processed
+    // 7) Trigger categorization via process-receipt edge function
+    try {
+      log.info('Triggering categorization', { receiptId });
+      const categoryResponse = await fetch(
+        `${process.env.SUPABASE_URL}/functions/v1/process-receipt`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`
+          },
+          body: JSON.stringify({ receipt_id: receiptId })
+        }
+      );
+
+      if (categoryResponse.ok) {
+        const categoryData = await categoryResponse.json();
+        log.info('Categorization triggered successfully', {
+          receiptId,
+          category: categoryData.category,
+          category_source: categoryData.category_source,
+          confidence: categoryData.confidence
+        });
+      } else {
+        const errorText = await categoryResponse.text();
+        log.warn('Categorization failed', {
+          receiptId,
+          status: categoryResponse.status,
+          error: errorText.substring(0, 200)
+        });
+      }
+    } catch (categoryError) {
+      log.warn('Error triggering categorization', {
+        receiptId,
+        error: categoryError.message
+      });
+    }
+
+    // 8) Mark queue item as processed
     await pgClient.query(
       `UPDATE public.receipt_queue 
        SET processed = TRUE, processor = $1, processed_at = NOW(), last_error = NULL
