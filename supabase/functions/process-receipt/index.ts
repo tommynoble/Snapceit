@@ -401,8 +401,16 @@ serve(async (req) => {
     const lineItems = receipt.line_items_json || null;
     const rawOcr = receipt.raw_ocr || "";
     
-    // Only verify if vendor looks uncertain (heuristic: contains numbers or special chars)
-    const vendorLooksUncertain = /[\d&@#$%]/.test(vendorText) || vendorText.length > 50;
+    // Verify vendor if:
+    // 1. Contains numbers/special chars (OCR corruption)
+    // 2. Too short/long (likely OCR error)
+    // 3. Doesn't match common vendor patterns
+    const vendorLooksUncertain = 
+      /[\d&@#$%]/.test(vendorText) || 
+      vendorText.length > 50 ||
+      vendorText.length < 3 ||
+      /^[a-z]+$/.test(vendorText); // All lowercase (likely OCR error)
+    
     if (vendorLooksUncertain && rawOcr) {
       console.info("Vendor looks uncertain, requesting Claude verification", { vendorText });
       const verificationResult = await verifyVendorWithClaude(vendorText, lineItems, rawOcr);
