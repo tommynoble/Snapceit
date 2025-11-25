@@ -46,6 +46,41 @@ export function RecentReceiptsCard() {
   const [editedValues, setEditedValues] = useState<{ [key: string]: any }>({});
   const cardRef = useRef<HTMLDivElement>(null);
 
+  const handleSaveEdits = async () => {
+    if (!selectedReceipt) return;
+
+    try {
+      const updates: any = {};
+      if (typeof editedValues.merchant !== 'undefined' && editedValues.merchant !== selectedReceipt.merchant) {
+        updates.merchant = editedValues.merchant;
+      }
+      if (typeof editedValues.total !== 'undefined' && editedValues.total !== selectedReceipt.total) {
+        updates.total = editedValues.total;
+      }
+      if (typeof editedValues.receipt_date !== 'undefined' && editedValues.receipt_date !== selectedReceipt.receipt_date) {
+        updates.receipt_date = editedValues.receipt_date;
+      }
+
+      let updatedReceipt = selectedReceipt;
+      // Only call update if there is something to change
+      if (Object.keys(updates).length > 0) {
+        updatedReceipt = await updateReceipt(selectedReceipt.id, updates);
+        setSelectedReceipt(updatedReceipt);
+      }
+
+      setIsEditMode(false);
+      setEditedValues({
+        merchant: updatedReceipt?.merchant,
+        total: updatedReceipt?.total,
+        receipt_date: updatedReceipt?.receipt_date,
+      });
+      toast.success('Changes saved');
+    } catch (error: any) {
+      console.error('Failed to save receipt edits', error);
+      toast.error('Failed to save changes');
+    }
+  };
+
   // Category icon mapping - using widely accepted, accurate icons
   const categoryIcons: { [key: string]: { 
     icon: React.ComponentType<any>, 
@@ -589,18 +624,7 @@ export function RecentReceiptsCard() {
                               <XCircle className="h-4 w-4 text-gray-600" />
                             </button>
                             <button
-                              onClick={() => {
-                                // Save corrections and track them
-                                Object.entries(editedValues).forEach(([field, value]) => {
-                                  if (value !== selectedReceipt[field]) {
-                                    // Save correction to database
-                                    console.log(`Correction: ${field} changed from ${selectedReceipt[field]} to ${value}`);
-                                  }
-                                });
-                                setIsEditMode(false);
-                                setEditedValues({});
-                                toast.success('Changes saved!');
-                              }}
+                              onClick={handleSaveEdits}
                               className="p-1 hover:bg-green-100 rounded transition-colors"
                               title="Save"
                             >

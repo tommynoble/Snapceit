@@ -181,28 +181,54 @@ export const ReceiptProvider: React.FC<{ children: React.ReactNode }> = ({ child
         throw new Error('No user ID available');
       }
 
-      const { data, error } = await supabase
-        .from('receipts')
-        .update({
-          merchant: updates.merchant,
-          amount: updates.amount,
-          total: updates.total,
-          category: updates.category,
-          receipt_date: updates.date,
-          items: updates.items,
-          tax: updates.tax,
-          notes: updates.notes,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', id)
-        .eq('user_id', currentUser.id)
-        .select()
-        .single();
+      // Get session token for RLS
+      const { data: sessionData } = await supabase.auth.getSession();
+      const session = sessionData?.session;
+      if (!session?.access_token) {
+        throw new Error('No session available');
+      }
 
-      if (error) throw error;
-      
-      setReceipts(prev => prev.map(r => (r.id === id) ? data : r));
-      return data;
+      const payload: any = {
+        updated_at: new Date().toISOString(),
+      };
+
+      if (typeof updates.merchant !== 'undefined') payload.merchant = updates.merchant;
+      if (typeof updates.total !== 'undefined') payload.total = updates.total;
+      if (typeof updates.category !== 'undefined') payload.category = updates.category;
+      if (typeof updates.tax !== 'undefined') payload.tax = updates.tax;
+      if (typeof updates.receipt_date !== 'undefined') payload.receipt_date = updates.receipt_date;
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/receipts_v2?id=eq.${id}&user_id=eq.${currentUser.id}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${session.access_token}`,
+            'Prefer': 'return=representation',
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('HTTP update error:', response.status, errorText);
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+
+      const rows = await response.json();
+      const updated = rows?.[0];
+      if (!updated) {
+        throw new Error('No updated receipt returned');
+      }
+
+      setReceipts(prev => prev.map(r => (r.id === id ? updated : r)));
+      if (selectedReceipt && selectedReceipt.id === id) {
+        setSelectedReceipt(updated);
+      }
+      return updated;
     } catch (error) {
       console.error('Error updating receipt:', error);
       throw error;

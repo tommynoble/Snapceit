@@ -120,6 +120,41 @@
     },
     {
       "type": "vendor",
+      "pattern": "(cvs|walgreens|rite\\s?aid|duane reade)",
+      "category": "Supplies",
+      "confidence": 0.7,
+      "region": "US"
+    },
+    {
+      "type": "vendor",
+      "pattern": "(carrefour|auchan|spar|coop|rewe|migros)",
+      "category": "Supplies",
+      "confidence": 0.75,
+      "region": "EU"
+    },
+    {
+      "type": "vendor",
+      "pattern": "(loblaws|no frills|sobeys|metro\\b|superstore|super store)",
+      "category": "Supplies",
+      "confidence": 0.75,
+      "region": "CA"
+    },
+    {
+      "type": "vendor",
+      "pattern": "(ikea|b&?q|argos|leroy merlin)",
+      "category": "Supplies",
+      "confidence": 0.75,
+      "region": "GB/EU/US"
+    },
+    {
+      "type": "vendor",
+      "pattern": "(7[-\\s]?eleven|7\\s?11|circle\\s?k|ampm|wawa)",
+      "category": "Car and Truck Expenses",
+      "confidence": 0.7,
+      "region": "US"
+    },
+    {
+      "type": "vendor",
       "pattern": "(stop.?shop|stopshop)",
       "category": "Supplies",
       "confidence": 0.75,
@@ -138,6 +173,83 @@
       "category": "Meals",
       "confidence": 0.78,
       "region": "US/GB"
+    },
+    {
+      "type": "vendor",
+      "pattern": "(woolworths|coles|countdown|new world)",
+      "category": "Supplies",
+      "confidence": 0.75,
+      "region": "AU/NZ"
+    },
+    {
+      "type": "vendor",
+      "pattern": "(bunnings|mitre\\s?10|rona|canadian tire|home hardware)",
+      "category": "Repairs and Maintenance",
+      "confidence": 0.78,
+      "region": "AU/NZ/CA"
+    },
+    {
+      "type": "vendor",
+      "pattern": "(family\\s?mart|lawson|seven & i|7&i)",
+      "category": "Supplies",
+      "confidence": 0.7,
+      "region": "JP"
+    },
+    {
+      "type": "vendor",
+      "pattern": "(boots|superdrug)",
+      "category": "Supplies",
+      "confidence": 0.7,
+      "region": "GB"
+    },
+    {
+      "type": "vendor",
+      "pattern": "(dunkin|tim hortons|peet'?s|dutch bros)",
+      "category": "Meals",
+      "confidence": 0.72,
+      "region": "US/CA"
+    },
+    {
+      "type": "vendor",
+      "pattern": "(grab|gojek)",
+      "category": "Car and Truck Expenses",
+      "confidence": 0.72,
+      "region": "SEA"
+    },
+    {
+      "type": "vendor",
+      "pattern": "(jetblue|spirit|frontier|air canada|westjet|qantas|air new zealand|emirates|qatar airways|singapore airlines|ana|jal|klm|air france)",
+      "category": "Travel",
+      "confidence": 0.85,
+      "region": "Global"
+    },
+    {
+      "type": "vendor",
+      "pattern": "(hyatt|accor|sofitel|novotel|mercure|radisson|intercontinental|crowne plaza|holiday inn express)",
+      "category": "Travel",
+      "confidence": 0.82,
+      "region": "Global"
+    },
+    {
+      "type": "vendor",
+      "pattern": "(google workspace|g suite|atlassian|slack|zoom|github|gitlab)",
+      "category": "Office Expense",
+      "confidence": 0.82,
+      "region": "Global"
+    },
+    {
+      "type": "vendor",
+      "pattern": "(autozone|o'reilly|oreilly|napa auto|advance auto|jiffy lube|midas|firestone)",
+      "category": "Repairs and Maintenance",
+      "confidence": 0.82,
+      "region": "US"
+    },
+    {
+      "type": "vendor",
+      "pattern": "(mercadona|eroski|jumbo|pick n pay|shoprite|soriana|chedraui|oxxo)",
+      "category": "Supplies",
+      "confidence": 0.75,
+      "region": "EU/SA/LatAm"
     }
   ],
   "keywords": [
@@ -231,6 +343,41 @@
       "category": "Other Expenses",
       "confidence": 0.65,
       "description": "Entertainment keywords"
+    },
+    {
+      "type": "keyword",
+      "pattern": "hardware|lumber|paint|plumbing|electrical|hvac|faucet|fixture",
+      "category": "Repairs and Maintenance",
+      "confidence": 0.76,
+      "description": "Home/building repair supplies"
+    },
+    {
+      "type": "keyword",
+      "pattern": "shipping|postage|courier|parcel|freight|logistics|ups|fedex|dhl|usps|royal mail|canada post",
+      "category": "Office Expense",
+      "confidence": 0.75,
+      "description": "Shipping and postage services"
+    },
+    {
+      "type": "keyword",
+      "pattern": "subscription|license|workspace|office 365|microsoft 365|google workspace|jira|confluence|github|gitlab|slack|zoom|notion|figma",
+      "category": "Office Expense",
+      "confidence": 0.78,
+      "description": "SaaS and productivity tools"
+    },
+    {
+      "type": "keyword",
+      "pattern": "fuel card|fleet card|diesel card",
+      "category": "Car and Truck Expenses",
+      "confidence": 0.72,
+      "description": "Fleet fuel payments"
+    },
+    {
+      "type": "keyword",
+      "pattern": "delivery|courier fee|shipping fee|service fee|platform fee|processing fee",
+      "category": "Office Expense",
+      "confidence": 0.7,
+      "description": "Platform and delivery fees"
     }
   ],
   "notes": {
