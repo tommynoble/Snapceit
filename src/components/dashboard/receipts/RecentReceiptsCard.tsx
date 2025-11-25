@@ -372,13 +372,13 @@ export function RecentReceiptsCard() {
               }
             }}
             className={`group relative flex items-center justify-between rounded-lg border p-4 hover:bg-gray-50 cursor-pointer shadow-sm
-              ${selectedReceipts.has(receipt.id || receipt.receiptId) ? 'border-purple-500 bg-purple-50' : 'border-gray-200'}
+              ${selectedReceipts.has(receipt.receiptId) ? 'border-purple-500 bg-purple-50' : 'border-gray-200'}
               ${isMultiSelectMode ? 'hover:border-purple-500' : ''}`}
           >
             {isMultiSelectMode && (
               <input
                 type="checkbox"
-                checked={selectedReceipts.has(receipt.id || receipt.receiptId)}
+                checked={selectedReceipts.has(receipt.receiptId)}
                 onChange={() => handleReceiptClick(receipt)}
                 onClick={(e) => e.stopPropagation()}
                 className="w-4 h-4 text-purple-600 rounded cursor-pointer"
