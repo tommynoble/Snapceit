@@ -574,9 +574,9 @@ export function RecentReceiptsCard() {
                     {selectedReceipt.status === 'pending' ? 'Processing Receipt...' : 'Details'}
                   </h2>
                   {selectedReceipt.status !== 'pending' && (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-4">
                       {isEditMode ? (
-                        <>
+                        <div className="flex items-center gap-2">
                           <button
                             onClick={() => {
                               setIsEditMode(false);
@@ -605,7 +605,7 @@ export function RecentReceiptsCard() {
                           >
                             <Check className="h-5 w-5 text-green-600" />
                           </button>
-                        </>
+                        </div>
                       ) : (
                         <button
                           onClick={() => {
