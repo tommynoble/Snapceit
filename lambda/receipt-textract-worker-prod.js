@@ -220,13 +220,9 @@ function extractVendor(textractResponse) {
   try {
     const lines = textractResponse.Blocks
       .filter(b => b.BlockType === 'LINE')
-      .map(b => b.Text.trim())
-      .filter(b => b.length > 0);
+      .map(b => b.Text);
 
-    // RULE: The FIRST line is almost always the brand name
-    // Examples: "Marshalls", "Shell", "Lidl", "McDonald's", "Amazon"
-    // Skip only if it's clearly not a vendor (numbers, very short, etc)
-    
+    // Look for vendor name in first 5 lines
     for (const line of lines.slice(0, 5)) {
       if (line.length < 2) continue; // Need at least 2 chars
       
@@ -244,6 +240,23 @@ function extractVendor(textractResponse) {
       
       // This is the vendor!
       let vendor = line;
+      let rawText = line;
+      
+      // Calculate confidence based on line characteristics
+      let confidence = 0.7; // Base confidence
+      
+      // Higher confidence if line is short (typical vendor names are short)
+      if (line.length < 30) confidence += 0.15;
+      
+      // Higher confidence if it has mixed case (typical for brand names)
+      if (/[a-z]/.test(line) && /[A-Z]/.test(line)) confidence += 0.1;
+      
+      // Lower confidence if it has many special characters
+      const specialChars = (line.match(/[^A-Za-z0-9\s&]/g) || []).length;
+      if (specialChars > 3) confidence -= 0.15;
+      
+      // Cap confidence at 1.0
+      confidence = Math.min(confidence, 1.0);
       
       // Clean up vendor name - be careful not to remove important parts
       vendor = vendor
@@ -260,14 +273,26 @@ function extractVendor(textractResponse) {
         .map(word => word.charAt(0) + word.slice(1).toLowerCase())
         .join(' ');
       
-      return vendor || 'Unknown Vendor';
+      return {
+        vendor: vendor || 'Unknown Vendor',
+        confidence: confidence,
+        rawText: rawText
+      };
     }
     
     // Fallback if no vendor found in first 5 lines
-    return 'Unknown Vendor';
+    return {
+      vendor: 'Unknown Vendor',
+      confidence: 0.3,
+      rawText: ''
+    };
   } catch (error) {
     log.warn('Failed to extract vendor', { error: error.message });
-    return 'Unknown Vendor';
+    return {
+      vendor: 'Unknown Vendor',
+      confidence: 0.0,
+      rawText: ''
+    };
   }
 }
 
@@ -613,6 +638,107 @@ function computeConfidence(textractResponse) {
 }
 
 /**
+ * Verify vendor name with Claude for low-confidence extractions
+ * Only calls Claude if vendor confidence < 0.75
+ */
+async function verifyVendorWithClaude(vendor, vendorConfidence, lineItems, rawOcrText) {
+  try {
+    // Skip Claude verification if confidence is already high
+    if (vendorConfidence >= 0.75) {
+      log.info('Vendor confidence high, skipping Claude verification', { vendor, vendorConfidence });
+      return { vendor, confidence: vendorConfidence, verified: false };
+    }
+
+    const claudeApiKey = process.env.CLAUDE_API_KEY;
+    if (!claudeApiKey) {
+      log.warn('CLAUDE_API_KEY not set, skipping vendor verification');
+      return { vendor, confidence: vendorConfidence, verified: false };
+    }
+
+    // Build context for Claude
+    const lineItemsText = lineItems && lineItems.length > 0
+      ? lineItems.map(item => `- ${item.description}`).join('\n')
+      : 'No line items extracted';
+
+    const prompt = `You are a receipt analysis expert. Based on the receipt text and line items below, verify or correct the vendor name.
+
+Extracted vendor name: "${vendor}"
+Confidence: ${(vendorConfidence * 100).toFixed(0)}%
+
+Line items:
+${lineItemsText}
+
+Receipt text (first 1000 chars):
+${rawOcrText.substring(0, 1000)}
+
+Task: 
+1. If the vendor name looks correct, respond with: VENDOR: [exact name]
+2. If the vendor name is incorrect or unclear, correct it based on context, respond with: VENDOR: [corrected name]
+3. Only respond with the vendor line, nothing else.
+
+Examples:
+- If you see "Stbaw" with grocery items, respond: VENDOR: Stop & Shop
+- If you see "Mrshls" with clothing items, respond: VENDOR: Marshalls
+- If the name looks correct, respond: VENDOR: ${vendor}`;
+
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': claudeApiKey,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: 'claude-3-5-sonnet-20241022',
+        max_tokens: 100,
+        messages: [
+          {
+            role: 'user',
+            content: prompt
+          }
+        ]
+      })
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      log.warn('Claude vendor verification failed', { status: response.status, error });
+      return { vendor, confidence: vendorConfidence, verified: false };
+    }
+
+    const data = await response.json();
+    const claudeResponse = data.content[0].text.trim();
+    
+    // Parse Claude's response
+    const vendorMatch = claudeResponse.match(/VENDOR:\s*(.+?)(?:\n|$)/i);
+    if (vendorMatch) {
+      const verifiedVendor = vendorMatch[1].trim();
+      const changed = verifiedVendor.toLowerCase() !== vendor.toLowerCase();
+      
+      log.info('Claude vendor verification complete', {
+        original: vendor,
+        verified: verifiedVendor,
+        changed: changed,
+        confidence: 0.9
+      });
+
+      return {
+        vendor: verifiedVendor,
+        confidence: 0.9, // High confidence after Claude verification
+        verified: true,
+        changed: changed
+      };
+    }
+
+    log.warn('Could not parse Claude vendor response', { response: claudeResponse });
+    return { vendor, confidence: vendorConfidence, verified: false };
+  } catch (error) {
+    log.warn('Claude vendor verification error', { error: error.message });
+    return { vendor, confidence: vendorConfidence, verified: false };
+  }
+}
+
+/**
  * Store OCR JSON to S3 (durable artifact)
  */
 async function storeOcrArtifact(receiptId, ocrData) {
@@ -655,7 +781,9 @@ async function processReceipt(pgClient, supabase, queueRow) {
     const textractResponse = await callTextract(imageBytes);
 
     // 3) Extract normalized fields
-    const vendor = extractVendor(textractResponse);
+    const vendorData = extractVendor(textractResponse);
+    const vendor = vendorData.vendor;
+    const vendorConfidence = vendorData.confidence;
     const extractedTotal = extractTotal(textractResponse);
     const receiptDate = extractDate(textractResponse);
     const taxData = extractTax(textractResponse);
@@ -675,12 +803,25 @@ async function processReceipt(pgClient, supabase, queueRow) {
     // 5b) Extract line items for Claude reasoning
     const lineItems = extractLineItems(textractResponse);
 
+    // 5c) Verify vendor with Claude if confidence is low
+    let finalVendor = vendor;
+    let finalVendorConfidence = vendorConfidence;
+    if (vendorConfidence < 0.75) {
+      log.info('Vendor confidence low, requesting Claude verification', { vendor, vendorConfidence });
+      const verificationResult = await verifyVendorWithClaude(vendor, vendorConfidence, lineItems, rawOcrText);
+      finalVendor = verificationResult.vendor;
+      finalVendorConfidence = verificationResult.confidence;
+      if (verificationResult.verified && verificationResult.changed) {
+        log.info('Vendor corrected by Claude', { original: vendor, corrected: finalVendor });
+      }
+    }
+
     // 6) Update Supabase idempotently (only if not already processed)
     // NOTE: We now write into receipts_v2 (new table) and only touch columns that exist there
     const rawOcrData = rawOcrText || null;
 
     const updatePayload = {
-      merchant: vendor,
+      merchant: finalVendor,
       total: total,
       subtotal: taxData.subtotal,
       tax: taxData.tax,
