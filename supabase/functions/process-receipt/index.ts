@@ -37,6 +37,7 @@ const CLAUDE_TIMEOUT = 8000;
 const CLAUDE_TEMPERATURE = 0;
 
 const RULES_CONFIDENCE_THRESHOLD = 0.75;
+const VENDOR_CONFIDENCE_THRESHOLD = 0.75;
 
 // Schedule C category map
 const CATEGORY_MAP: Record<string, number> = {
@@ -233,6 +234,96 @@ async function callClaude(prompt: string): Promise<any> {
   }
 }
 
+async function verifyVendorWithClaude(
+  vendor: string,
+  lineItems: any[],
+  rawOcr: string
+): Promise<{ vendor: string; verified: boolean; changed: boolean }> {
+  try {
+    if (!CLAUDE_API_KEY) {
+      console.warn("CLAUDE_API_KEY not set, skipping vendor verification");
+      return { vendor, verified: false, changed: false };
+    }
+
+    const lineItemsText = lineItems && lineItems.length > 0
+      ? lineItems.map((item: any) => `- ${item.description}`).join("\n")
+      : "No line items extracted";
+
+    const prompt = `You are a receipt analysis expert. Based on the receipt text and line items below, verify or correct the vendor name.
+
+Extracted vendor name: "${vendor}"
+
+Line items:
+${lineItemsText}
+
+Receipt text (first 500 chars):
+${rawOcr.substring(0, 500)}
+
+Task: 
+1. If the vendor name looks correct, respond with: VENDOR: [exact name]
+2. If the vendor name is incorrect or unclear, correct it based on context, respond with: VENDOR: [corrected name]
+3. Only respond with the vendor line, nothing else.
+
+Examples:
+- If you see "Stbaw" with grocery items, respond: VENDOR: Stop & Shop
+- If you see "Mrshls" with clothing items, respond: VENDOR: Marshalls
+- If the name looks correct, respond: VENDOR: ${vendor}`;
+
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": CLAUDE_API_KEY,
+        "anthropic-version": "2023-06-01"
+      },
+      body: JSON.stringify({
+        model: "claude-3-5-sonnet-20241022",
+        max_tokens: 100,
+        messages: [
+          {
+            role: "user",
+            content: prompt
+          }
+        ]
+      })
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      console.warn("Claude vendor verification failed", { status: response.status });
+      return { vendor, verified: false, changed: false };
+    }
+
+    const data = await response.json();
+    const claudeResponse = data.content[0].text.trim();
+
+    // Parse Claude's response
+    const vendorMatch = claudeResponse.match(/VENDOR:\s*(.+?)(?:\n|$)/i);
+    if (vendorMatch) {
+      const verifiedVendor = vendorMatch[1].trim();
+      const changed = verifiedVendor.toLowerCase() !== vendor.toLowerCase();
+
+      console.info("Claude vendor verification complete", {
+        original: vendor,
+        verified: verifiedVendor,
+        changed: changed
+      });
+
+      return {
+        vendor: verifiedVendor,
+        verified: true,
+        changed: changed
+      };
+    }
+
+    console.warn("Could not parse Claude vendor response", { response: claudeResponse });
+    return { vendor, verified: false, changed: false };
+  } catch (error) {
+    console.warn("Claude vendor verification error", { error: String(error) });
+    return { vendor, verified: false, changed: false };
+  }
+}
+
 async function upsertPrediction(
   subject_type: "receipt" | "line_item",
   subject_id: string,
@@ -305,9 +396,32 @@ serve(async (req) => {
       total: receipt.total
     });
 
-    // Step 1: Apply rules engine
-    const vendorText = receipt.merchant || receipt.vendor_text || "";
+    // Step 0: Verify vendor name with Claude if needed
+    let vendorText = receipt.merchant || receipt.vendor_text || "";
     const lineItems = receipt.line_items_json || null;
+    const rawOcr = receipt.raw_ocr || "";
+    
+    // Only verify if vendor looks uncertain (heuristic: contains numbers or special chars)
+    const vendorLooksUncertain = /[\d&@#$%]/.test(vendorText) || vendorText.length > 50;
+    if (vendorLooksUncertain && rawOcr) {
+      console.info("Vendor looks uncertain, requesting Claude verification", { vendorText });
+      const verificationResult = await verifyVendorWithClaude(vendorText, lineItems, rawOcr);
+      if (verificationResult.verified && verificationResult.changed) {
+        console.info("Vendor corrected by Claude", { 
+          original: vendorText, 
+          corrected: verificationResult.vendor 
+        });
+        vendorText = verificationResult.vendor;
+        
+        // Update receipt in database with corrected vendor
+        await supabase
+          .from("receipts_v2")
+          .update({ merchant: vendorText })
+          .eq("id", receipt_id);
+      }
+    }
+
+    // Step 1: Apply rules engine
     
     const rulesResult = applyRules(rules, vendorText, lineItems);
 
