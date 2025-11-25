@@ -486,6 +486,72 @@ function extractTax(textractResponse) {
 }
 
 /**
+ * Extract line items from Textract response
+ * Identifies individual items purchased with their amounts
+ */
+function extractLineItems(textractResponse) {
+  try {
+    const lines = textractResponse.Blocks
+      .filter(b => b.BlockType === 'LINE')
+      .map(b => b.Text.trim())
+      .filter(b => b.length > 0);
+
+    const items = [];
+    const skipPatterns = [
+      /^(ITEM|DESCRIPTION|QTY|QUANTITY|PRICE|AMOUNT|TOTAL|SUBTOTAL|TAX|VAT|GST|THANK YOU|RECEIPT|INVOICE|STORE|WELCOME|HAVE A NICE DAY|PLEASE COME AGAIN)/i,
+      /^(CARD|CASH|PAYMENT|METHOD|CHANGE|BALANCE|ACCOUNT|TRANSACTION|REFERENCE|AUTHORIZATION)/i,
+      /^\d{4}-\d{4}-\d{4}-\d{4}/, // Credit card numbers
+      /^[A-Z0-9]{10,}$/ // Long alphanumeric codes
+    ];
+
+    for (const line of lines) {
+      // Skip header/footer lines
+      if (skipPatterns.some(pattern => pattern.test(line))) {
+        continue;
+      }
+
+      // Look for lines with amounts (item + price pattern)
+      const amountMatch = line.match(AMOUNT_PATTERN);
+      if (!amountMatch) {
+        continue; // Skip lines without amounts
+      }
+
+      const amount = parseAmount(amountMatch[0]);
+      if (amount === null || amount <= 0) {
+        continue; // Skip invalid amounts
+      }
+
+      // Extract description (everything before the amount)
+      const description = line.replace(AMOUNT_PATTERN, '').trim();
+      
+      // Skip if description is too short or looks like metadata
+      if (description.length < 2 || /^[0-9\-\s]+$/.test(description)) {
+        continue;
+      }
+
+      // Avoid duplicates (same description and amount)
+      const isDuplicate = items.some(
+        item => item.description === description && Math.abs(item.amount - amount) < 0.01
+      );
+      if (isDuplicate) {
+        continue;
+      }
+
+      items.push({
+        description: description,
+        amount: amount
+      });
+    }
+
+    log.info('Extracted line items', { count: items.length });
+    return items.length > 0 ? items : null;
+  } catch (error) {
+    log.warn('Failed to extract line items', { error: error.message });
+    return null;
+  }
+}
+
+/**
  * Compute OCR confidence (simplified)
  */
 function computeConfidence(textractResponse) {
@@ -563,6 +629,9 @@ async function processReceipt(pgClient, supabase, queueRow) {
       .map(b => b.Text)
       .join('\n');
 
+    // 5b) Extract line items for Claude reasoning
+    const lineItems = extractLineItems(textractResponse);
+
     // 6) Update Supabase idempotently (only if not already processed)
     // NOTE: We now write into receipts_v2 (new table) and only touch columns that exist there
     const rawOcrData = rawOcrText || null;
@@ -577,6 +646,7 @@ async function processReceipt(pgClient, supabase, queueRow) {
       tax_rate: taxData.taxRate,
       receipt_date: receiptDate || null,
       raw_ocr: rawOcrData,
+      line_items_json: lineItems,
       status: 'ocr_done',
       updated_at: new Date().toISOString()
     };
