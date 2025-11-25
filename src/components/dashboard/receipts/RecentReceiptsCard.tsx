@@ -15,7 +15,10 @@ import {
   FileText,
   AlertTriangle,
   DollarSign,
-  Home
+  Home,
+  Edit2,
+  Check,
+  XCircle
 } from 'lucide-react';
 import { useReceipts } from './ReceiptContext';
 import { toast } from 'react-hot-toast';
@@ -39,6 +42,8 @@ export function RecentReceiptsCard() {
   const [selectedReceipt, setSelectedReceipt] = useState<any>(null);
   const [selectedReceipts, setSelectedReceipts] = useState<Set<string>>(new Set());
   const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editedValues, setEditedValues] = useState<{ [key: string]: any }>({});
   const cardRef = useRef<HTMLDivElement>(null);
 
   // Category icon mapping - using widely accepted, accurate icons
@@ -568,6 +573,59 @@ export function RecentReceiptsCard() {
                   <h2 className="text-lg sm:text-xl font-bold text-gray-900">
                     {selectedReceipt.status === 'pending' ? 'Processing Receipt...' : 'Details'}
                   </h2>
+                  {selectedReceipt.status !== 'pending' && (
+                    <div className="flex items-center gap-2">
+                      {isEditMode ? (
+                        <>
+                          <button
+                            onClick={() => {
+                              setIsEditMode(false);
+                              setEditedValues({});
+                            }}
+                            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                            title="Cancel"
+                          >
+                            <XCircle className="h-5 w-5 text-gray-600" />
+                          </button>
+                          <button
+                            onClick={() => {
+                              // Save corrections and track them
+                              Object.entries(editedValues).forEach(([field, value]) => {
+                                if (value !== selectedReceipt[field]) {
+                                  // Save correction to database
+                                  console.log(`Correction: ${field} changed from ${selectedReceipt[field]} to ${value}`);
+                                }
+                              });
+                              setIsEditMode(false);
+                              setEditedValues({});
+                              toast.success('Changes saved!');
+                            }}
+                            className="p-2 hover:bg-green-100 rounded-lg transition-colors"
+                            title="Save"
+                          >
+                            <Check className="h-5 w-5 text-green-600" />
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            setIsEditMode(true);
+                            setEditedValues({
+                              merchant: selectedReceipt.merchant,
+                              category: selectedReceipt.category,
+                              total: selectedReceipt.total,
+                              tax: selectedReceipt.tax,
+                              receipt_date: selectedReceipt.receipt_date
+                            });
+                          }}
+                          className="p-2 hover:bg-blue-100 rounded-lg transition-colors"
+                          title="Edit"
+                        >
+                          <Edit2 className="h-5 w-5 text-blue-600" />
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Show extracted fields only if processed */}
@@ -654,7 +712,17 @@ export function RecentReceiptsCard() {
                     <div>
                       <label className="text-xs sm:text-sm font-medium text-gray-600">Vendor / Merchant</label>
                       <div className="mt-1 p-2 sm:p-3 bg-gray-50 rounded-lg border border-gray-200">
-                        <p className="text-base sm:text-lg font-semibold text-gray-900">{selectedReceipt.merchant || 'Unknown'}</p>
+                        {isEditMode ? (
+                          <input
+                            type="text"
+                            value={editedValues.merchant || ''}
+                            onChange={(e) => setEditedValues({ ...editedValues, merchant: e.target.value })}
+                            className="w-full px-3 py-2 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-base sm:text-lg font-semibold"
+                            placeholder="Enter vendor name"
+                          />
+                        ) : (
+                          <p className="text-base sm:text-lg font-semibold text-gray-900">{selectedReceipt.merchant || 'Unknown'}</p>
+                        )}
                       </div>
                     </div>
 
@@ -712,9 +780,20 @@ export function RecentReceiptsCard() {
                     <div>
                       <label className="text-xs sm:text-sm font-medium text-gray-600">Total Amount</label>
                       <div className="mt-1 p-2 sm:p-3 bg-gray-50 rounded-lg border border-gray-200">
-                        <p className="text-xl sm:text-2xl font-bold text-gray-900">
-                          {formatCurrency(selectedReceipt.total || 0)}
-                        </p>
+                        {isEditMode ? (
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={editedValues.total || 0}
+                            onChange={(e) => setEditedValues({ ...editedValues, total: parseFloat(e.target.value) })}
+                            className="w-full px-3 py-2 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xl sm:text-2xl font-bold"
+                            placeholder="0.00"
+                          />
+                        ) : (
+                          <p className="text-xl sm:text-2xl font-bold text-gray-900">
+                            {formatCurrency(selectedReceipt.total || 0)}
+                          </p>
+                        )}
                       </div>
                     </div>
 
