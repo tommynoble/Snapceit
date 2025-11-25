@@ -659,73 +659,7 @@ async function processReceipt(pgClient, supabase, queueRow) {
 
     if (updateError) throw new Error(`Supabase update failed: ${updateError.message}`);
 
-    // 7) Trigger categorization via Edge Function
-    try {
-      const categoryResponse = await fetch(
-        `${process.env.SUPABASE_URL}/functions/v1/categorize`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`
-          },
-          body: JSON.stringify({
-            receipt_id: receiptId,
-            min_confidence: 0.65
-          })
-        }
-      );
-
-      if (categoryResponse.ok) {
-        const categoryData = await categoryResponse.json();
-        
-        // Check if categorization actually succeeded (ok: true in response)
-        if (categoryData.ok && categoryData.category_id) {
-          log.info('Categorization successful', {
-            receiptId,
-            category_id: categoryData.category_id,
-            category: categoryData.category,
-            confidence: categoryData.confidence,
-            method: categoryData.method
-          });
-
-          // Update receipt with category info
-          const { error: categoryError } = await supabase
-            .from('receipts_v2')
-            .update({
-              category_id: categoryData.category_id,
-              category: categoryData.category,
-              category_confidence: categoryData.confidence,
-              status: 'categorized',
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', receiptId);
-
-          if (categoryError) {
-            log.warn('Failed to update category', { receiptId, error: categoryError.message });
-          }
-        } else {
-          // Categorization returned no match
-          log.warn('Categorization returned no match', {
-            receiptId,
-            reason: categoryData.reason
-          });
-        }
-      } else {
-        log.warn('Categorization failed', {
-          receiptId,
-          status: categoryResponse.status,
-          statusText: categoryResponse.statusText
-        });
-      }
-    } catch (categoryError) {
-      log.warn('Error calling categorization function', {
-        receiptId,
-        error: categoryError.message
-      });
-    }
-
-    // 8) Mark queue item as processed
+    // 7) Mark queue item as processed
     await pgClient.query(
       `UPDATE public.receipt_queue 
        SET processed = TRUE, processor = $1, processed_at = NOW(), last_error = NULL
