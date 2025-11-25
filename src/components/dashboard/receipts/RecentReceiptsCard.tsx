@@ -5,7 +5,6 @@ import {
   MoreVertical, 
   Trash2, 
   X, 
-  Copy, 
   ShoppingBag, 
   Car, 
   Utensils, 
@@ -283,28 +282,6 @@ export function RecentReceiptsCard() {
     }
   };
 
-  const handleCopyReceipts = async () => {
-    if (selectedReceipts.size === 0) return;
-
-    const selectedReceiptsData = receipts
-      .filter(receipt => selectedReceipts.has(receipt.receiptId))
-      .map(receipt => ({
-        merchant: receipt.merchant,
-        total: receipt.total,
-        date: receipt.date,
-        category: receipt.category,
-        items: receipt.items
-      }));
-
-    try {
-      await navigator.clipboard.writeText(JSON.stringify(selectedReceiptsData, null, 2));
-      toast.success('Receipt data copied to clipboard');
-    } catch (error) {
-      console.error('Error copying receipts:', error);
-      toast.error('Failed to copy receipt data');
-    }
-  };
-
   const handleSave = async (formData: any) => {
     try {
       if (selectedReceipt) {
@@ -341,25 +318,16 @@ export function RecentReceiptsCard() {
           )}
         </div>
         {selectedReceipts.size > 0 && (
-          <div className="flex gap-2">
-            <button
-              onClick={handleCopyReceipts}
-              className="flex items-center gap-2 px-3 py-1 text-sm font-medium text-purple-600 hover:bg-purple-50 rounded-lg"
-            >
-              <Copy size={16} />
-              Copy ({selectedReceipts.size})
-            </button>
-            <button
-              onClick={() => {
-                setDeleteModalOpen(true);
-                setActiveMenu(null);
-              }}
-              className="flex items-center gap-2 px-3 py-1 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg"
-            >
-              <Trash2 size={16} />
-              Delete ({selectedReceipts.size})
-            </button>
-          </div>
+          <button
+            onClick={() => {
+              setDeleteModalOpen(true);
+              setActiveMenu(null);
+            }}
+            className="flex items-center gap-2 px-3 py-1 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg"
+          >
+            <Trash2 size={16} />
+            Delete ({selectedReceipts.size})
+          </button>
         )}
       </div>
 
