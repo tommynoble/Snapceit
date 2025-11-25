@@ -570,62 +570,64 @@ export function RecentReceiptsCard() {
               {/* Right side - Extracted Fields */}
               <div className="w-full lg:w-1/2 p-4 sm:p-6 bg-white lg:overflow-y-auto lg:max-h-full relative z-10 -mt-6 sm:-mt-8 lg:mt-0 rounded-t-3xl lg:rounded-none shadow-lg lg:shadow-none">
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-lg sm:text-xl font-bold text-gray-900">
-                    {selectedReceipt.status === 'pending' ? 'Processing Receipt...' : 'Details'}
-                  </h2>
-                  {selectedReceipt.status !== 'pending' && (
-                    <div className="flex items-center gap-4">
-                      {isEditMode ? (
-                        <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-lg sm:text-xl font-bold text-gray-900">
+                      {selectedReceipt.status === 'pending' ? 'Processing Receipt...' : 'Details'}
+                    </h2>
+                    {selectedReceipt.status !== 'pending' && (
+                      <>
+                        {isEditMode ? (
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => {
+                                setIsEditMode(false);
+                                setEditedValues({});
+                              }}
+                              className="p-1 hover:bg-gray-100 rounded transition-colors"
+                              title="Cancel"
+                            >
+                              <XCircle className="h-4 w-4 text-gray-600" />
+                            </button>
+                            <button
+                              onClick={() => {
+                                // Save corrections and track them
+                                Object.entries(editedValues).forEach(([field, value]) => {
+                                  if (value !== selectedReceipt[field]) {
+                                    // Save correction to database
+                                    console.log(`Correction: ${field} changed from ${selectedReceipt[field]} to ${value}`);
+                                  }
+                                });
+                                setIsEditMode(false);
+                                setEditedValues({});
+                                toast.success('Changes saved!');
+                              }}
+                              className="p-1 hover:bg-green-100 rounded transition-colors"
+                              title="Save"
+                            >
+                              <Check className="h-4 w-4 text-green-600" />
+                            </button>
+                          </div>
+                        ) : (
                           <button
                             onClick={() => {
-                              setIsEditMode(false);
-                              setEditedValues({});
-                            }}
-                            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                            title="Cancel"
-                          >
-                            <XCircle className="h-5 w-5 text-gray-600" />
-                          </button>
-                          <button
-                            onClick={() => {
-                              // Save corrections and track them
-                              Object.entries(editedValues).forEach(([field, value]) => {
-                                if (value !== selectedReceipt[field]) {
-                                  // Save correction to database
-                                  console.log(`Correction: ${field} changed from ${selectedReceipt[field]} to ${value}`);
-                                }
+                              setIsEditMode(true);
+                              setEditedValues({
+                                merchant: selectedReceipt.merchant,
+                                category: selectedReceipt.category,
+                                total: selectedReceipt.total,
+                                tax: selectedReceipt.tax,
+                                receipt_date: selectedReceipt.receipt_date
                               });
-                              setIsEditMode(false);
-                              setEditedValues({});
-                              toast.success('Changes saved!');
                             }}
-                            className="p-2 hover:bg-green-100 rounded-lg transition-colors"
-                            title="Save"
+                            className="p-1 hover:bg-blue-100 rounded transition-colors"
+                            title="Edit"
                           >
-                            <Check className="h-5 w-5 text-green-600" />
+                            <Edit2 className="h-4 w-4 text-blue-600" />
                           </button>
-                        </div>
-                      ) : (
-                        <button
-                          onClick={() => {
-                            setIsEditMode(true);
-                            setEditedValues({
-                              merchant: selectedReceipt.merchant,
-                              category: selectedReceipt.category,
-                              total: selectedReceipt.total,
-                              tax: selectedReceipt.tax,
-                              receipt_date: selectedReceipt.receipt_date
-                            });
-                          }}
-                          className="p-2 hover:bg-blue-100 rounded-lg transition-colors"
-                          title="Edit"
-                        >
-                          <Edit2 className="h-5 w-5 text-blue-600" />
-                        </button>
-                      )}
-                    </div>
-                  )}
+                        )}
+                      </>
+                    )}
+                  </div>
                 </div>
 
                 {/* Show extracted fields only if processed */}
