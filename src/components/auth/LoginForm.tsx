@@ -61,14 +61,9 @@ export function LoginForm() {
     setShowLoading(true);
 
     try {
-      // Login but don't navigate yet
       await login(formData.email, formData.password);
-      
-      // Show loading screen for longer (20 seconds)
-      await new Promise(resolve => setTimeout(resolve, 20000));
-      
-      // Then navigate with loading state to prevent auto-redirect
-      navigate('/dashboard', { state: { loading: true } });
+      const fromPath = (location.state as any)?.from?.pathname || '/dashboard';
+      navigate(fromPath, { replace: true });
     } catch (err: any) {
       console.error('Login error:', err);
       
