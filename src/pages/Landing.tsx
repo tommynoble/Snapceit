@@ -827,7 +827,7 @@ export function Landing() {
                       </div>
                     ))}
 
-                    <div className="flex gap-4 mt-12 items-center">
+                    <div className="flex gap-4 mt-12 items-center justify-center">
                       <button
                         onClick={() => setFeatureSlide((s) => (s - 1 + 3) % 3)}
                         className="group h-12 w-12 rounded-full border border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20 backdrop-blur-sm flex items-center justify-center transition-all active:scale-95"
@@ -855,7 +855,7 @@ export function Landing() {
                     </div>
                   </div>
 
-                  <div className="relative h-full md:min-h-[480px] min-h-[360px] flex items-center order-1 md:order-2">
+                  <div className="relative h-full md:min-h-[480px] min-h-[300px] flex items-center order-1 md:order-2">
                     <div className="grid grid-cols-1 grid-rows-1 w-full relative">
                       {[
                         { icon: Camera, color: 'from-purple-500 to-purple-600', image: '/scan.jpg' },
@@ -868,7 +868,7 @@ export function Landing() {
                             key={idx}
                             className={`col-start-1 row-start-1 w-full transition-all duration-1000 ease-in-out transform ${featureSlide === idx ? 'opacity-100 scale-100 translate-x-0 z-10' : 'opacity-0 scale-95 translate-x-12 pointer-events-none'}`}
                           >
-                            <div className="group relative overflow-hidden bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-md rounded-3xl h-full min-h-[480px] flex items-center justify-center border-4 border-purple-400/40 shadow-[0_0_60px_rgba(147,51,234,0.6)]">
+                            <div className="group relative overflow-hidden bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-md rounded-3xl h-full min-h-[300px] md:min-h-[480px] flex items-center justify-center border-4 border-purple-400/40 shadow-[0_0_60px_rgba(147,51,234,0.6)]">
                               <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-transparent" />
                               {item.image ? (
                                 <img src={item.image} alt="Feature" className="absolute inset-0 w-full h-full object-cover" loading="lazy" decoding="async" />
@@ -1193,7 +1193,7 @@ export function Landing() {
             </div>
           </div>
           <div className="w-full overflow-hidden">
-            <div className="flex gap-6 pl-8 animate-scroll" style={{animation: 'scroll 30s linear infinite'}}>
+            <div className="flex gap-6 pl-8 animate-scroll" style={{animation: 'scroll 20s linear infinite'}}>
               <div className="w-[450px] shrink-0 bg-white/10 backdrop-blur-lg rounded-2xl p-8 flex flex-col">
                 <h3 className="text-white font-bold text-2xl mb-5 break-words">Transformed Our Receipt Management</h3>
                 <p className="text-white/90 text-lg mb-8 flex-grow break-words leading-relaxed">This app has completely transformed how we handle receipts. The OCR accuracy is impressive!</p>

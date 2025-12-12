@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../../auth/SupabaseAuthContext';
@@ -58,6 +58,10 @@ export function RegisterForm({ onBack, heading = "Get started with Snapceit" }: 
   const [loading, setLoading] = useState(false);
   const [showCodeInput, setShowCodeInput] = useState(false);
   const [verificationCode, setVerificationCode] = useState('');
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
   const [signupEmail, setSignupEmail] = useState('');
   const [cooldownSeconds, setCooldownSeconds] = useState(0);
   const { signup, confirmSignUp } = useAuth();
