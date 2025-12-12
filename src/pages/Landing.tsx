@@ -776,7 +776,7 @@ export function Landing() {
             <div className="overflow-hidden rounded-3xl relative backdrop-blur-2xl">
               <div className="md:py-24 max-w-7xl mx-auto md:pt-20 md:px-8 pt-12 px-4 md:pb-20 pb-12 relative">
                 <div className="grid md:grid-cols-2 gap-8 md:gap-16 items-center">
-                  <div className="flex flex-col justify-center min-h-[360px] relative">
+                  <div className="flex flex-col justify-center min-h-[360px] relative order-2 md:order-1">
                     {[
                       {
                         badge: 'App Features',
@@ -855,7 +855,7 @@ export function Landing() {
                     </div>
                   </div>
 
-                  <div className="relative h-full md:min-h-[480px] min-h-[360px] flex items-center">
+                  <div className="relative h-full md:min-h-[480px] min-h-[360px] flex items-center order-1 md:order-2">
                     <div className="grid grid-cols-1 grid-rows-1 w-full relative">
                       {[
                         { icon: Camera, color: 'from-purple-500 to-purple-600', image: '/scan.jpg' },
@@ -970,7 +970,7 @@ export function Landing() {
                 style={{background: 'linear-gradient(to right, #D444EF 0%, #7431CA 100%)'}}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.05 }}
+                transition={{ duration: 0.4, delay: 0.08 }}
                 viewport={{ once: true, margin: '-100px' }}
               >
                 <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/5 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 ease-in-out pointer-events-none z-10" />
@@ -1007,7 +1007,7 @@ export function Landing() {
                 style={{background: 'linear-gradient(to right, #D444EF 0%, #7431CA 100%)'}}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.1 }}
+                transition={{ duration: 0.4, delay: 0.16 }}
                 viewport={{ once: true, margin: '-100px' }}
               >
                 <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/5 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 ease-in-out pointer-events-none z-10" />
@@ -1046,7 +1046,7 @@ export function Landing() {
                 style={{background: 'linear-gradient(to right, #D444EF 0%, #7431CA 100%)'}}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.15 }}
+                transition={{ duration: 0.4, delay: 0.24 }}
                 viewport={{ once: true, margin: '-100px' }}
               >
                 <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/5 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 ease-in-out pointer-events-none z-10" />
@@ -1091,7 +1091,7 @@ export function Landing() {
                 style={{background: 'linear-gradient(to right, #D444EF 0%, #7431CA 100%)'}}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.2 }}
+                transition={{ duration: 0.4, delay: 0.32 }}
                 viewport={{ once: true, margin: '-100px' }}
               >
                 <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/5 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 ease-in-out pointer-events-none z-10" />
@@ -1128,7 +1128,7 @@ export function Landing() {
                 style={{background: 'linear-gradient(to right, #D444EF 0%, #7431CA 100%)'}}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.25 }}
+                transition={{ duration: 0.4, delay: 0.4 }}
                 viewport={{ once: true, margin: '-100px' }}
               >
                 <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/5 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 ease-in-out pointer-events-none z-10" />
