@@ -93,5 +93,44 @@ export default {
       },
     },
   },
-  plugins: [],
+  plugins: [
+    // Custom 3D rotation and perspective utilities from landing page design
+    function ({ addUtilities }) {
+      const rotateValues = [0, 5, 10, 15, 20, 30, 45, 75];
+      const rotateXUtilities = {};
+      const rotateYUtilities = {};
+      const rotateZUtilities = {};
+
+      rotateValues.forEach((value) => {
+        rotateXUtilities[`.rotate-x-${value}`] = { '--tw-rotate-x': `${value}deg` };
+        rotateXUtilities[`.-rotate-x-${value}`] = { '--tw-rotate-x': `-${value}deg` };
+        rotateYUtilities[`.rotate-y-${value}`] = { '--tw-rotate-y': `${value}deg` };
+        rotateYUtilities[`.-rotate-y-${value}`] = { '--tw-rotate-y': `-${value}deg` };
+        rotateZUtilities[`.rotate-z-${value}`] = { '--tw-rotate-z': `${value}deg` };
+        rotateZUtilities[`.-rotate-z-${value}`] = { '--tw-rotate-z': `-${value}deg` };
+      });
+
+      const perspectiveUtilities = {
+        '.perspective-none': { perspective: 'none' },
+        '.perspective-dramatic': { perspective: '100px' },
+        '.perspective-near': { perspective: '300px' },
+        '.perspective-normal': { perspective: '500px' },
+        '.perspective-midrange': { perspective: '800px' },
+        '.perspective-distant': { perspective: '1200px' },
+      };
+
+      const transformStyleUtilities = {
+        '.transform-style-preserve-3d': { 'transform-style': 'preserve-3d' },
+        '.transform-style-flat': { 'transform-style': 'flat' },
+      };
+
+      addUtilities({
+        ...rotateXUtilities,
+        ...rotateYUtilities,
+        ...rotateZUtilities,
+        ...perspectiveUtilities,
+        ...transformStyleUtilities,
+      });
+    },
+  ],
 };

@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { Camera, Upload, X, Scan, Edit2, Download } from 'lucide-react';
+import { Camera, Upload, X, Scan, Edit2, Download, Image as ImageIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useReceipts } from './ReceiptContext';
 import { Calendar } from 'lucide-react';
@@ -156,6 +156,38 @@ export function ReceiptUploader() {
       }
     };
     input.click();
+  };
+
+  const handleUnsplashImage = async () => {
+    setIsProcessing(true);
+    try {
+      // Fetch a random image from Unsplash (receipt/food related)
+      const response = await fetch(
+        'https://api.unsplash.com/photos/random?query=receipt,invoice,food&client_id=YOUR_UNSPLASH_ACCESS_KEY'
+      );
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch from Unsplash');
+      }
+
+      const data = await response.json();
+      const imageUrl = data.urls.regular;
+      
+      // Fetch the image as a blob
+      const imageResponse = await fetch(imageUrl);
+      const blob = await imageResponse.blob();
+      
+      // Create a File object from the blob
+      const file = new File([blob], `unsplash-${Date.now()}.jpg`, { type: 'image/jpeg' });
+      
+      // Process the file
+      await processReceipt(file);
+    } catch (error) {
+      console.error('Error fetching Unsplash image:', error);
+      alert('Failed to fetch image from Unsplash. Please make sure to set your Unsplash API key.');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handleConfirmUpload = () => {
@@ -329,6 +361,14 @@ export function ReceiptUploader() {
         >
           <Camera size={20} />
           Capture Receipt
+        </button>
+        <button
+          onClick={handleUnsplashImage}
+          disabled={isProcessing}
+          className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <ImageIcon size={20} />
+          Pull from Unsplash
         </button>
       </div>
 

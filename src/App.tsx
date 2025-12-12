@@ -12,7 +12,7 @@ import { Onboarding } from './components/onboarding/OnboardingQuestionnaire';
 import { AnimatePresence } from 'framer-motion';
 import { PageTransition } from './components/transitions/PageTransition';
 import { Toaster } from 'react-hot-toast';
-import Home from './pages/Home';
+import { Landing } from './pages/Landing';
 import AuthLayout from './components/auth/AuthLayout';
 import Features from './components/Features';
 import Features2 from './components/Features2';
@@ -81,7 +81,7 @@ const AppContent: React.FC = () => {
       />
       <AnimatePresence mode="wait">
         <Routes location={location} key={location.pathname}>
-          <Route path="/" element={<Home />} />
+          <Route path="/" element={<Landing />} />
           <Route path="/features" element={<Features />} />
           <Route path="/features2" element={<Features2 />} />
           <Route path="/style-guide" element={<StyleGuide />} />
