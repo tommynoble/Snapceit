@@ -17,6 +17,10 @@ export function Landing() {
     { label: 'Pricing', href: '#pricing' },
   ];
 
+  const handleLogoClick = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   useEffect(() => {
     const id = setInterval(() => {
       setFeatureSlide((prev) => (prev + 1) % 3);
@@ -34,9 +38,9 @@ export function Landing() {
       {/* Navigation */}
       <nav className="fixed flex w-full z-50 pt-4 px-4 top-0 shadow-sm justify-center">
         <div className="glass flex md:w-auto md:gap-16 md:py-4 md:px-20 text-base w-full rounded-full py-3 px-6 relative shadow-md gap-4 items-center justify-between bg-black/10 backdrop-blur-md">
-          <Link to="/" className="flex items-center gap-2 group relative">
+          <button onClick={handleLogoClick} className="flex items-center gap-2 group relative bg-none border-none cursor-pointer">
             <img src={logo} alt="Snapceit" className="h-14 w-auto" />
-          </Link>
+          </button>
 
           <div className="hidden md:flex items-center gap-6">
             {navLinks.map((link) => (
