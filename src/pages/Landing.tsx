@@ -159,7 +159,7 @@ export function Landing() {
           <div className="dashboard-shadow overflow-hidden border-[12px] bg-white border-fuchsia-300 rounded-[50px] relative" style={{ animation: 'fadeInUp 1s cubic-bezier(0.2, 0.8, 0.2, 1) forwards', marginBottom: '-200px' }}>
 
             {/* Full Dashboard Replacement */}
-            <div className="flex flex-col md:flex-row h-auto md:h-[720px] w-full bg-[#a855f7] font-sans overflow-y-auto md:overflow-hidden">
+            <div className="flex flex-col md:flex-row h-[600px] md:h-[720px] w-full bg-[#a855f7] font-sans overflow-y-scroll md:overflow-hidden">
               {/* Sidebar */}
               <div className="hidden md:flex flex-shrink-0 flex flex-col gap-4 z-10 text-white w-64 pt-4 pr-4 pb-4 pl-4" style={{ background: 'linear-gradient(135deg, #D444EF 0%, #AF3AEB 50%, #9d4edd 100%)' }}>
                 {/* Logo */}
@@ -931,9 +931,9 @@ export function Landing() {
               <motion.div 
                 className="group relative overflow-hidden rounded-3xl p-6 h-[290px] flex flex-col transition-all duration-500 hover:-translate-y-2" 
                 style={{background: 'linear-gradient(to right, #D444EF 0%, #7431CA 100%)'}}
-                initial={{ opacity: 0, y: 30 }}
+                initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0 }}
+                transition={{ duration: 0.4, delay: 0 }}
                 viewport={{ once: true, margin: '-100px' }}
               >
                 <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/5 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 ease-in-out pointer-events-none z-10" />
@@ -968,9 +968,9 @@ export function Landing() {
               <motion.div 
                 className="group relative overflow-hidden rounded-3xl p-6 h-[290px] flex flex-col transition-all duration-500 hover:-translate-y-2" 
                 style={{background: 'linear-gradient(to right, #D444EF 0%, #7431CA 100%)'}}
-                initial={{ opacity: 0, y: 30 }}
+                initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.1 }}
+                transition={{ duration: 0.4, delay: 0.05 }}
                 viewport={{ once: true, margin: '-100px' }}
               >
                 <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/5 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 ease-in-out pointer-events-none z-10" />
@@ -1005,9 +1005,9 @@ export function Landing() {
               <motion.div 
                 className="group relative overflow-hidden rounded-3xl p-6 h-[290px] flex flex-col transition-all duration-500 hover:-translate-y-2" 
                 style={{background: 'linear-gradient(to right, #D444EF 0%, #7431CA 100%)'}}
-                initial={{ opacity: 0, y: 30 }}
+                initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
+                transition={{ duration: 0.4, delay: 0.1 }}
                 viewport={{ once: true, margin: '-100px' }}
               >
                 <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/5 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 ease-in-out pointer-events-none z-10" />
@@ -1044,9 +1044,9 @@ export function Landing() {
               <motion.div 
                 className="group relative overflow-hidden rounded-3xl p-6 h-[290px] flex flex-col transition-all duration-500 hover:-translate-y-2" 
                 style={{background: 'linear-gradient(to right, #D444EF 0%, #7431CA 100%)'}}
-                initial={{ opacity: 0, y: 30 }}
+                initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.3 }}
+                transition={{ duration: 0.4, delay: 0.15 }}
                 viewport={{ once: true, margin: '-100px' }}
               >
                 <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/5 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 ease-in-out pointer-events-none z-10" />
@@ -1089,9 +1089,9 @@ export function Landing() {
               <motion.div 
                 className="group relative overflow-hidden rounded-3xl p-6 h-[290px] flex flex-col transition-all duration-500 hover:-translate-y-2" 
                 style={{background: 'linear-gradient(to right, #D444EF 0%, #7431CA 100%)'}}
-                initial={{ opacity: 0, y: 30 }}
+                initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.4 }}
+                transition={{ duration: 0.4, delay: 0.2 }}
                 viewport={{ once: true, margin: '-100px' }}
               >
                 <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/5 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 ease-in-out pointer-events-none z-10" />
@@ -1126,9 +1126,9 @@ export function Landing() {
               <motion.div 
                 className="group relative overflow-hidden rounded-3xl p-6 h-[290px] flex flex-col transition-all duration-500 hover:-translate-y-2" 
                 style={{background: 'linear-gradient(to right, #D444EF 0%, #7431CA 100%)'}}
-                initial={{ opacity: 0, y: 30 }}
+                initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.5 }}
+                transition={{ duration: 0.4, delay: 0.25 }}
                 viewport={{ once: true, margin: '-100px' }}
               >
                 <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/5 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 ease-in-out pointer-events-none z-10" />
@@ -1497,12 +1497,12 @@ export function Landing() {
         </motion.section>
 
         {/* Footer */}
-        <footer className="border-t border-white/10 bg-black/20 backdrop-blur-lg pt-16 pb-8 relative z-10">
+        <footer className="border-t border-white/10 bg-gradient-to-br from-[#D444EF] via-[#AF3AEB] to-purple-900 pt-16 pb-8 relative z-10">
           <div className="max-w-6xl mx-auto px-6">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
               <div className="col-span-2 md:col-span-1">
                 <Link to="/" className="flex items-center gap-2 mb-4">
-                  <img src={logo} alt="Snapceit" className="h-8 w-auto" />
+                  <img src={logo} alt="Snapceit" className="h-14 w-auto" />
                 </Link>
                 <p className="text-sm text-white/50 mb-6">Automating financial operations for modern businesses.</p>
                 <div className="flex gap-4">
