@@ -159,7 +159,7 @@ export function Landing() {
           <div className="dashboard-shadow overflow-hidden border-[12px] bg-white border-fuchsia-300 rounded-[50px] relative mx-4 md:mx-0" style={{ animation: 'fadeInUp 1s cubic-bezier(0.2, 0.8, 0.2, 1) forwards', marginBottom: '-200px' }}>
 
             {/* Full Dashboard Replacement */}
-            <div className="flex flex-col md:flex-row h-[450px] md:h-[720px] w-full bg-[#a855f7] font-sans overflow-y-scroll md:overflow-hidden">
+            <div className="flex flex-col md:flex-row h-[500px] md:h-[720px] w-full bg-[#a855f7] font-sans overflow-y-scroll md:overflow-hidden">
               {/* Sidebar */}
               <div className="hidden md:flex flex-shrink-0 flex flex-col gap-4 z-10 text-white w-64 pt-4 pr-4 pb-4 pl-4" style={{ background: 'linear-gradient(135deg, #D444EF 0%, #AF3AEB 50%, #9d4edd 100%)' }}>
                 {/* Logo */}
