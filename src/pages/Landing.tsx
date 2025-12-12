@@ -118,14 +118,14 @@ export function Landing() {
               paper receipts
             </span>
           </h1>
-          <p className="leading-relaxed text-xl font-normal text-purple-100 max-w-2xl mx-auto mb-10">
+          <p className="leading-relaxed text-base md:text-xl font-normal text-purple-100 max-w-2xl mx-auto mb-10">
             Digitize, organize, and access your receipts effortlessly. Our AI-powered solution makes expense tracking simpler than ever.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 items-center justify-center">
             <Link
               to="/register"
-              className="group flex gap-2 shiny-cta shadow-purple-900/30 text-2xl font-semibold text-white h-16 rounded-lg px-12 relative shadow-xl items-center justify-center mb-[3px]"
+              className="group flex gap-2 shiny-cta shadow-purple-900/30 text-base md:text-2xl font-semibold text-white h-14 md:h-16 rounded-lg px-8 md:px-12 relative shadow-xl items-center justify-center mb-[3px]"
             >
               <span className="z-10 relative">Get Started</span>
             </Link>
