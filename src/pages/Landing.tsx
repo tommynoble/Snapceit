@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { Menu, X, User, ScanLine, Tag, RefreshCw, PieChart, LogIn, Camera, BarChart3 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import logo from '../../images/logo.svg';
@@ -11,7 +12,7 @@ export function Landing() {
   const [billingMode, setBillingMode] = useState<'monthly' | 'yearly'>('monthly');
 
   const navLinks = [
-    { label: 'Capabilities', href: '#capabilities' },
+    { label: 'Solutions', href: '#action' },
     { label: 'Features', href: '#features' },
     { label: 'Testimonials', href: '#testimonials' },
     { label: 'Pricing', href: '#pricing' },
@@ -19,6 +20,15 @@ export function Landing() {
 
   const handleLogoClick = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    e.preventDefault();
+    const element = document.querySelector(href);
+    if (element) {
+      const offsetTop = element.getBoundingClientRect().top + window.scrollY - 100;
+      window.scrollTo({ top: offsetTop, behavior: 'smooth' });
+    }
   };
 
   useEffect(() => {
@@ -29,7 +39,32 @@ export function Landing() {
   }, []);
 
   return (
-    <div className="landing-bg landing-scrollbar min-h-screen text-white overflow-x-hidden relative">
+    <>
+      <Helmet>
+        <title>Snapceit - AI Receipt Scanner & Tax Deduction Tool | Automate Expense Tracking</title>
+        <meta name="description" content="Snapceit is an AI-powered receipt scanner that automates expense tracking and tax deductions. Digitize receipts instantly, categorize expenses, and maximize tax savings. Explore Solutions, Features, Testimonials, and Pricing." />
+        <meta name="keywords" content="receipt scanner, AI receipt OCR, expense tracking software, tax deduction tool, automated receipt management, financial software, receipt digitizer, expense categorization, tax savings" />
+        <meta name="author" content="Snapceit Inc." />
+        <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+        <meta name="language" content="English" />
+        <meta name="revisit-after" content="7 days" />
+        <meta property="og:title" content="Snapceit - AI Receipt Scanner & Tax Deduction Tool" />
+        <meta property="og:description" content="Automate receipt scanning, expense tracking, and tax deductions with AI. Digitize receipts instantly and maximize your tax savings." />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://snapceit.com/" />
+        <meta property="og:site_name" content="Snapceit" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Snapceit - AI Receipt Scanner & Tax Deduction Tool" />
+        <meta name="twitter:description" content="Automate receipt scanning and expense tracking with AI. Digitize receipts instantly." />
+        <meta name="twitter:creator" content="@snapceit" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+        <meta name="theme-color" content="#D444EF" />
+        <link rel="canonical" href="https://snapceit.com/" />
+        <link rel="alternate" hrefLang="en" href="https://snapceit.com/" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+      </Helmet>
+      <div className="landing-bg landing-scrollbar min-h-screen text-white overflow-x-hidden relative">
       {/* Grid overlay */}
       <div className="bg-grid" />
       {/* Ambient glows */}
@@ -44,7 +79,7 @@ export function Landing() {
 
           <div className="hidden md:flex items-center gap-6">
             {navLinks.map((link) => (
-              <a key={link.label} href={link.href} className="text-base font-semibold text-white/90">
+              <a key={link.label} href={link.href} onClick={(e) => handleNavClick(e, link.href)} className="text-base font-semibold text-white/90 hover:text-white transition-colors cursor-pointer">
                 {link.label}
               </a>
             ))}
@@ -56,9 +91,9 @@ export function Landing() {
             </Link>
             <Link
               to="/register"
-              className="bg-[#4c1d95] hover:bg-[#5b21b6] text-xs font-semibold px-4 py-2 rounded-lg transition-colors shadow-lg shadow-purple-900/20"
+              className="bg-[#4c1d95] hover:bg-[#5b21b6] text-xs font-semibold px-5 py-2.5 rounded-lg transition-colors shadow-lg shadow-purple-900/20"
             >
-              Start Free Trial
+              Try for Free
             </Link>
           </div>
 
@@ -91,7 +126,7 @@ export function Landing() {
                   onClick={() => setMobileOpen(false)}
                   className="flex items-center justify-center gap-2 w-full bg-[#4c1d95] hover:bg-[#5b21b6] text-white text-sm font-semibold py-3 rounded-xl transition-all shadow-lg shadow-purple-900/20 active:scale-[0.98]"
                 >
-                  Start Free Trial
+                  Try for Free
                 </Link>
                 <Link
                   to="/login"
@@ -827,7 +862,7 @@ export function Landing() {
                       </div>
                     ))}
 
-                    <div className="flex gap-4 mt-12 items-center justify-center">
+                    <div className="flex gap-4 mt-12 items-center justify-center md:justify-start">
                       <button
                         onClick={() => setFeatureSlide((s) => (s - 1 + 3) % 3)}
                         className="group h-12 w-12 rounded-full border border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20 backdrop-blur-sm flex items-center justify-center transition-all active:scale-95"
@@ -1390,7 +1425,7 @@ export function Landing() {
               viewport={{ once: true, margin: '-100px' }}
             >
               <motion.div 
-                className="rounded-[32px] bg-white px-8 py-8 flex flex-col justify-between shadow-lg border-2 border-zinc-200 h-fit"
+                className="rounded-[32px] bg-white px-8 py-8 flex flex-col justify-between shadow-lg border-2 border-zinc-200 h-fit order-2 md:order-1"
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.2 }}
@@ -1421,7 +1456,7 @@ export function Landing() {
               </motion.div>
 
               <motion.div 
-                className="flex flex-col transition-transform hover:scale-105 duration-300 bg-white z-10 rounded-[32px] px-8 py-10 relative shadow-lg ring-4 ring-purple-500 ring-opacity-50 justify-between"
+                className="flex flex-col transition-transform hover:scale-105 duration-300 bg-white z-10 rounded-[32px] px-8 py-10 relative shadow-lg ring-4 ring-purple-500 ring-opacity-50 justify-between order-1 md:order-2"
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.3 }}
@@ -1461,7 +1496,7 @@ export function Landing() {
               </motion.div>
 
               <motion.div 
-                className="rounded-[32px] bg-white outline outline-2 outline-zinc-200 px-8 py-8 flex flex-col justify-between shadow-lg h-fit"
+                className="rounded-[32px] bg-white outline outline-2 outline-zinc-200 px-8 py-8 flex flex-col justify-between shadow-lg h-fit order-3 md:order-3"
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.4 }}
@@ -1546,6 +1581,7 @@ export function Landing() {
           </div>
         </footer>
       </main>
-    </div>
+      </div>
+    </>
   );
 }

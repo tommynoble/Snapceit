@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
+import { HelmetProvider } from 'react-helmet-async';
 import { OnboardingSlide } from './components/onboarding/OnboardingSlide';
 import { LoginForm } from './components/auth/LoginForm';
 import { RegisterForm } from './components/auth/RegisterForm';
@@ -141,15 +142,17 @@ const AppContent: React.FC = () => {
 
 const App: React.FC = () => {
   return (
-    <Router>
-      <AuthProvider>
-        <div className="min-h-screen bg-gradient-to-br from-fuchsia-500 via-purple-600 to-purple-800">
-          <CurrencyProvider>
-            <AppContent />
-          </CurrencyProvider>
-        </div>
-      </AuthProvider>
-    </Router>
+    <HelmetProvider>
+      <Router>
+        <AuthProvider>
+          <div className="min-h-screen bg-gradient-to-br from-fuchsia-500 via-purple-600 to-purple-800">
+            <CurrencyProvider>
+              <AppContent />
+            </CurrencyProvider>
+          </div>
+        </AuthProvider>
+      </Router>
+    </HelmetProvider>
   );
 };
 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../../auth/SupabaseAuthContext';
@@ -98,6 +99,13 @@ export function LoginForm() {
 
   return (
     <>
+      <Helmet>
+        <title>Login to Snapceit - Receipt Scanner</title>
+        <meta name="description" content="Sign in to your Snapceit account to access your receipt scanner and expense tracking dashboard." />
+        <meta property="og:title" content="Login to Snapceit" />
+        <meta property="og:description" content="Sign in to your Snapceit account to manage your receipts and track expenses." />
+        <link rel="canonical" href="https://snapceit.com/login" />
+      </Helmet>
       {showLoading && <LoadingSpinner />}
       <div className="w-full">
         <motion.div
