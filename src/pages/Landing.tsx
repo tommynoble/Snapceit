@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { Menu, X, User, ScanLine, Tag, RefreshCw, PieChart, LogIn, Camera, BarChart3 } from 'lucide-react';
+import { Menu, X, User, ScanLine, Tag, RefreshCw, PieChart, Camera } from 'lucide-react';
 import { motion } from 'framer-motion';
 import logo from '../../images/logo.svg';
 import '../styles/landing.css';
@@ -147,7 +147,7 @@ export function Landing() {
         <section className="z-10 text-center max-w-4xl mx-auto mb-16 px-6 relative">
           <h1 className="z-20 font-manrope mt-20 md:mt-24 mb-6 relative perspective-1000 leading-tight">
             <span className="md:text-7xl text-5xl sm:text-6xl font-medium text-white tracking-tighter drop-shadow-sm block bg-gradient-to-t from-cyan-200 to-white bg-clip-text text-transparent">
-              Say Goodbye to old
+              Say Goodbye to
             </span>
             <span className="md:text-7xl text-5xl sm:text-6xl font-medium text-white tracking-tighter drop-shadow-sm block -mt-2 bg-gradient-to-t from-cyan-200 to-white bg-clip-text text-transparent">
               paper receipts
@@ -160,7 +160,7 @@ export function Landing() {
           <div className="flex flex-col sm:flex-row gap-4 items-center justify-center">
             <Link
               to="/register"
-              className="group flex gap-2 shiny-cta shadow-purple-900/30 text-base md:text-2xl font-semibold text-white h-14 md:h-16 rounded-lg px-8 md:px-12 relative shadow-xl items-center justify-center mb-[3px]"
+              className="group flex gap-2 shiny-cta shadow-purple-900/30 text-sm md:text-lg font-semibold text-white h-12 md:h-14 rounded-lg px-6 md:px-10 relative shadow-xl items-center justify-center mb-[3px]"
             >
               <span className="z-10 relative">Get Started</span>
             </Link>
@@ -723,7 +723,7 @@ export function Landing() {
           viewport={{ once: true, margin: '-100px' }}
         >
           <div className="absolute inset-0 w-full h-full pointer-events-none bg-[linear-gradient(to_right,rgba(0,0,0,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(0,0,0,0.03)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
-          <div className="z-10 max-w-6xl mx-auto px-6 relative">
+          <div className="z-10 max-w-full mx-auto px-4 md:px-[195px] relative">
             <motion.div 
               className="max-w-2xl mx-auto text-center mb-16"
               initial={{ opacity: 0, y: 20 }}
@@ -740,64 +740,110 @@ export function Landing() {
             </motion.div>
 
             <motion.div 
-              className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 xl:gap-6 max-w-[1800px] w-full mx-auto"
+              className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 max-w-full w-full mx-auto"
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               transition={{ duration: 0.3 }}
               viewport={{ once: true, margin: '-100px' }}
             >
               <motion.div 
-                className="group overflow-hidden transition-all duration-300 shadow-[0_20px_40px_-15px_rgba(168,85,247,0.12)] flex flex-col gap-6 bg-gradient-to-br from-purple-200 via-purple-100 to-purple-50 border-purple-200/90 border rounded-2xl p-10 relative shadow-sm items-start min-h-[300px]"
+                className="group relative w-full h-[520px] bg-gradient-to-br from-[#E95AF5] to-[#991B9F] rounded-[2rem] overflow-hidden flex flex-col pt-10 px-8 shadow-md transition-transform hover:scale-[1.01] duration-500"
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.2 }}
                 viewport={{ once: true, margin: '-100px' }}
               >
-                <div className="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 rounded-full bg-purple-500/5 blur-3xl group-hover:bg-purple-500/10 transition-colors duration-500" />
-                <div className="flex-1 z-10">
-                  <div className="w-12 h-12 rounded-lg bg-purple-200 flex items-center justify-center text-purple-600 mb-6">
-                    <LogIn width={32} height={32} strokeWidth={2.5} />
-                  </div>
-                  <h3 className="text-xl font-bold text-zinc-900 tracking-tight mb-3">Quick Setup</h3>
-                  <p className="text-sm text-zinc-500 leading-relaxed group-hover:text-zinc-600 transition-colors">
-                    Get started in seconds with a free account. No credit card required - just sign up and start transforming your receipts into insights.
+                <div className="relative z-10 flex flex-col items-start gap-3 max-w-[90%]">
+                  <h2 className="text-lg font-bold text-white tracking-tight font-manrope">Smart Scanning</h2>
+                  <p className="leading-snug text-base font-medium text-white/90">
+                    Instantly extract merchant, date, and amount from any receipt with 99.9% accuracy.
                   </p>
+                  <a href="#" className="mt-1 text-cyan-300 font-semibold text-base hover:text-white transition-colors flex items-center gap-1.5 group-hover:gap-2 duration-300">
+                    Learn more
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
+                  </a>
+                </div>
+                
+                <div className="absolute bottom-0 right-[-5%] w-[90%] h-[280px] rounded-tl-3xl overflow-hidden shadow-2xl border-l-4 border-t-4 border-white/30 transform translate-x-2 translate-y-4 transition-transform duration-500 group-hover:translate-y-2">
+                  <img src="https://images.unsplash.com/photo-1616469829581-73993eb86b02?q=80&w=800&auto=format&fit=crop" alt="Smart Scanning UI" className="w-full h-full object-cover opacity-100 hover:opacity-100 transition-opacity" />
                 </div>
               </motion.div>
 
               <motion.div 
-                className="group overflow-hidden transition-all duration-300 shadow-[0_20px_40px_-15px_rgba(234,88,12,0.12)] bg-gradient-to-br from-orange-200 via-orange-100 to-orange-50 border-orange-200/90 border rounded-2xl p-10 relative shadow-sm min-h-[300px]"
+                className="group relative w-full h-[520px] bg-gradient-to-br from-[#E95AF5] to-[#991B9F] rounded-[2rem] overflow-hidden flex flex-col pt-10 px-8 shadow-md transition-transform hover:scale-[1.01] duration-500"
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.3 }}
                 viewport={{ once: true, margin: '-100px' }}
               >
-                <div className="absolute top-0 right-0 -mr-16 -mt-16 w-48 h-48 rounded-full bg-orange-500/5 blur-3xl group-hover:bg-orange-500/10 transition-colors duration-500" />
-                <div className="w-12 h-12 rounded-lg bg-orange-200 flex items-center justify-center text-orange-600 mb-6">
-                  <Camera width={32} height={32} strokeWidth={2.5} />
+                <div className="relative z-10 flex flex-col items-start gap-3 max-w-[90%]">
+                  <h2 className="text-lg font-bold text-white tracking-tight font-manrope">Auto Categorization</h2>
+                  <p className="leading-snug text-base font-medium text-white/90">
+                    AI automatically assigns tax codes and categories based on your past behavior.
+                  </p>
+                  <a href="#" className="mt-1 text-cyan-300 font-semibold text-base hover:text-white transition-colors flex items-center gap-1.5 group-hover:gap-2 duration-300">
+                    Learn more
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
+                  </a>
                 </div>
-                <h3 className="text-xl font-bold text-zinc-900 mb-3 tracking-tight">Instant Scanning</h3>
-                <p className="text-sm text-zinc-500 leading-relaxed group-hover:text-zinc-600 transition-colors">
-                  Simply snap a photo of your receipt and watch as our AI instantly extracts all important details. No more manual data entry!
-                </p>
+
+                <div className="absolute bottom-0 right-[-5%] w-[90%] h-[280px] rounded-tl-3xl overflow-hidden shadow-2xl border-l-4 border-t-4 border-white/30 transform translate-x-2 translate-y-4 transition-transform duration-500 group-hover:translate-y-2">
+                  <img src="https://images.unsplash.com/photo-1642427749670-f20e2e76ed8c?q=80&w=800&auto=format&fit=crop" alt="Categorization UI" className="w-full h-full object-cover opacity-100 hover:opacity-100 transition-opacity" />
+                </div>
               </motion.div>
 
               <motion.div 
-                className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-200 via-blue-100 to-blue-50 p-10 shadow-sm transition-all duration-300 shadow-[0_20px_40px_-15px_rgba(37,99,235,0.12)] border border-blue-200/90 min-h-[300px]"
+                className="group relative w-full h-[520px] bg-gradient-to-br from-[#E95AF5] to-[#991B9F] rounded-[2rem] overflow-hidden flex flex-col pt-10 px-8 shadow-md transition-transform hover:scale-[1.01] duration-500"
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.4 }}
                 viewport={{ once: true, margin: '-100px' }}
               >
-                <div className="absolute top-0 right-0 -mr-16 -mt-16 w-48 h-48 rounded-full bg-blue-500/5 blur-3xl group-hover:bg-blue-500/10 transition-colors duration-500" />
-                <div className="w-12 h-12 rounded-lg bg-blue-200 flex items-center justify-center text-blue-600 mb-6">
-                  <BarChart3 width={32} height={32} strokeWidth={2.5} />
+                <div className="relative z-10 flex flex-col items-start gap-3 max-w-[90%]">
+                  <h2 className="text-lg font-bold text-white tracking-tight font-manrope">Sync Anywhere</h2>
+                  <p className="text-base text-white/90 font-medium leading-snug">
+                    Seamlessly push reconciled data to QuickBooks, or NetSuite in seconds.
+                  </p>
+                  <a href="#" className="mt-1 text-cyan-300 font-semibold text-base hover:text-white transition-colors flex items-center gap-1.5 group-hover:gap-2 duration-300">
+                    Learn more
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                      <path d="M5 12h14"></path>
+                      <path d="m12 5 7 7-7 7"></path>
+                    </svg>
+                  </a>
                 </div>
-                <h3 className="text-xl font-bold text-zinc-900 mb-3 tracking-tight">Smart Insights</h3>
-                <p className="text-sm text-zinc-500 leading-relaxed group-hover:text-zinc-600 transition-colors">
-                  Track spending patterns, set budgets, and get personalized insights to help you make smarter financial decisions.
-                </p>
+
+                <div className="absolute bottom-0 right-[-5%] w-[90%] h-[280px] rounded-tl-3xl overflow-hidden shadow-2xl border-l-4 border-t-4 border-white/30 transform translate-x-2 translate-y-4 transition-transform duration-500 group-hover:translate-y-2">
+                  <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=800&auto=format&fit=crop" alt="Sync Dashboard UI" className="w-full h-full object-cover opacity-100 hover:opacity-100 transition-opacity" />
+                </div>
               </motion.div>
+
+              <motion.div 
+                className="group relative w-full h-[520px] bg-gradient-to-br from-[#E95AF5] to-[#991B9F] rounded-[2rem] overflow-hidden flex flex-col pt-10 px-8 shadow-md transition-transform hover:scale-[1.01] duration-500"
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.5 }}
+                viewport={{ once: true, margin: '-100px' }}
+              >
+                <div className="relative z-10 flex flex-col items-start gap-3 max-w-[90%]">
+                  <h2 className="text-lg font-bold text-white tracking-tight font-manrope">Tax Deduction Insights</h2>
+                  <p className="text-base text-white/90 font-medium leading-snug">
+                    Maximize tax savings with intelligent deduction tracking and Schedule C categorization.
+                  </p>
+                  <a href="#" className="mt-1 text-cyan-300 font-semibold text-base hover:text-white transition-colors flex items-center gap-1.5 group-hover:gap-2 duration-300">
+                    Learn more
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                      <path d="M5 12h14"></path>
+                      <path d="m12 5 7 7-7 7"></path>
+                    </svg>
+                  </a>
+                </div>
+
+                <div className="absolute bottom-0 right-[-5%] w-[90%] h-[280px] rounded-tl-3xl overflow-hidden shadow-2xl border-l-4 border-t-4 border-white/30 transform translate-x-2 translate-y-4 transition-transform duration-500 group-hover:translate-y-2">
+                  <img src="https://images.unsplash.com/photo-1554224311-beee415c15c9?q=80&w=800&auto=format&fit=crop" alt="Tax Deduction Insights" className="w-full h-full object-cover opacity-100 hover:opacity-100 transition-opacity" />
+                </div>
+              </motion.div>
+
             </motion.div>
           </div>
         </motion.section>
