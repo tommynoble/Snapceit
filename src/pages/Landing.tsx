@@ -821,32 +821,6 @@ export function Landing() {
                 </div>
               </motion.div>
 
-              <motion.div 
-                className="group relative w-full h-[520px] bg-gradient-to-br from-[#E95AF5] to-[#991B9F] rounded-[2rem] overflow-hidden flex flex-col pt-10 px-8 shadow-md transition-transform hover:scale-[1.01] duration-500"
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.5 }}
-                viewport={{ once: true, margin: '-100px' }}
-              >
-                <div className="relative z-10 flex flex-col items-start gap-3 max-w-[90%]">
-                  <h2 className="text-lg font-bold text-white tracking-tight font-manrope">Tax Deduction Insights</h2>
-                  <p className="text-base text-white/90 font-medium leading-snug">
-                    Maximize tax savings with intelligent deduction tracking and Schedule C categorization.
-                  </p>
-                  <a href="#" className="mt-1 text-cyan-300 font-semibold text-base hover:text-white transition-colors flex items-center gap-1.5 group-hover:gap-2 duration-300">
-                    Learn more
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-                      <path d="M5 12h14"></path>
-                      <path d="m12 5 7 7-7 7"></path>
-                    </svg>
-                  </a>
-                </div>
-
-                <div className="absolute bottom-0 right-[-5%] w-[90%] h-[280px] rounded-tl-3xl overflow-hidden shadow-2xl border-l-4 border-t-4 border-white/30 transform translate-x-2 translate-y-4 transition-transform duration-500 group-hover:translate-y-2">
-                  <img src="https://images.unsplash.com/photo-1554224311-beee415c15c9?q=80&w=800&auto=format&fit=crop" alt="Tax Deduction Insights" className="w-full h-full object-cover opacity-100 hover:opacity-100 transition-opacity" />
-                </div>
-              </motion.div>
-
             </motion.div>
           </div>
         </motion.section>
