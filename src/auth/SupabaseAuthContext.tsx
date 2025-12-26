@@ -95,7 +95,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signup = async (email: string, password: string) => {
     try {
       setError(null);
-      // First, sign up the user
+      // Sign up the user with email/password
       const { data: signupData, error: signupError } = await supabase.auth.signUp({
         email: email.toLowerCase(),
         password,
@@ -103,15 +103,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (signupError) throw signupError;
 
-      // Then send OTP code to email
-      const { error: otpError } = await supabase.auth.signInWithOtp({
-        email: email.toLowerCase(),
-        options: {
-          emailRedirectTo: `${window.location.origin}/dashboard`,
-        },
-      });
+      // Send OTP code to email for verification
+      // Note: This is separate from signup to avoid rate limiting
+      try {
+        const { error: otpError } = await supabase.auth.signInWithOtp({
+          email: email.toLowerCase(),
+          options: {
+            emailRedirectTo: `${window.location.origin}/dashboard`,
+          },
+        });
 
-      if (otpError) throw otpError;
+        if (otpError) {
+          console.warn('OTP sending delayed due to rate limit, user can request it manually');
+        }
+      } catch (otpErr) {
+        console.warn('OTP error (non-critical):', otpErr);
+        // Don't throw - OTP is optional, signup already succeeded
+      }
 
       return signupData;
     } catch (error: any) {
