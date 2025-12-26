@@ -767,8 +767,8 @@ export function Landing() {
                   </a>
                 </div>
                 
-                <div className="absolute bottom-0 right-[-5%] w-[90%] h-[280px] rounded-tl-3xl overflow-hidden shadow-2xl border-l-4 border-t-4 border-white/30 transform translate-x-2 translate-y-4 transition-transform duration-500 group-hover:translate-y-2">
-                  <img src="https://images.unsplash.com/photo-1616469829581-73993eb86b02?q=80&w=800&auto=format&fit=crop" alt="Smart Scanning UI" className="w-full h-full object-cover opacity-100 hover:opacity-100 transition-opacity" />
+                <div className="absolute bottom-0 right-[-5%] w-[90%] h-[280px] shadow-2xl transform translate-x-2 translate-y-4 transition-transform duration-500 group-hover:translate-y-2" style={{ borderTopLeftRadius: '15px', borderBottomLeftRadius: '15px', overflow: 'hidden' }}>
+                  <img src="/cards/scan.png" alt="Smart Scanning UI" className="w-full h-full object-cover opacity-100 hover:opacity-100 transition-opacity" />
                 </div>
               </motion.div>
 

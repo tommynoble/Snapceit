@@ -106,6 +106,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Then send OTP code to email
       const { error: otpError } = await supabase.auth.signInWithOtp({
         email: email.toLowerCase(),
+        options: {
+          emailRedirectTo: `${window.location.origin}/dashboard`,
+        },
       });
 
       if (otpError) throw otpError;
@@ -140,6 +143,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setError(null);
       const { error: otpError } = await supabase.auth.signInWithOtp({
         email: email.toLowerCase(),
+        options: {
+          emailRedirectTo: `${window.location.origin}/dashboard`,
+        },
       });
 
       if (otpError) throw otpError;
