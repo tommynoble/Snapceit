@@ -34,7 +34,7 @@ export function Landing() {
   useEffect(() => {
     const id = setInterval(() => {
       setFeatureSlide((prev) => (prev + 1) % 3);
-    }, 8000);
+    }, 16000);
     return () => clearInterval(id);
   }, []);
 
@@ -68,7 +68,7 @@ export function Landing() {
       {/* Grid overlay */}
       <div className="bg-grid" />
       {/* Ambient glows */}
-      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-3xl h-[500px] bg-fuchsia-500/30 blur-[120px] rounded-full pointer-events-none -z-10" />
+      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-3xl h-[500px] bg-fuchsia-500/30 blur-[150px] rounded-full pointer-events-none -z-10" />
 
       {/* Navigation */}
       <nav className="fixed flex w-full z-50 pt-4 px-4 top-0 shadow-sm justify-center">
@@ -737,43 +737,43 @@ export function Landing() {
               <h2 className="text-5xl md:text-6xl font-semibold text-slate-900 tracking-tight leading-tight mb-6">
                 Automate your entire<br />financial workflow
               </h2>
-              <p className="leading-relaxed text-base text-slate-500">
-                Automate your entire financial workflow with smart<br />receipt scanning and categorization.
+              <p className="leading-relaxed text-lg text-slate-600">
+                Scan receipts, categorize expenses, and sync to your accounting software automatically.
               </p>
             </motion.div>
 
             <motion.div 
-              className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 max-w-full w-full mx-auto"
+              className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 max-w-full w-full mx-auto"
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               transition={{ duration: 0.3 }}
               viewport={{ once: true, margin: '-100px' }}
             >
               <motion.div 
-                className="group relative w-full h-[520px] bg-gradient-to-br from-[#E95AF5] to-[#991B9F] rounded-[2rem] overflow-hidden flex flex-col pt-10 px-8 shadow-md transition-transform hover:scale-[1.01] duration-500"
+                className="group relative w-full h-[520px] bg-gradient-to-br from-[#E95AF5] to-[#991B9F] rounded-[2rem] overflow-hidden flex flex-col pt-10 px-8 shadow-lg transition-transform hover:scale-[1.01] duration-500"
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.2 }}
                 viewport={{ once: true, margin: '-100px' }}
               >
                 <div className="relative z-10 flex flex-col items-start gap-3 max-w-[90%]">
-                  <h2 className="text-lg font-bold text-white tracking-tight font-manrope">Smart Scanning</h2>
+                  <h2 className="text-lg font-bold text-white tracking-tight font-manrope">Scan & Go</h2>
                   <p className="leading-snug text-base font-medium text-white/90">
                     Instantly extract merchant, date, and amount from any receipt with 99.9% accuracy.
                   </p>
-                  <a href="#" className="mt-1 text-cyan-300 font-semibold text-base hover:text-white transition-colors flex items-center gap-1.5 group-hover:gap-2 duration-300">
+                  <a href="#" className="mt-4 text-cyan-300 font-semibold text-base hover:text-white transition-colors flex items-center gap-1.5 group-hover:gap-2 duration-300">
                     Learn more
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
                   </a>
                 </div>
                 
-                <div className="absolute bottom-0 right-[-5%] w-[90%] h-[280px] shadow-2xl transform translate-x-2 translate-y-4 transition-transform duration-500 group-hover:translate-y-2" style={{ borderTopLeftRadius: '15px', borderBottomLeftRadius: '15px', overflow: 'hidden' }}>
-                  <img src="/cards/scan.png" alt="Smart Scanning UI" className="w-full h-full object-cover opacity-100 hover:opacity-100 transition-opacity" />
+                <div className="absolute bottom-0 right-0 w-[85%] h-[60%] rounded-tl-3xl overflow-hidden shadow-2xl border-l-4 border-t-4 border-white/30 transition-transform duration-500 group-hover:translate-y-2">
+                  <img src="/cards/scan.png" alt="Smart Scanning UI" className="w-full h-full object-cover opacity-100 hover:opacity-100 transition-opacity" style={{ position: 'absolute', bottom: 0, right: 0 }} />
                 </div>
               </motion.div>
 
               <motion.div 
-                className="group relative w-full h-[520px] bg-gradient-to-br from-[#E95AF5] to-[#991B9F] rounded-[2rem] overflow-hidden flex flex-col pt-10 px-8 shadow-md transition-transform hover:scale-[1.01] duration-500"
+                className="group relative w-full h-[520px] bg-gradient-to-br from-[#E95AF5] to-[#991B9F] rounded-[2rem] overflow-hidden flex flex-col pt-10 px-8 shadow-lg transition-transform hover:scale-[1.01] duration-500"
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.3 }}
@@ -782,21 +782,21 @@ export function Landing() {
                 <div className="relative z-10 flex flex-col items-start gap-3 max-w-[90%]">
                   <h2 className="text-lg font-bold text-white tracking-tight font-manrope">Auto Categorization</h2>
                   <p className="leading-snug text-base font-medium text-white/90">
-                    AI automatically assigns tax codes and categories based on your past behavior.
+                    Intelligent AI learns your spending patterns and automatically categorizes expenses for you.
                   </p>
-                  <a href="#" className="mt-1 text-cyan-300 font-semibold text-base hover:text-white transition-colors flex items-center gap-1.5 group-hover:gap-2 duration-300">
+                  <a href="#" className="mt-4 text-cyan-300 font-semibold text-base hover:text-white transition-colors flex items-center gap-1.5 group-hover:gap-2 duration-300">
                     Learn more
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
                   </a>
                 </div>
 
-                <div className="absolute bottom-0 right-[-5%] w-[90%] h-[280px] rounded-tl-3xl overflow-hidden shadow-2xl border-l-4 border-t-4 border-white/30 transform translate-x-2 translate-y-4 transition-transform duration-500 group-hover:translate-y-2">
-                  <img src="https://images.unsplash.com/photo-1642427749670-f20e2e76ed8c?q=80&w=800&auto=format&fit=crop" alt="Categorization UI" className="w-full h-full object-cover opacity-100 hover:opacity-100 transition-opacity" />
+                <div className="absolute bottom-0 right-0 w-[85%] h-[60%] rounded-tl-3xl overflow-hidden shadow-2xl border-l-4 border-t-4 border-white/30 transition-transform duration-500 group-hover:translate-y-2">
+                  <img src="/cards/categorize.png" alt="Auto Categorization UI" className="w-full h-full object-cover opacity-100 hover:opacity-100 transition-opacity" style={{ position: 'absolute', bottom: 0, right: 0 }} />
                 </div>
               </motion.div>
 
               <motion.div 
-                className="group relative w-full h-[520px] bg-gradient-to-br from-[#E95AF5] to-[#991B9F] rounded-[2rem] overflow-hidden flex flex-col pt-10 px-8 shadow-md transition-transform hover:scale-[1.01] duration-500"
+                className="group relative w-full h-[520px] bg-gradient-to-br from-[#E95AF5] to-[#991B9F] rounded-[2rem] overflow-hidden flex flex-col pt-10 px-8 shadow-lg transition-transform hover:scale-[1.01] duration-500"
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.4 }}
@@ -805,9 +805,9 @@ export function Landing() {
                 <div className="relative z-10 flex flex-col items-start gap-3 max-w-[90%]">
                   <h2 className="text-lg font-bold text-white tracking-tight font-manrope">Sync Anywhere</h2>
                   <p className="text-base text-white/90 font-medium leading-snug">
-                    Seamlessly push reconciled data to QuickBooks, or NetSuite in seconds.
+                    Seamlessly sync your reconciled financial data to your accounting platform in seconds.
                   </p>
-                  <a href="#" className="mt-1 text-cyan-300 font-semibold text-base hover:text-white transition-colors flex items-center gap-1.5 group-hover:gap-2 duration-300">
+                  <a href="#" className="mt-4 text-cyan-300 font-semibold text-base hover:text-white transition-colors flex items-center gap-1.5 group-hover:gap-2 duration-300">
                     Learn more
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
                       <path d="M5 12h14"></path>
@@ -816,8 +816,8 @@ export function Landing() {
                   </a>
                 </div>
 
-                <div className="absolute bottom-0 right-[-5%] w-[90%] h-[280px] rounded-tl-3xl overflow-hidden shadow-2xl border-l-4 border-t-4 border-white/30 transform translate-x-2 translate-y-4 transition-transform duration-500 group-hover:translate-y-2">
-                  <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=800&auto=format&fit=crop" alt="Sync Dashboard UI" className="w-full h-full object-cover opacity-100 hover:opacity-100 transition-opacity" />
+                <div className="absolute bottom-0 right-0 w-[85%] h-[60%] rounded-tl-3xl overflow-hidden shadow-2xl border-l-4 border-t-4 border-white/30 transition-transform duration-500 group-hover:translate-y-2">
+                  <img src="/cards/quickbooks.png" alt="QuickBooks Integration" className="w-full h-full object-cover opacity-100 hover:opacity-100 transition-opacity" style={{ position: 'absolute', bottom: 0, right: 0 }} />
                 </div>
               </motion.div>
 
@@ -827,31 +827,31 @@ export function Landing() {
 
         {/* Feature slider */}
         <section className="z-10 overflow-hidden md:pt-24 md:pb-24 pt-16 pb-16 relative" id="action">
-          <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-96 h-96 bg-purple-600/20 rounded-full blur-[100px] pointer-events-none" />
-          <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-fuchsia-600/10 rounded-full blur-[120px] pointer-events-none" />
+          <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-96 h-96 bg-purple-600/20 rounded-full blur-[130px] pointer-events-none" />
+          <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-fuchsia-600/10 rounded-full blur-[150px] pointer-events-none" />
 
           <div className="mx-auto max-w-7xl px-4 md:px-6 relative z-10">
             <div className="overflow-hidden rounded-3xl relative backdrop-blur-2xl">
-              <div className="md:py-24 max-w-7xl mx-auto md:pt-20 md:px-8 pt-12 px-4 md:pb-20 pb-12 relative">
+              <div className="md:py-12 max-w-7xl mx-auto md:pt-12 md:px-8 pt-8 px-4 md:pb-12 pb-8 relative">
                 <div className="grid md:grid-cols-2 gap-8 md:gap-16 items-center">
                   <div className="flex flex-col justify-center min-h-[360px] relative order-2 md:order-1">
                     {[
                       {
-                        badge: 'App Features',
-                        title: 'Scan receipts instantly',
-                        copy: 'Simply point your camera at any receipt and our AI instantly extracts all the important details. No more manual data entry.',
+                        badge: 'For Small Business',
+                        title: 'Grow smarter, not harder',
+                        copy: 'Save hours on receipt management. Focus on growing your business while our AI handles the details.',
                         tone: 'purple',
                       },
                       {
-                        badge: 'App Features',
-                        title: 'Organize and categorize',
-                        copy: 'Automatically categorize expenses, track spending patterns, and get insights into your financial health in real-time.',
+                        badge: 'For Everyone',
+                        title: 'Easy to use, powerful results',
+                        copy: 'Perfect for business owners, students, and freelancers. Manage receipts effortlessly.',
                         tone: 'blue',
                       },
                       {
-                        badge: 'App Features',
-                        title: 'Sync with QuickBooks',
-                        copy: 'Automatically sync your receipt data directly to QuickBooks. No manual entry, no delays. Your financial records stay perfectly in sync.',
+                        badge: 'Built for Everyone',
+                        title: 'Designed for businesses and people',
+                        copy: 'Whether you\'re scaling a business or managing personal finances, Snapceit adapts to your needs.',
                         tone: 'emerald',
                       },
                     ].map((slide, idx) => (
@@ -926,7 +926,7 @@ export function Landing() {
                             key={idx}
                             className={`col-start-1 row-start-1 w-full transition-all duration-1000 ease-in-out transform ${featureSlide === idx ? 'opacity-100 scale-100 translate-x-0 z-10' : 'opacity-0 scale-95 translate-x-12 pointer-events-none'}`}
                           >
-                            <div className="group relative overflow-hidden bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-md rounded-3xl h-full min-h-[300px] md:min-h-[480px] flex items-center justify-center border-4 border-purple-400/40 shadow-[0_0_60px_rgba(147,51,234,0.6)]">
+                            <div className="group relative overflow-hidden bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-md rounded-3xl h-full min-h-[310px] md:min-h-[490px] flex items-center justify-center border-4 border-purple-400/40 shadow-[0_0_60px_rgba(147,51,234,0.6)]">
                               <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-transparent" />
                               {item.image ? (
                                 <img src={item.image} alt="Feature" className="absolute inset-0 w-full h-full object-cover" loading="lazy" decoding="async" />
@@ -964,17 +964,17 @@ export function Landing() {
           <div className="absolute inset-0 w-full h-full pointer-events-none bg-[linear-gradient(to_right,rgba(0,0,0,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(0,0,0,0.03)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
           <div className="z-10 max-w-6xl mx-auto px-6 relative">
             <motion.div 
-              className="max-w-2xl mx-auto text-center mb-16"
+              className="max-w-2xl mb-16"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.1 }}
               viewport={{ once: true, margin: '-100px' }}
             >
               <h2 className="text-5xl md:text-6xl font-semibold text-slate-900 tracking-tight leading-tight mb-6">
-                Powerful Features for Your Receipts
+                Smart Features That Work for You
               </h2>
-              <p className="leading-relaxed text-base text-slate-500">
-                Organize, categorize, and extract insights from your receipts instantly.
+              <p className="leading-relaxed text-lg text-slate-600">
+                Everything you need to manage receipts effortlessly and stay organized.
               </p>
             </motion.div>
 
@@ -1246,7 +1246,7 @@ export function Landing() {
           </div>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-16">
             <div className="max-w-2xl mx-auto text-center">
-              <h2 className="text-5xl md:text-6xl font-semibold text-slate-900 tracking-tight leading-tight mb-6">Businesses love Snapceit</h2>
+              <h2 className="text-5xl md:text-6xl font-semibold text-white tracking-tight leading-tight mb-6">Businesses love Snapceit</h2>
               <p className="text-lg text-white/80 font-light">Trusted by thousands of businesses worldwide to streamline receipt management.</p>
             </div>
           </div>
