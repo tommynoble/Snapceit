@@ -50,7 +50,7 @@ export function PromotionalPopup({ delayMs = 5000 }: PromotionalPopupProps) {
                   </button>
                 </div>
 
-                <p className="text-gray-600 text-base md:text-lg mb-8 leading-relaxed">
+                <p className="text-gray-600 text-sm md:text-base mb-8 leading-relaxed">
                   See how Snapceit helps you save time, reduce waste, and take control of your finances—then get started with our free plan.
                 </p>
 
