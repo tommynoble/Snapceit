@@ -31,7 +31,7 @@ export function ChatWidget() {
     <>
       {/* Floating Chat Button */}
       <motion.button
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => setIsOpen(true)}
         className="fixed bottom-8 right-8 z-40 w-16 h-16 rounded-full bg-gradient-to-br from-[#D444EF] via-[#AF3AEB] to-purple-700 shadow-lg flex items-center justify-center text-white hover:shadow-xl transition-shadow focus:outline-none"
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.95 }}
@@ -39,18 +39,9 @@ export function ChatWidget() {
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5, delay: 0.3 }}
       >
-        <motion.div
-          animate={{ rotate: isOpen ? 90 : 0 }}
-          transition={{ duration: 0.3 }}
-        >
-          {isOpen ? (
-            <X size={24} />
-          ) : (
-            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-            </svg>
-          )}
-        </motion.div>
+        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+        </svg>
 
         {/* Pulsing Ring Animation */}
         {!isOpen && (
@@ -81,14 +72,22 @@ export function ChatWidget() {
           >
             {/* Header */}
             <div className="bg-gradient-to-r from-[#D444EF] via-[#AF3AEB] to-purple-700 p-6 text-white">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
-                  <span className="text-lg font-bold">S</span>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+                    <span className="text-lg font-bold">S</span>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">Snapceit Support</h3>
+                    <p className="text-xs text-white/70">Usually replies instantly</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-semibold">Snapceit Support</h3>
-                  <p className="text-xs text-white/70">Usually replies instantly</p>
-                </div>
+                <button
+                  onClick={() => setIsOpen(false)}
+                  className="text-white/80 hover:text-white transition-colors"
+                >
+                  <X size={24} />
+                </button>
               </div>
             </div>
 
