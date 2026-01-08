@@ -182,7 +182,7 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
               name="industry"
               value={formData.industry}
               onChange={handleChange}
-              className="w-full rounded-lg bg-white/10 px-6 py-4 pr-10 text-white placeholder-white/60 backdrop-blur-sm border border-white/20 focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
+              className="w-full rounded-lg bg-white/10 px-6 py-4 pr-12 text-white placeholder-white/60 backdrop-blur-sm border border-white/20 focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
             >
               <option value="" disabled>Select your industry</option>
               <option value="retail">Retail</option>
@@ -241,7 +241,7 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
               name="employeeCount"
               value={formData.employeeCount}
               onChange={handleChange}
-              className="w-full rounded-lg bg-white/10 px-6 py-4 pr-10 text-white placeholder-white/60 backdrop-blur-sm border border-white/20 focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
+              className="w-full rounded-lg bg-white/10 px-6 py-4 pr-12 text-white placeholder-white/60 backdrop-blur-sm border border-white/20 focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
             >
               <option value="">Select employee count</option>
               <option value="1-10">1-10</option>
