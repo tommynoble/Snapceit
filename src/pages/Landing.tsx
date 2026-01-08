@@ -835,7 +835,7 @@ export function Landing() {
             <div className="overflow-hidden rounded-3xl relative backdrop-blur-2xl">
               <div className="md:py-12 max-w-7xl mx-auto md:pt-12 md:px-8 pt-8 px-4 md:pb-12 pb-8 relative">
                 <div className="grid md:grid-cols-2 gap-8 md:gap-16 items-center">
-                  <div className="flex flex-col justify-center min-h-[360px] relative order-2 md:order-1">
+                  <div className="flex flex-col justify-center min-h-[360px] relative order-2 md:order-1 md:-ml-8">
                     {[
                       {
                         badge: 'For Small Business',
