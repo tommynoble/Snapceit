@@ -979,7 +979,7 @@ export function Landing() {
             </motion.div>
           </div>
 
-          <div className="w-screen relative left-1/2 right-1/2 -ml-[calc(50vw-200px)] -mr-[calc(50vw-200px)]">
+          <div className="w-screen relative left-1/2 right-1/2 -ml-[calc(50vw-300px)] -mr-[calc(50vw-300px)]">
             <div className="max-w-full mx-auto space-y-32">
             {/* Feature 1: Scan Receipts */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-32 items-center">
