@@ -18,7 +18,7 @@ const OnboardingPage = () => {
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-[#D444EF] via-[#AF3AEB] to-purple-900">
       <div className="max-w-7xl mx-auto w-full flex-1 flex flex-col">
         <Navbar />
-        <div className="flex-1 flex items-center justify-center py-20">
+        <div className="flex-1 flex items-center justify-center py-20 pb-32">
           <Onboarding onComplete={handleComplete} onBack={handleBack} />
         </div>
       </div>
