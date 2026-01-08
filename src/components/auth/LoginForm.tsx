@@ -137,7 +137,11 @@ export function LoginForm() {
             )}
 
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+              >
                 <label className="block text-xs font-medium text-white/80 mb-2">
                   EMAIL ADDRESS
                 </label>
@@ -151,9 +155,13 @@ export function LoginForm() {
                   required
                   disabled={showLoading}
                 />
-              </div>
+              </motion.div>
 
-              <div>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+              >
                 <label className="block text-xs font-medium text-white/80 mb-2">
                   PASSWORD
                 </label>
@@ -176,7 +184,7 @@ export function LoginForm() {
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
-              </div>
+              </motion.div>
 
               <div className="space-y-3 pt-4">
                 <motion.button
