@@ -1020,7 +1020,7 @@ export function Landing() {
                 <p className="text-lg text-slate-500 mb-8 leading-relaxed">Our OCR technology is lightning fast. Simply take a photo and let our engine extract the vendor, date, total, and taxes in milliseconds.</p>
                 <ul className="space-y-4 mb-8">
                   <li className="flex items-center gap-3 text-slate-700">
-                    <span className="text-violet-600">
+                    <span style={{ color: '#af3aeb' }}>
                       <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <circle cx="12" cy="12" r="10"></circle>
                         <path d="m9 12l2 2l4-4"></path>
@@ -1029,7 +1029,7 @@ export function Landing() {
                     99.9% data extraction accuracy
                   </li>
                   <li className="flex items-center gap-3 text-slate-700">
-                    <span className="text-violet-600">
+                    <span style={{ color: '#af3aeb' }}>
                       <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <circle cx="12" cy="12" r="10"></circle>
                         <path d="m9 12l2 2l4-4"></path>
@@ -1038,7 +1038,7 @@ export function Landing() {
                     Support for multi-page receipts
                   </li>
                   <li className="flex items-center gap-3 text-slate-700">
-                    <span className="text-violet-600">
+                    <span style={{ color: '#af3aeb' }}>
                       <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <circle cx="12" cy="12" r="10"></circle>
                         <path d="m9 12l2 2l4-4"></path>
