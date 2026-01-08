@@ -1491,7 +1491,7 @@ export function Landing() {
                 transition={{ duration: 0.5, delay: 0.3 }}
                 viewport={{ once: true, margin: '-100px' }}
               >
-                <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-[#FF6B00] to-orange-600 text-white text-xs font-bold px-3 py-2 rounded-full shadow-lg tracking-wide uppercase">
+                <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-[#D444EF] via-[#AF3AEB] to-purple-700 text-white text-xs font-bold px-3 py-2 rounded-full shadow-lg tracking-wide uppercase">
                   Most Popular
                 </div>
                 <div>
