@@ -7,7 +7,7 @@ const OnboardingPage = () => {
   const navigate = useNavigate();
 
   const handleComplete = () => {
-    navigate('/dashboard');
+    navigate('/register');
   };
 
   const handleBack = () => {
