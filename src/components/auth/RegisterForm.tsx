@@ -3,7 +3,7 @@ import { Helmet } from 'react-helmet-async';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../../auth/SupabaseAuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import LoadingSpinner from '../common/LoadingSpinner';
 
 interface RegisterFormProps {
@@ -59,14 +59,22 @@ export function RegisterForm({ onBack, heading = "Complete your registration" }:
   const [loading, setLoading] = useState(false);
   const [showCodeInput, setShowCodeInput] = useState(false);
   const [verificationCode, setVerificationCode] = useState('');
-
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, []);
   const [signupEmail, setSignupEmail] = useState('');
   const [cooldownSeconds, setCooldownSeconds] = useState(0);
   const { signup, confirmSignUp } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Pre-fill email from navigation state if available
+    if (location.state?.email) {
+      setFormData(prev => ({
+        ...prev,
+        email: location.state.email
+      }));
+    }
+  }, [location.state?.email]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

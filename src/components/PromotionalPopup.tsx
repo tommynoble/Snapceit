@@ -9,6 +9,7 @@ interface PromotionalPopupProps {
 
 export function PromotionalPopup({ delayMs = 5000 }: PromotionalPopupProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [email, setEmail] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -21,7 +22,7 @@ export function PromotionalPopup({ delayMs = 5000 }: PromotionalPopupProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    navigate('/onboarding');
+    navigate('/onboarding', { state: { email } });
   };
 
   return (
@@ -65,6 +66,8 @@ export function PromotionalPopup({ delayMs = 5000 }: PromotionalPopupProps) {
                   <input
                     type="email"
                     placeholder="What's your email?"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     className="w-full px-4 py-3 rounded-lg border border-gray-300 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
                     required
                   />
