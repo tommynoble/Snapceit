@@ -5,6 +5,7 @@ import { Menu, X, User, ScanLine, Tag, RefreshCw, PieChart, Camera } from 'lucid
 import { motion } from 'framer-motion';
 import logo from '../../images/logo.svg';
 import '../styles/landing.css';
+import { PromotionalPopup } from '../components/PromotionalPopup';
 
 export function Landing() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -1592,6 +1593,7 @@ export function Landing() {
         </footer>
       </main>
       </div>
+      <PromotionalPopup delayMs={5000} />
     </>
   );
 }
