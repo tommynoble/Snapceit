@@ -54,7 +54,7 @@ const RegisterFormWrapper: React.FC = () => {
   return (
     <RegisterForm 
       onBack={() => navigate('/login')}
-      heading="Get started with Snapceit"
+      heading="Complete your registration"
     />
   );
 };
