@@ -209,7 +209,7 @@ export function RegisterForm({ onBack, heading = "Complete your registration" }:
           animate={{ opacity: 1, y: 0 }}
           className="w-full max-w-2xl mx-auto"
         >
-          <div className="backdrop-blur-sm rounded-3xl p-8 sm:p-12 border border-white/10">
+          <div className="backdrop-blur-sm rounded-3xl p-8 sm:p-12">
             <h2 className="text-3xl sm:text-4xl font-bold text-white text-center mb-2">
               {showCodeInput ? 'Verify Your Email' : heading}
             </h2>
