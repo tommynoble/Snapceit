@@ -1404,13 +1404,13 @@ export function Landing() {
         >
           <div className="absolute inset-0 w-full h-full pointer-events-none bg-[linear-gradient(to_right,rgba(0,0,0,0.015)_1px,transparent_1px),linear-gradient(to_bottom,rgba(0,0,0,0.015)_1px,transparent_1px)] bg-[size:64px_64px]" />
           <div className="lg:px-8 max-w-6xl mx-auto px-6 relative">
-            <div className="text-center mb-12 md:mb-16">
+            <div className="text-left mb-12 md:mb-16">
               <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold text-slate-900 tracking-tight leading-tight mb-6">
                 Pricing that grows
                 <br />
                 with you
               </h2>
-              <p className="mt-3 text-sm md:text-base text-zinc-600 max-w-2xl mx-auto font-light">
+              <p className="mt-3 text-sm md:text-base text-zinc-600 max-w-2xl font-light">
                 Start small, scale when your financial complexity grows. Every plan includes the AI extraction engine.
               </p>
             </div>
