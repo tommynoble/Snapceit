@@ -159,7 +159,7 @@ export function Landing() {
 
           <div className="flex flex-col sm:flex-row gap-4 items-center justify-center">
             <Link
-              to="/register"
+              to="/onboarding"
               className="group flex gap-2 shiny-cta shadow-purple-900/30 text-sm md:text-lg font-semibold text-white h-12 md:h-14 rounded-lg px-6 md:px-10 relative shadow-xl items-center justify-center mb-[3px]"
             >
               <span className="z-10 relative">Get Started</span>
@@ -1460,7 +1460,7 @@ export function Landing() {
                     <li className="flex items-start gap-3 text-zinc-500"><span className="text-zinc-400 font-bold">●</span> Accounting Sync</li>
                   </ul>
                 </div>
-                <Link to="/register" className="block w-full py-3 px-6 text-center rounded-xl bg-blue-500 hover:bg-blue-600 text-white font-medium transition-colors">
+                <Link to="/onboarding" className="block w-full py-3 px-6 text-center rounded-xl bg-blue-500 hover:bg-blue-600 text-white font-medium transition-colors">
                   Get started
                 </Link>
               </motion.div>
@@ -1500,7 +1500,7 @@ export function Landing() {
                     <li className="flex items-start gap-3"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 flex-none bg-gradient-to-r from-purple-600 to-pink-500 text-white rounded-full p-1"><path d="M20 6 9 17l-5-5"></path></svg> Priority Support</li>
                   </ul>
                 </div>
-                <Link to="/register" className="group flex gap-2 shiny-cta shadow-purple-900/30 text-lg font-semibold text-white h-12 rounded-lg px-8 relative shadow-xl items-center justify-center w-full">
+                <Link to="/onboarding" className="group flex gap-2 shiny-cta shadow-purple-900/30 text-lg font-semibold text-white h-12 rounded-lg px-8 relative shadow-xl items-center justify-center w-full">
                   <span className="z-10 relative">Get started</span>
                 </Link>
               </motion.div>
