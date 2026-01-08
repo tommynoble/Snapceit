@@ -978,26 +978,7 @@ export function Landing() {
               </p>
             </motion.div>
 
-            <motion.div 
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-7 max-w-[1750px] mx-auto"
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              transition={{ duration: 0.3 }}
-              viewport={{ once: true, margin: '-100px' }}
-            >
-            </motion.div>
-          </div>
-        </motion.section>
-
-        {/* Feature Details Section */}
-        <motion.section
-          className="relative bg-white py-24"
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          transition={{ duration: 0.6 }}
-          viewport={{ once: true, margin: '-100px' }}
-        >
-          <div className="max-w-7xl mr-auto ml-auto pr-6 pl-6 space-y-32">
+            <div className="max-w-7xl mr-auto ml-auto pr-6 pl-6 space-y-32">
             {/* Feature 1: Scan Receipts */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
               <div className="order-2 md:order-1 relative">
@@ -1089,6 +1070,7 @@ export function Landing() {
                 </div>
               </div>
             </div>
+          </div>
           </div>
         </motion.section>
 
