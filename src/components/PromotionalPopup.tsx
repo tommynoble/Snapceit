@@ -32,14 +32,14 @@ export function PromotionalPopup({ delayMs = 5000 }: PromotionalPopupProps) {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
             transition={{ duration: 0.4 }}
-            className="bg-white rounded-2xl overflow-hidden max-w-2xl w-full shadow-2xl"
+            className="bg-white rounded-2xl overflow-hidden max-w-4xl w-full shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex flex-col md:flex-row">
               {/* Left side - Content */}
-              <div className="flex-1 p-8 md:p-10">
-                <div className="flex justify-between items-start mb-6">
-                  <h2 className="text-3xl md:text-4xl font-bold text-gray-900 leading-tight">
+              <div className="flex-1 p-6 md:p-8">
+                <div className="flex justify-between items-start mb-4">
+                  <h2 className="text-2xl md:text-3xl font-bold text-gray-900 leading-tight">
                     Limited time:<br />Get started free
                   </h2>
                   <button
@@ -50,11 +50,11 @@ export function PromotionalPopup({ delayMs = 5000 }: PromotionalPopupProps) {
                   </button>
                 </div>
 
-                <p className="text-gray-600 text-sm md:text-base mb-8 leading-relaxed">
+                <p className="text-gray-600 text-sm md:text-base mb-6 leading-relaxed">
                   See how Snapceit helps you save time, reduce waste, and take control of your finances—then get started with our free plan.
                 </p>
 
-                <form className="space-y-4 mb-6">
+                <form className="space-y-3 mb-4">
                   <input
                     type="email"
                     placeholder="What's your email?"
