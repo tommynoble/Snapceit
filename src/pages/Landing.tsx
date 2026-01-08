@@ -831,7 +831,7 @@ export function Landing() {
           <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-96 h-96 bg-purple-600/20 rounded-full blur-[130px] pointer-events-none" />
           <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-fuchsia-600/10 rounded-full blur-[150px] pointer-events-none" />
 
-          <div className="z-10 max-w-full mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-[195px] relative">
+          <div className="mx-auto max-w-7xl px-4 md:px-6 relative z-10">
             <div className="overflow-hidden rounded-3xl relative backdrop-blur-2xl">
               <div className="md:py-12 max-w-7xl mx-auto md:pt-12 md:px-8 pt-8 px-4 md:pb-12 pb-8 relative">
                 <div className="grid md:grid-cols-2 gap-8 md:gap-16 items-center">
@@ -856,15 +856,11 @@ export function Landing() {
                         tone: 'emerald',
                       },
                     ].map((slide, idx) => (
-                      <motion.div
+                      <div
                         key={slide.title}
                         className={`transition-all duration-1000 ease-out ${featureSlide === idx ? 'opacity-100 translate-y-0 relative' : 'opacity-0 translate-y-8 absolute pointer-events-none'}`}
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5, delay: 0.1 }}
-                        viewport={{ once: true, margin: '-100px' }}
                       >
-                        <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full mb-8 text-xs font-medium backdrop-blur-md border ${
+                        <div className={`inline-flex gap-2 text-xs font-medium rounded-full mb-6 px-3 py-1 backdrop-blur-md border ${
                           slide.tone === 'purple'
                             ? 'text-purple-200 bg-purple-500/10 border-purple-500/20'
                             : slide.tone === 'blue'
@@ -880,14 +876,14 @@ export function Landing() {
                         <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold text-white tracking-tight leading-tight mb-6">
                           {slide.title}
                         </h2>
-                        <p className="leading-relaxed text-sm sm:text-base md:text-lg text-white/80 max-w-lg">
+                        <p className="leading-relaxed text-lg text-purple-100/80 max-w-lg mt-6">
                           {slide.copy}
                         </p>
                         <button className="mt-6 text-purple-300 hover:text-purple-200 font-medium transition-colors inline-flex items-center gap-2 pr-1">
                           Learn more
                           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"></path></svg>
                         </button>
-                      </motion.div>
+                      </div>
                     ))}
 
                     <div className="flex gap-4 mt-12 items-center justify-center md:justify-start">
@@ -1428,7 +1424,7 @@ export function Landing() {
               </p>
             </motion.div>
 
-            <div className="flex justify-start mb-14">
+            <div className="flex justify-end mb-14">
               <div className="inline-flex items-center rounded-full bg-zinc-300/30 backdrop-blur-xl px-1.5 py-1.5 text-sm shadow-lg">
                 <button
                   type="button"
