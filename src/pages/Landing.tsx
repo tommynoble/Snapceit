@@ -1075,7 +1075,7 @@ export function Landing() {
                     <div className="flex justify-between items-end h-full gap-4 px-4">
                       <motion.div 
                         className="w-full rounded-t-md relative group" 
-                        style={{ backgroundColor: '#af3aeb', opacity: 0.4 }}
+                        style={{ backgroundColor: '#af3aeb', opacity: 0.4, alignSelf: 'flex-end' }}
                         initial={{ height: 0, opacity: 0 }}
                         whileInView={{ height: '40%', opacity: 0.4 }}
                         transition={{ duration: 0.8, delay: 0 }}
@@ -1085,7 +1085,7 @@ export function Landing() {
                       </motion.div>
                       <motion.div 
                         className="w-full rounded-t-md relative group" 
-                        style={{ backgroundColor: '#af3aeb', opacity: 0.6 }}
+                        style={{ backgroundColor: '#af3aeb', opacity: 0.6, alignSelf: 'flex-end' }}
                         initial={{ height: 0, opacity: 0 }}
                         whileInView={{ height: '65%', opacity: 0.6 }}
                         transition={{ duration: 0.8, delay: 0.1 }}
@@ -1095,7 +1095,7 @@ export function Landing() {
                       </motion.div>
                       <motion.div 
                         className="w-full rounded-t-md relative group" 
-                        style={{ backgroundColor: '#af3aeb' }}
+                        style={{ backgroundColor: '#af3aeb', alignSelf: 'flex-end' }}
                         initial={{ height: 0, opacity: 0 }}
                         whileInView={{ height: '85%', opacity: 1 }}
                         transition={{ duration: 0.8, delay: 0.2 }}
@@ -1105,7 +1105,7 @@ export function Landing() {
                       </motion.div>
                       <motion.div 
                         className="w-full rounded-t-md" 
-                        style={{ backgroundColor: '#af3aeb', opacity: 0.6 }}
+                        style={{ backgroundColor: '#af3aeb', opacity: 0.6, alignSelf: 'flex-end' }}
                         initial={{ height: 0, opacity: 0 }}
                         whileInView={{ height: '55%', opacity: 0.6 }}
                         transition={{ duration: 0.8, delay: 0.3 }}
@@ -1113,7 +1113,7 @@ export function Landing() {
                       ></motion.div>
                       <motion.div 
                         className="w-full rounded-t-md" 
-                        style={{ backgroundColor: '#af3aeb', opacity: 0.4 }}
+                        style={{ backgroundColor: '#af3aeb', opacity: 0.4, alignSelf: 'flex-end' }}
                         initial={{ height: 0, opacity: 0 }}
                         whileInView={{ height: '45%', opacity: 0.4 }}
                         transition={{ duration: 0.8, delay: 0.4 }}
