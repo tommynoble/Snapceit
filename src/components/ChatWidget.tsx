@@ -65,11 +65,12 @@ export function ChatWidget() {
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.8, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.8, y: 20 }}
-            transition={{ duration: 0.3 }}
-            className="fixed bottom-24 right-8 z-40 w-96 h-[600px] bg-white rounded-3xl shadow-2xl flex flex-col overflow-hidden"
+            initial={{ opacity: 0, scale: 0 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0 }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
+            style={{ transformOrigin: "bottom right" }}
+            className="fixed bottom-8 right-8 z-40 w-96 h-[600px] bg-white rounded-3xl shadow-2xl flex flex-col overflow-hidden"
           >
             {/* Header */}
             <div className="bg-gradient-to-r from-[#D444EF] via-[#AF3AEB] to-purple-700 p-6 text-white">
