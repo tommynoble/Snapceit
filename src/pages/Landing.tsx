@@ -980,7 +980,7 @@ export function Landing() {
 
             <div className="w-[calc(100%+80px)] -ml-10 pr-6 pl-6 space-y-16">
             {/* Feature 1: Scan Receipts */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center w-[calc(100%+60px)] -ml-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center w-full">
               <div className="order-2 md:order-1 relative">
                 <div className="absolute -inset-4 bg-gradient-to-tr from-violet-100 to-fuchsia-50 rounded-3xl -z-10 blur-xl opacity-70"></div>
                 <div className="bg-white border border-slate-100 rounded-2xl shadow-2xl shadow-slate-200/50 p-6">
