@@ -978,7 +978,7 @@ export function Landing() {
               </p>
             </motion.div>
 
-            <div className="w-full pr-6 pl-6 space-y-32">
+            <div className="w-full space-y-32">
             {/* Feature 1: Scan Receipts */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-32 items-center">
               <div className="order-2 md:order-1 relative">
