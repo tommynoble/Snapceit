@@ -979,7 +979,8 @@ export function Landing() {
             </motion.div>
           </div>
 
-          <div className="w-screen relative left-1/2 right-1/2 -ml-[calc(50vw-200px)] -mr-[calc(50vw-200px)] space-y-32">
+          <div className="w-screen relative left-1/2 right-1/2 -ml-[calc(50vw-200px)] -mr-[calc(50vw-200px)]">
+            <div className="max-w-6xl mx-auto px-6 space-y-32">
             {/* Feature 1: Scan Receipts */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-32 items-center">
               <div className="order-2 md:order-1 relative">
@@ -1016,7 +1017,7 @@ export function Landing() {
                   </div>
                 </div>
               </div>
-              <div className="order-1 md:order-2 px-6">
+              <div className="order-1 md:order-2">
                 <h3 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight mb-6">Scan receipts instantly.</h3>
                 <p className="text-lg text-slate-500 mb-8 leading-relaxed">Our OCR technology is lightning fast. Simply take a photo and let our engine extract the vendor, date, total, and taxes in milliseconds.</p>
                 <ul className="space-y-4 mb-8">
@@ -1059,7 +1060,7 @@ export function Landing() {
 
             {/* Feature 2: Real-time Insights */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-32 items-center">
-              <div className="px-6">
+              <div>
                 <h3 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight mb-6">Real-time insights.</h3>
                 <p className="text-lg text-slate-500 mb-8 leading-relaxed">Visualize your spending habits. Get a clear view of where money is going with interactive charts and real-time budget tracking.</p>
                 <a href="#" className="text-violet-600 font-semibold hover:text-violet-700 inline-flex items-center gap-2 group">
@@ -1090,6 +1091,7 @@ export function Landing() {
                   </div>
                 </div>
               </div>
+            </div>
             </div>
           </div>
         </motion.section>
