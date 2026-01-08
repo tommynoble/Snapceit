@@ -209,7 +209,7 @@ export function RegisterForm({ onBack, heading = "Complete your registration" }:
           animate={{ opacity: 1, y: 0 }}
           className="w-full max-w-2xl mx-auto"
         >
-          <div className="backdrop-blur-sm rounded-3xl p-8 sm:p-12 bg-white/5 border border-white/10">
+          <div className="backdrop-blur-sm rounded-3xl p-8 sm:p-12 border border-white/10">
             <h2 className="text-3xl sm:text-4xl font-bold text-white text-center mb-2">
               {showCodeInput ? 'Verify Your Email' : heading}
             </h2>
@@ -351,10 +351,10 @@ export function RegisterForm({ onBack, heading = "Complete your registration" }:
                     <motion.button
                       type="submit"
                       disabled={loading}
-                      className={`w-full py-4 px-6 rounded-lg text-white font-semibold transition-all duration-200 border-2 ${
+                      className={`w-full py-4 px-6 rounded-lg text-white font-semibold transition-all duration-200 ${
                         loading
-                          ? 'bg-purple-400 cursor-not-allowed border-purple-400'
-                          : 'bg-white text-purple-600 border-white hover:bg-white/90'
+                          ? 'bg-purple-400 cursor-not-allowed'
+                          : 'bg-purple-600 hover:bg-purple-700'
                       }`}
                       whileHover={{ scale: loading ? 1 : 1.02 }}
                       whileTap={{ scale: loading ? 1 : 0.98 }}
