@@ -27,8 +27,8 @@ const OnboardingPage = () => {
         </motion.div>
         <motion.div 
           className="flex-1 flex items-center justify-center py-20 pb-32"
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.6 }}
         >
           <Onboarding onComplete={handleComplete} onBack={handleBack} />
