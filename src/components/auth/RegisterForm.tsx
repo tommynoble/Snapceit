@@ -207,12 +207,15 @@ export function RegisterForm({ onBack, heading = "Complete your registration" }:
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="w-full max-w-xl mx-auto"
+          className="w-full max-w-2xl mx-auto"
         >
-          <div className="backdrop-blur-sm rounded-2xl p-6 sm:p-8">
-            <h2 className="text-2xl sm:text-3xl font-bold text-white/90 text-center mb-6">
+          <div className="backdrop-blur-sm rounded-3xl p-8 sm:p-12 bg-white/5 border border-white/10">
+            <h2 className="text-3xl sm:text-4xl font-bold text-white text-center mb-2">
               {showCodeInput ? 'Verify Your Email' : heading}
             </h2>
+            <p className="text-center text-white/70 mb-8 text-sm sm:text-base">
+              {showCodeInput ? 'Enter the code we sent to your email' : 'Start managing your finances today.'}
+            </p>
 
             {successMessage && (
               <div className="mb-4 bg-green-500/10 border border-green-500/20 text-green-200 px-4 py-3 rounded-lg text-sm sm:text-base">
@@ -227,16 +230,16 @@ export function RegisterForm({ onBack, heading = "Complete your registration" }:
             )}
 
             {showCodeInput ? (
-              <form onSubmit={handleVerifyCode} className="space-y-4">
+              <form onSubmit={handleVerifyCode} className="space-y-6">
                 <div>
-                  <label className="block text-sm font-medium text-white/80 mb-1.5">
+                  <label className="block text-sm font-medium text-white/80 mb-2">
                     Verification Code
                   </label>
                   <input
                     type="text"
                     value={verificationCode}
                     onChange={(e) => setVerificationCode(e.target.value.toUpperCase())}
-                    className="w-full px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/40 focus:border-transparent backdrop-blur-sm text-sm text-center tracking-widest"
+                    className="w-full px-6 py-4 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/40 focus:border-transparent backdrop-blur-sm text-sm text-center tracking-widest"
                     placeholder="000000"
                     maxLength={6}
                     required
@@ -245,7 +248,7 @@ export function RegisterForm({ onBack, heading = "Complete your registration" }:
                   <p className="text-xs text-white/60 mt-2">Check your email for the 6-digit code</p>
                 </div>
 
-                <div className="space-y-3 pt-2">
+                <div className="space-y-3 pt-4">
                   <motion.button
                     type="submit"
                     disabled={loading}
@@ -275,19 +278,19 @@ export function RegisterForm({ onBack, heading = "Complete your registration" }:
                 </div>
               </form>
             ) : (
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-6">
                 {!successMessage ? (
                 <>
                   <div>
-                    <label className="block text-sm font-medium text-white/80 mb-1.5">
-                      Email Address
+                    <label className="block text-sm font-medium text-white/80 mb-2">
+                      EMAIL ADDRESS
                     </label>
                     <input
                       type="email"
                       name="email"
                       value={formData.email}
                       onChange={handleInputChange}
-                      className="w-full px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/40 focus:border-transparent backdrop-blur-sm text-sm"
+                      className="w-full px-6 py-4 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/40 focus:border-transparent backdrop-blur-sm text-sm"
                       placeholder="Enter your email"
                       required
                       disabled={loading}
@@ -295,8 +298,8 @@ export function RegisterForm({ onBack, heading = "Complete your registration" }:
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-white/80 mb-1.5">
-                      Password
+                    <label className="block text-sm font-medium text-white/80 mb-2">
+                      PASSWORD
                     </label>
                     <div className="relative">
                       <input
@@ -304,7 +307,7 @@ export function RegisterForm({ onBack, heading = "Complete your registration" }:
                         name="password"
                         value={formData.password}
                         onChange={handleInputChange}
-                        className="w-full px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/40 focus:border-transparent backdrop-blur-sm text-sm"
+                        className="w-full px-6 py-4 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/40 focus:border-transparent backdrop-blur-sm text-sm"
                         placeholder="Create a password"
                         required
                         disabled={loading}
@@ -312,7 +315,7 @@ export function RegisterForm({ onBack, heading = "Complete your registration" }:
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white"
+                        className="absolute right-6 top-1/2 -translate-y-1/2 text-white/60 hover:text-white"
                       >
                         {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                       </button>
@@ -320,8 +323,8 @@ export function RegisterForm({ onBack, heading = "Complete your registration" }:
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-white/80 mb-1.5">
-                      Confirm Password
+                    <label className="block text-sm font-medium text-white/80 mb-2">
+                      CONFIRM PASSWORD
                     </label>
                     <div className="relative">
                       <input
@@ -329,7 +332,7 @@ export function RegisterForm({ onBack, heading = "Complete your registration" }:
                         name="confirmPassword"
                         value={formData.confirmPassword}
                         onChange={handleInputChange}
-                        className="w-full px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/40 focus:border-transparent backdrop-blur-sm text-sm"
+                        className="w-full px-6 py-4 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/40 focus:border-transparent backdrop-blur-sm text-sm"
                         placeholder="Confirm your password"
                         required
                         disabled={loading}
@@ -337,26 +340,26 @@ export function RegisterForm({ onBack, heading = "Complete your registration" }:
                       <button
                         type="button"
                         onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white"
+                        className="absolute right-6 top-1/2 -translate-y-1/2 text-white/60 hover:text-white"
                       >
                         {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                       </button>
                     </div>
                   </div>
 
-                  <div className="space-y-3 pt-2">
+                  <div className="space-y-3 pt-4">
                     <motion.button
                       type="submit"
                       disabled={loading}
-                      className={`w-full py-3 px-4 rounded-lg text-white font-semibold transition-all duration-200 ${
+                      className={`w-full py-4 px-6 rounded-lg text-white font-semibold transition-all duration-200 border-2 ${
                         loading
-                          ? 'bg-purple-400 cursor-not-allowed'
-                          : 'bg-purple-600 hover:bg-purple-700'
+                          ? 'bg-purple-400 cursor-not-allowed border-purple-400'
+                          : 'bg-white text-purple-600 border-white hover:bg-white/90'
                       }`}
                       whileHover={{ scale: loading ? 1 : 1.02 }}
                       whileTap={{ scale: loading ? 1 : 0.98 }}
                     >
-                      {loading ? 'Creating Account...' : 'Create Account'}
+                      {loading ? 'Creating account...' : 'Continue'}
                     </motion.button>
                     
                     <div className="flex flex-col space-y-2 text-center">
