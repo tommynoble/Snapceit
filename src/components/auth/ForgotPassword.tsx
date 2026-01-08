@@ -53,11 +53,11 @@ export function ForgotPassword() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="w-full max-w-xl mx-auto"
+          className="w-full max-w-2xl mx-auto"
         >
-          <div className="backdrop-blur-sm rounded-2xl p-6 sm:p-8">
-            <h2 className="text-2xl sm:text-3xl font-bold text-white/90 text-center mb-2">Reset Password</h2>
-            <p className="text-center text-white/60 text-sm sm:text-base mb-6">
+          <div className="backdrop-blur-sm rounded-3xl p-8 sm:p-12">
+            <h2 className="text-3xl sm:text-4xl font-bold text-white text-center mb-2">Reset Password</h2>
+            <p className="text-center text-white/70 text-sm sm:text-base mb-8">
               Enter your email address and we'll send you a link to reset your password.
             </p>
 
@@ -73,27 +73,31 @@ export function ForgotPassword() {
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-white/80 mb-1.5">
-                  Email Address
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+              >
+                <label className="block text-xs font-medium text-white/80 mb-2">
+                  EMAIL ADDRESS
                 </label>
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/40 focus:border-transparent backdrop-blur-sm text-sm"
+                  className="w-full px-6 py-4 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/40 focus:border-transparent backdrop-blur-sm text-sm"
                   placeholder="Enter your email"
                   required
                   disabled={isLoading}
                 />
-              </div>
+              </motion.div>
 
-              <div className="space-y-3 pt-2">
+              <div className="space-y-3 pt-4">
                 <motion.button
                   type="submit"
                   disabled={isLoading}
-                  className={`w-full py-3 px-4 rounded-lg text-white font-semibold transition-all duration-200 ${
+                  className={`w-full py-4 px-6 rounded-lg text-white font-semibold transition-all duration-200 ${
                     isLoading
                       ? 'bg-purple-400 cursor-not-allowed'
                       : 'bg-purple-600 hover:bg-purple-700'
