@@ -84,7 +84,7 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           onClick={() => setFormData(prev => ({ ...prev, accountType: 'personal' }))}
-          className={`flex flex-col items-center gap-4 rounded-xl p-8 text-center transition-all ${
+          className={`flex flex-col items-center gap-4 rounded-xl p-12 text-center transition-all ${
             formData.accountType === 'personal'
               ? 'bg-white text-purple-600 shadow-lg'
               : 'bg-white/10 text-white hover:bg-white/20'
@@ -112,7 +112,7 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           onClick={() => setFormData(prev => ({ ...prev, accountType: 'business' }))}
-          className={`flex flex-col items-center gap-4 rounded-xl p-8 text-center transition-all ${
+          className={`flex flex-col items-center gap-4 rounded-xl p-12 text-center transition-all ${
             formData.accountType === 'business'
               ? 'bg-white text-purple-600 shadow-lg'
               : 'bg-white/10 text-white hover:bg-white/20'
