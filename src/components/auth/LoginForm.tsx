@@ -111,10 +111,11 @@ export function LoginForm() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="w-full max-w-xl mx-auto"
+          className="w-full max-w-2xl mx-auto"
         >
-          <div className="backdrop-blur-sm rounded-2xl p-6 sm:p-8">
-            <h2 className="text-2xl sm:text-3xl font-bold text-white/90 text-center mb-6">Welcome Back!</h2>
+          <div className="backdrop-blur-sm rounded-3xl p-8 sm:p-12">
+            <h2 className="text-3xl sm:text-4xl font-bold text-white text-center mb-2">Welcome Back!</h2>
+            <p className="text-center text-white/70 mb-8 text-sm sm:text-base">Sign in to your account</p>
             <div className="flex flex-col items-center mb-2 sm:mb-4">
               {/* <img 
                 src="/images/logo.svg" 
@@ -135,17 +136,17 @@ export function LoginForm() {
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-white/80 mb-1.5">
-                  Email Address
+                <label className="block text-xs font-medium text-white/80 mb-2">
+                  EMAIL ADDRESS
                 </label>
                 <input
                   type="email"
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
-                  className="w-full px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/40 focus:border-transparent backdrop-blur-sm text-sm"
+                  className="w-full px-6 py-4 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/40 focus:border-transparent backdrop-blur-sm text-sm"
                   placeholder="Enter your email"
                   required
                   disabled={showLoading}
@@ -153,8 +154,8 @@ export function LoginForm() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-white/80 mb-1.5">
-                  Password
+                <label className="block text-xs font-medium text-white/80 mb-2">
+                  PASSWORD
                 </label>
                 <div className="relative">
                   <input
@@ -162,7 +163,7 @@ export function LoginForm() {
                     name="password"
                     value={formData.password}
                     onChange={handleChange}
-                    className="w-full px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/40 focus:border-transparent backdrop-blur-sm text-sm pr-10"
+                    className="w-full px-6 py-4 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/40 focus:border-transparent backdrop-blur-sm text-sm"
                     placeholder="Enter your password"
                     required
                     disabled={showLoading}
@@ -170,18 +171,18 @@ export function LoginForm() {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white"
+                    className="absolute right-6 top-1/2 -translate-y-1/2 text-white/60 hover:text-white"
                   >
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
               </div>
 
-              <div className="space-y-3 pt-2">
+              <div className="space-y-3 pt-4">
                 <motion.button
                   type="submit"
                   disabled={showLoading}
-                  className={`w-full py-3 px-4 rounded-lg text-white font-semibold transition-all duration-200 ${
+                  className={`w-full py-4 px-6 rounded-lg text-white font-semibold transition-all duration-200 ${
                     showLoading
                       ? 'bg-purple-400 cursor-not-allowed'
                       : 'bg-purple-600 hover:bg-purple-700'
