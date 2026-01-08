@@ -735,10 +735,10 @@ export function Landing() {
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 border border-slate-200 text-xs font-medium text-slate-900 mb-8 backdrop-blur-md">
                 Snapceit features suite
               </div>
-              <h2 className="text-5xl md:text-6xl font-semibold text-slate-900 tracking-tight leading-tight mb-6">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold text-slate-900 tracking-tight leading-tight mb-6">
                 Automate your entire<br />financial workflow
               </h2>
-              <p className="leading-relaxed text-lg text-slate-600">
+              <p className="leading-relaxed text-sm sm:text-base md:text-lg text-slate-600">
                 Scan receipts, categorize expenses, and sync to your accounting software automatically.
               </p>
             </motion.div>
