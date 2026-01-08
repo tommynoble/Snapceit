@@ -963,7 +963,7 @@ export function Landing() {
           id="features"
         >
           <div className="absolute inset-0 w-full h-full pointer-events-none bg-[linear-gradient(to_right,rgba(0,0,0,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(0,0,0,0.03)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
-          <div className="z-10 max-w-full mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-[195px] relative">
+          <div className="z-10 max-w-full mx-auto px-6 lg:px-8 relative">
             <motion.div 
               className="max-w-2xl text-left mb-16"
               initial={{ opacity: 0, y: 20 }}
@@ -974,12 +974,12 @@ export function Landing() {
               <h2 className="text-5xl md:text-6xl font-semibold text-slate-900 tracking-tight leading-tight mb-6">
                 Smart Features That Work for You
               </h2>
-              <p className="leading-relaxed text-lg text-slate-600">
+              <p className="leading-relaxed text-base md:text-lg text-slate-600">
                 Everything you need to manage receipts effortlessly and stay organized.
               </p>
             </motion.div>
 
-            <div className="w-[calc(100%+80px)] -ml-10 pr-6 pl-6 space-y-16">
+            <div className="w-full space-y-16">
             {/* Feature 1: Scan Receipts */}
             <motion.div 
               className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center w-full"
