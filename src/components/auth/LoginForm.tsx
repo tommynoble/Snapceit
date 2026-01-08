@@ -196,7 +196,7 @@ export function LoginForm() {
                 <div className="flex flex-col space-y-2 text-center">
                   <button
                     type="button"
-                    onClick={() => navigate('/register')}
+                    onClick={() => navigate('/onboarding')}
                     className="text-xs sm:text-sm text-white/80 hover:text-white transition-colors group"
                   >
                     Don't have an account? <span className="text-[#23cff4] group-hover:text-[#23cff4] border-b border-[#23cff4]">Sign up</span>
