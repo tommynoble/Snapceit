@@ -259,11 +259,11 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
         <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8">
           <div className="w-full max-w-2xl mx-auto px-6 py-4">
             <AnimatePresence mode="wait">
-              <div className="flex flex-col space-y-8">
+              <div className="flex flex-col space-y-4">
                 <ProgressIndicator />
                 {steps[step]}
                 
-                <div className="flex justify-between items-center pt-8">
+                <div className="flex justify-between items-center pt-4">
                   <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
