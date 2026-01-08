@@ -985,15 +985,31 @@ export function Landing() {
                 <div className="absolute -inset-4 bg-gradient-to-tr from-violet-100 to-fuchsia-50 rounded-3xl -z-10 blur-xl opacity-70"></div>
                 <div className="bg-white border border-slate-100 rounded-2xl shadow-2xl shadow-slate-200/50 p-6">
                   <div className="aspect-[4/3] bg-slate-50 rounded-xl border border-slate-200 relative overflow-hidden flex items-center justify-center">
-                    <div className="absolute w-3/4 h-3/4 bg-white shadow-lg rounded-lg border border-slate-100 flex flex-col items-center p-6">
-                      <div className="w-12 h-12 rounded-full bg-slate-100 mb-4"></div>
-                      <div className="w-2/3 h-4 bg-slate-100 rounded mb-2"></div>
-                      <div className="w-1/2 h-4 bg-slate-100 rounded mb-8"></div>
-                      <div className="w-full mt-auto h-12 bg-violet-600/10 rounded-lg border border-violet-100 flex items-center justify-center text-violet-600 font-medium text-sm">Scanning...</div>
+                    <div className="absolute w-3/4 h-3/4 bg-white shadow-lg rounded-lg border border-slate-100 flex flex-col items-center p-6 relative z-10">
+                      <motion.div 
+                        className="w-12 h-12 rounded-full bg-slate-100 mb-4"
+                        animate={{ backgroundColor: ['rgb(226, 232, 240)', 'rgb(147, 112, 219)', 'rgb(226, 232, 240)'] }}
+                        transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+                      ></motion.div>
+                      <motion.div 
+                        className="w-2/3 h-4 bg-slate-100 rounded mb-2"
+                        animate={{ backgroundColor: ['rgb(226, 232, 240)', 'rgb(147, 112, 219)', 'rgb(226, 232, 240)'] }}
+                        transition={{ duration: 2, repeat: Infinity, ease: 'linear', delay: 0.2 }}
+                      ></motion.div>
+                      <motion.div 
+                        className="w-1/2 h-4 bg-slate-100 rounded mb-8"
+                        animate={{ backgroundColor: ['rgb(226, 232, 240)', 'rgb(147, 112, 219)', 'rgb(226, 232, 240)'] }}
+                        transition={{ duration: 2, repeat: Infinity, ease: 'linear', delay: 0.4 }}
+                      ></motion.div>
+                      <motion.div 
+                        className="w-full mt-auto h-12 bg-violet-600/10 rounded-lg border border-violet-100 flex items-center justify-center text-violet-600 font-medium text-sm"
+                        animate={{ backgroundColor: ['rgba(109, 40, 217, 0.1)', 'rgba(109, 40, 217, 0.3)', 'rgba(109, 40, 217, 0.1)'] }}
+                        transition={{ duration: 2, repeat: Infinity, ease: 'linear', delay: 0.6 }}
+                      >Scanning...</motion.div>
                     </div>
                     <motion.div 
-                      className="absolute w-full h-1 bg-violet-500 shadow-[0_0_15px_rgba(139,92,246,0.6)] top-1/2"
-                      animate={{ y: ['-100%', '100%'] }}
+                      className="absolute w-full h-12 bg-gradient-to-b from-violet-400/60 to-transparent shadow-[0_0_20px_rgba(139,92,246,0.8)] z-20"
+                      animate={{ top: ['-50px', 'calc(100% + 50px)'] }}
                       transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
                     ></motion.div>
                   </div>
