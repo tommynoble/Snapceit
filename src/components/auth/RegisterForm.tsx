@@ -282,7 +282,7 @@ export function RegisterForm({ onBack, heading = "Complete your registration" }:
                 {!successMessage ? (
                 <>
                   <div>
-                    <label className="block text-sm font-medium text-white/80 mb-2">
+                    <label className="block text-xs font-medium text-white/80 mb-2">
                       EMAIL ADDRESS
                     </label>
                     <input
@@ -298,7 +298,7 @@ export function RegisterForm({ onBack, heading = "Complete your registration" }:
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-white/80 mb-2">
+                    <label className="block text-xs font-medium text-white/80 mb-2">
                       PASSWORD
                     </label>
                     <div className="relative">
@@ -323,7 +323,7 @@ export function RegisterForm({ onBack, heading = "Complete your registration" }:
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-white/80 mb-2">
+                    <label className="block text-xs font-medium text-white/80 mb-2">
                       CONFIRM PASSWORD
                     </label>
                     <div className="relative">
