@@ -91,7 +91,7 @@ export function Landing() {
               <User size={20} />
             </Link>
             <Link
-              to="/register"
+              to="/onboarding"
               className="bg-[#4c1d95] hover:bg-[#5b21b6] text-xs font-semibold px-5 py-2.5 rounded-lg transition-colors shadow-lg shadow-purple-900/20"
             >
               Try for Free
@@ -123,7 +123,7 @@ export function Landing() {
               <div className="h-px bg-white/10 mx-4 my-1" />
               <div className="flex flex-col gap-2 p-2">
                 <Link
-                  to="/register"
+                  to="/onboarding"
                   onClick={() => setMobileOpen(false)}
                   className="flex items-center justify-center gap-2 w-full bg-[#4c1d95] hover:bg-[#5b21b6] text-white text-sm font-semibold py-3 rounded-xl transition-all shadow-lg shadow-purple-900/20 active:scale-[0.98]"
                 >
