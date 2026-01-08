@@ -22,7 +22,9 @@ export function PromotionalPopup({ delayMs = 5000 }: PromotionalPopupProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    navigate('/onboarding', { state: { email } });
+    // Store email in localStorage so it persists through navigation
+    localStorage.setItem('popupEmail', email);
+    navigate('/onboarding');
   };
 
   return (
