@@ -12,6 +12,7 @@ export function Landing() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [featureSlide, setFeatureSlide] = useState(0);
   const [billingMode, setBillingMode] = useState<'monthly' | 'yearly'>('monthly');
+  const [isPopupOpen, setIsPopupOpen] = useState(false);
 
   const navLinks = [
     { label: 'Solutions', href: '#action' },
@@ -1612,8 +1613,8 @@ export function Landing() {
         </footer>
       </main>
       </div>
-      <PromotionalPopup delayMs={5000} />
-      <ChatWidget />
+      <PromotionalPopup delayMs={5000} onOpenChange={setIsPopupOpen} />
+      <ChatWidget isPopupOpen={isPopupOpen} />
     </>
   );
 }

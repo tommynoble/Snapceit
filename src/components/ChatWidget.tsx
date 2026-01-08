@@ -2,7 +2,11 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 
-export function ChatWidget() {
+interface ChatWidgetProps {
+  isPopupOpen?: boolean;
+}
+
+export function ChatWidget({ isPopupOpen = false }: ChatWidgetProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Array<{ type: 'user' | 'bot'; text: string }>>([
     {
@@ -31,7 +35,7 @@ export function ChatWidget() {
     <>
       {/* Floating Chat Button */}
       <AnimatePresence>
-        {!isOpen && (
+        {!isOpen && !isPopupOpen && (
           <motion.button
             onClick={() => setIsOpen(true)}
             className="fixed bottom-8 right-8 z-40 w-16 h-16 rounded-full bg-gradient-to-br from-[#D444EF] via-[#AF3AEB] to-purple-700 shadow-lg flex items-center justify-center text-white hover:shadow-xl transition-shadow focus:outline-none"

@@ -5,16 +5,22 @@ import { X } from 'lucide-react';
 
 interface PromotionalPopupProps {
   delayMs?: number;
+  onOpenChange?: (isOpen: boolean) => void;
 }
 
-export function PromotionalPopup({ delayMs = 5000 }: PromotionalPopupProps) {
+export function PromotionalPopup({ delayMs = 5000, onOpenChange }: PromotionalPopupProps) {
   const [isOpen, setIsOpen] = useState(false);
+
+  const handleSetOpen = (open: boolean) => {
+    setIsOpen(open);
+    onOpenChange?.(open);
+  };
   const [email, setEmail] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      setIsOpen(true);
+      handleSetOpen(true);
     }, delayMs);
 
     return () => clearTimeout(timer);
@@ -53,7 +59,8 @@ export function PromotionalPopup({ delayMs = 5000 }: PromotionalPopupProps) {
                     Limited time:<br />Get started free
                   </h2>
                   <button
-                    onClick={() => setIsOpen(false)}
+                    type="button"
+                    onClick={() => handleSetOpen(false)}
                     className="text-gray-400 hover:text-gray-600 transition-colors"
                   >
                     <X size={24} />
