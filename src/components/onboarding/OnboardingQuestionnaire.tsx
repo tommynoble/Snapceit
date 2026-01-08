@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Building2, User, ChevronLeft, ChevronRight, CheckCircle2 } from 'lucide-react';
-import Footer from '../Footer';
 
 interface OnboardingProps {
   onComplete: () => void;
@@ -289,8 +288,6 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
           </div>
         </div>
       </main>
-
-      <Footer />
     </div>
   );
 }
