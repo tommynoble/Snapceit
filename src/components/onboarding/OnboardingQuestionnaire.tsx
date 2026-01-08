@@ -163,7 +163,7 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
               value={formData.businessName}
               onChange={handleChange}
               placeholder="Enter your business name"
-              className="w-full rounded-lg bg-white/10 px-4 py-3 text-white placeholder-white/60 backdrop-blur-sm border border-white/20 focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
+              className="w-full rounded-lg bg-white/10 px-6 py-4 text-white placeholder-white/60 backdrop-blur-sm border border-white/20 focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
             />
           </div>
           <div className="space-y-2">
@@ -172,7 +172,7 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
               name="industry"
               value={formData.industry}
               onChange={handleChange}
-              className="w-full rounded-lg bg-white/10 px-4 py-3 text-white placeholder-white/60 backdrop-blur-sm border border-white/20 focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
+              className="w-full rounded-lg bg-white/10 px-6 py-4 text-white placeholder-white/60 backdrop-blur-sm border border-white/20 focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
             >
               <option value="" disabled>Select your industry</option>
               <option value="retail">Retail</option>
@@ -193,7 +193,7 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
               value={formData.personalUseCase}
               onChange={handleChange}
               placeholder="How will you use Snapceit?"
-              className="w-full rounded-lg bg-white/10 px-4 py-3 text-white placeholder-white/60 backdrop-blur-sm border border-white/20 focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
+              className="w-full rounded-lg bg-white/10 px-6 py-4 text-white placeholder-white/60 backdrop-blur-sm border border-white/20 focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
             />
           </div>
         </div>
@@ -221,7 +221,7 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
               name="employeeCount"
               value={formData.employeeCount}
               onChange={handleChange}
-              className="w-full rounded-lg bg-white/10 px-4 py-3 text-white placeholder-white/60 backdrop-blur-sm border border-white/20 focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
+              className="w-full rounded-lg bg-white/10 px-6 py-4 text-white placeholder-white/60 backdrop-blur-sm border border-white/20 focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
             >
               <option value="">Select employee count</option>
               <option value="1-10">1-10</option>
@@ -240,7 +240,7 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
             name="monthlyReceipts"
             value={formData.monthlyReceipts}
             onChange={handleChange}
-            className="w-full rounded-lg bg-white/10 px-4 py-3 text-white placeholder-white/60 backdrop-blur-sm border border-white/20 focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
+            className="w-full rounded-lg bg-white/10 px-6 py-4 text-white placeholder-white/60 backdrop-blur-sm border border-white/20 focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
           >
             <option value="">Select monthly volume</option>
             <option value="1-10">1-10 receipts</option>
