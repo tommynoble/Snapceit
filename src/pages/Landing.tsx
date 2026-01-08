@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import logo from '../../images/logo.svg';
 import '../styles/landing.css';
 import { PromotionalPopup } from '../components/PromotionalPopup';
+import { ChatWidget } from '../components/ChatWidget';
 
 export function Landing() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -1612,6 +1613,7 @@ export function Landing() {
       </main>
       </div>
       <PromotionalPopup delayMs={5000} />
+      <ChatWidget />
     </>
   );
 }
