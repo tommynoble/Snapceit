@@ -155,7 +155,12 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
 
       {formData.accountType === 'business' ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <div className="space-y-2">
+          <motion.div 
+            className="space-y-2"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+          >
             <label className="text-sm font-medium text-white/80">Business Name</label>
             <input
               type="text"
@@ -165,8 +170,13 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
               placeholder="Enter your business name"
               className="w-full rounded-lg bg-white/10 px-6 py-4 text-white placeholder-white/60 backdrop-blur-sm border border-white/20 focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
             />
-          </div>
-          <div className="space-y-2">
+          </motion.div>
+          <motion.div 
+            className="space-y-2"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
             <label className="text-sm font-medium text-white/80">Industry</label>
             <select
               name="industry"
@@ -181,11 +191,16 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
               <option value="finance">Finance</option>
               <option value="other">Other</option>
             </select>
-          </div>
+          </motion.div>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-6">
-          <div className="space-y-2">
+          <motion.div 
+            className="space-y-2"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+          >
             <label className="text-sm font-medium text-white/80">Usage Purpose</label>
             <input
               type="text"
@@ -195,7 +210,7 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
               placeholder="How will you use Snapceit?"
               className="w-full rounded-lg bg-white/10 px-6 py-4 text-white placeholder-white/60 backdrop-blur-sm border border-white/20 focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
             />
-          </div>
+          </motion.div>
         </div>
       )}
     </motion.div>,
@@ -215,7 +230,12 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
         {formData.accountType === 'business' && (
-          <div className="space-y-2">
+          <motion.div 
+            className="space-y-2"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+          >
             <label className="text-sm font-medium text-white/80">Number of Employees</label>
             <select
               name="employeeCount"
@@ -229,10 +249,15 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
               <option value="51-200">51-200</option>
               <option value="201+">201+</option>
             </select>
-          </div>
+          </motion.div>
         )}
 
-        <div className="space-y-2">
+        <motion.div 
+          className="space-y-2"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: formData.accountType === 'business' ? 0.2 : 0.1 }}
+        >
           <label className="text-sm font-medium text-white/80">
             Estimated Monthly Receipts
           </label>
@@ -248,7 +273,7 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
             <option value="51-200">51-200 receipts</option>
             <option value="201+">201+ receipts</option>
           </select>
-        </div>
+        </motion.div>
       </div>
     </motion.div>
   ];
