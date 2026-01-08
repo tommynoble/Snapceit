@@ -46,7 +46,7 @@ const getErrorMessage = (error: any) => {
   return error.message || 'An error occurred during registration. Please try again.';
 };
 
-export function RegisterForm({ onBack, heading = "Get started with Snapceit" }: RegisterFormProps) {
+export function RegisterForm({ onBack, heading = "Complete your registration" }: RegisterFormProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
