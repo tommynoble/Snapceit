@@ -32,7 +32,7 @@ export function ChatWidget() {
       {/* Floating Chat Button */}
       <motion.button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-8 right-8 z-40 w-16 h-16 rounded-full bg-gradient-to-br from-[#D444EF] via-[#AF3AEB] to-purple-700 shadow-lg flex items-center justify-center text-white hover:shadow-xl transition-shadow"
+        className="fixed bottom-8 right-8 z-40 w-16 h-16 rounded-full bg-gradient-to-br from-[#D444EF] via-[#AF3AEB] to-purple-700 shadow-lg flex items-center justify-center text-white hover:shadow-xl transition-shadow focus:outline-none"
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.95 }}
         initial={{ opacity: 0, scale: 0 }}
@@ -50,13 +50,13 @@ export function ChatWidget() {
         {!isOpen && (
           <>
             <motion.div
-              className="absolute inset-0 rounded-full border-2 border-purple-400"
-              animate={{ scale: [1, 1.3], opacity: [1, 0] }}
+              className="absolute inset-0 rounded-full border-2 border-purple-400/60 pointer-events-none"
+              animate={{ scale: [1, 1.3], opacity: [0.6, 0] }}
               transition={{ duration: 2, repeat: Infinity }}
             />
             <motion.div
-              className="absolute inset-0 rounded-full border-2 border-purple-300"
-              animate={{ scale: [1, 1.5], opacity: [1, 0] }}
+              className="absolute inset-0 rounded-full border-2 border-purple-300/40 pointer-events-none"
+              animate={{ scale: [1, 1.5], opacity: [0.4, 0] }}
               transition={{ duration: 2, repeat: Infinity, delay: 0.3 }}
             />
           </>
