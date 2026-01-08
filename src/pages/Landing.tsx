@@ -1073,17 +1073,17 @@ export function Landing() {
                 <div className="bg-white border border-slate-100 rounded-2xl shadow-2xl shadow-slate-200/50 p-6">
                   <div className="aspect-[4/3] bg-slate-50 rounded-xl border border-slate-200 relative p-6 flex flex-col justify-end">
                     <div className="flex justify-between items-end h-full gap-4 px-4">
-                      <div className="w-full bg-violet-200 rounded-t-md h-[40%] relative group">
+                      <div className="w-full rounded-t-md h-[40%] relative group" style={{ backgroundColor: '#af3aeb', opacity: 0.4 }}>
                         <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">$2k</div>
                       </div>
-                      <div className="w-full bg-violet-300 rounded-t-md h-[65%] relative group">
+                      <div className="w-full rounded-t-md h-[65%] relative group" style={{ backgroundColor: '#af3aeb', opacity: 0.6 }}>
                         <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">$4.5k</div>
                       </div>
-                      <div className="w-full bg-violet-500 rounded-t-md h-[85%] shadow-lg shadow-violet-500/30 relative group">
+                      <div className="w-full rounded-t-md h-[85%] relative group" style={{ backgroundColor: '#af3aeb' }}>
                         <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-100">$8.2k</div>
                       </div>
-                      <div className="w-full bg-violet-300 rounded-t-md h-[55%]"></div>
-                      <div className="w-full bg-violet-200 rounded-t-md h-[45%]"></div>
+                      <div className="w-full rounded-t-md h-[55%]" style={{ backgroundColor: '#af3aeb', opacity: 0.6 }}></div>
+                      <div className="w-full rounded-t-md h-[45%]" style={{ backgroundColor: '#af3aeb', opacity: 0.4 }}></div>
                     </div>
                     <div className="h-px w-full bg-slate-200 mt-2"></div>
                   </div>
