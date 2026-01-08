@@ -962,9 +962,9 @@ export function Landing() {
           id="features"
         >
           <div className="absolute inset-0 w-full h-full pointer-events-none bg-[linear-gradient(to_right,rgba(0,0,0,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(0,0,0,0.03)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
-          <div className="z-10 max-w-6xl mx-auto px-6 relative">
+          <div className="z-10 max-w-full mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-[195px] relative">
             <motion.div 
-              className="max-w-2xl mb-16"
+              className="max-w-2xl text-left mb-16"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.1 }}
