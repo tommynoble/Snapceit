@@ -1485,7 +1485,7 @@ export function Landing() {
               </motion.div>
 
               <motion.div 
-                className="flex flex-col transition-transform hover:scale-105 duration-300 bg-white z-10 rounded-[32px] px-8 py-10 relative shadow-lg ring-4 ring-purple-500 ring-opacity-50 justify-between order-1 md:order-2"
+                className="flex flex-col transition-transform hover:scale-105 duration-300 bg-white z-10 rounded-[32px] px-8 py-10 relative shadow-lg ring-8 ring-purple-500 ring-opacity-50 justify-between order-1 md:order-2"
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.3 }}
