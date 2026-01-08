@@ -263,7 +263,7 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
                 <ProgressIndicator />
                 {steps[step]}
                 
-                <div className="flex justify-between items-center pt-4">
+                <div className="flex justify-between items-center pt-8">
                   <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
