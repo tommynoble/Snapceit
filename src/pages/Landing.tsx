@@ -1403,17 +1403,26 @@ export function Landing() {
           viewport={{ once: true, margin: '-100px' }}
         >
           <div className="absolute inset-0 w-full h-full pointer-events-none bg-[linear-gradient(to_right,rgba(0,0,0,0.015)_1px,transparent_1px),linear-gradient(to_bottom,rgba(0,0,0,0.015)_1px,transparent_1px)] bg-[size:64px_64px]" />
-          <div className="lg:px-8 max-w-6xl mx-auto px-6 relative">
-            <div className="text-left mb-12 md:mb-16">
+          <div className="z-10 max-w-full mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-[195px] relative">
+            <motion.div 
+              className="max-w-2xl text-left mb-16"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              viewport={{ once: true, margin: '-100px' }}
+            >
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 border border-slate-200 text-xs font-medium text-slate-900 mb-8 backdrop-blur-md">
+                Pricing suite
+              </div>
               <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold text-slate-900 tracking-tight leading-tight mb-6">
                 Pricing that grows
                 <br />
                 with you
               </h2>
-              <p className="mt-3 text-sm md:text-base text-zinc-600 max-w-2xl font-light">
+              <p className="leading-relaxed text-sm sm:text-base md:text-lg text-slate-600">
                 Start small, scale when your financial complexity grows. Every plan includes the AI extraction engine.
               </p>
-            </div>
+            </motion.div>
 
             <div className="flex justify-start mb-14">
               <div className="inline-flex items-center rounded-full bg-zinc-300/30 backdrop-blur-xl px-1.5 py-1.5 text-sm shadow-lg">
