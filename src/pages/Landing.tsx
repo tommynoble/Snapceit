@@ -873,7 +873,7 @@ export function Landing() {
                           </span>
                           {slide.badge}
                         </div>
-                        <h2 className="text-5xl md:text-6xl font-semibold text-white tracking-tight leading-tight mb-6">
+                        <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold text-white tracking-tight leading-tight mb-6">
                           {slide.title}
                         </h2>
                         <p className="leading-relaxed text-lg text-purple-100/80 max-w-lg mt-6">
@@ -971,7 +971,7 @@ export function Landing() {
               transition={{ duration: 0.5, delay: 0.1 }}
               viewport={{ once: true, margin: '-100px' }}
             >
-              <h2 className="text-5xl md:text-6xl font-semibold text-slate-900 tracking-tight leading-tight mb-6">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold text-slate-900 tracking-tight leading-tight mb-6">
                 Smart Features That Work for You
               </h2>
               <p className="leading-relaxed text-base md:text-lg text-slate-600">
@@ -1164,7 +1164,7 @@ export function Landing() {
           </div>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-16">
             <div className="max-w-2xl mx-auto text-center">
-              <h2 className="text-5xl md:text-6xl font-semibold text-white tracking-tight leading-tight mb-6">Businesses love Snapceit</h2>
+              <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold text-white tracking-tight leading-tight mb-6">Businesses love Snapceit</h2>
               <p className="text-lg text-white/80 font-light">Trusted by thousands of businesses worldwide to streamline receipt management.</p>
             </div>
           </div>
@@ -1396,7 +1396,7 @@ export function Landing() {
           <div className="absolute inset-0 w-full h-full pointer-events-none bg-[linear-gradient(to_right,rgba(0,0,0,0.015)_1px,transparent_1px),linear-gradient(to_bottom,rgba(0,0,0,0.015)_1px,transparent_1px)] bg-[size:64px_64px]" />
           <div className="lg:px-8 max-w-6xl mx-auto px-6 relative">
             <div className="text-center mb-12 md:mb-16">
-              <h2 className="text-5xl md:text-6xl font-semibold text-slate-900 tracking-tight leading-tight mb-6">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold text-slate-900 tracking-tight leading-tight mb-6">
                 Pricing that grows
                 <br />
                 with you
