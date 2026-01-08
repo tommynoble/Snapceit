@@ -991,7 +991,11 @@ export function Landing() {
                       <div className="w-1/2 h-4 bg-slate-100 rounded mb-8"></div>
                       <div className="w-full mt-auto h-12 bg-violet-600/10 rounded-lg border border-violet-100 flex items-center justify-center text-violet-600 font-medium text-sm">Scanning...</div>
                     </div>
-                    <div className="absolute w-full h-1 bg-violet-500 shadow-[0_0_15px_rgba(139,92,246,0.6)] top-1/2 animate-pulse"></div>
+                    <motion.div 
+                      className="absolute w-full h-1 bg-violet-500 shadow-[0_0_15px_rgba(139,92,246,0.6)] top-1/2"
+                      animate={{ y: ['-100%', '100%'] }}
+                      transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+                    ></motion.div>
                   </div>
                 </div>
               </div>
