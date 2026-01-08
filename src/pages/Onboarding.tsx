@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import AuthLayout from '../components/auth/AuthLayout';
+import Navbar from '../components/Navbar';
 import { Onboarding } from '../components/onboarding/OnboardingQuestionnaire';
 
 const OnboardingPage = () => {
@@ -14,9 +14,14 @@ const OnboardingPage = () => {
   };
 
   return (
-    <AuthLayout>
-      <Onboarding onComplete={handleComplete} onBack={handleBack} />
-    </AuthLayout>
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-[#D444EF] via-[#AF3AEB] to-purple-900">
+      <div className="max-w-7xl mx-auto w-full flex-1 flex flex-col">
+        <Navbar />
+        <div className="flex-1 flex items-center justify-center py-20">
+          <Onboarding onComplete={handleComplete} onBack={handleBack} />
+        </div>
+      </div>
+    </div>
   );
 };
 
