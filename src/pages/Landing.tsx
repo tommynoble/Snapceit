@@ -980,8 +980,8 @@ export function Landing() {
 
             <div className="max-w-7xl mr-auto ml-auto pr-6 pl-6 space-y-32">
             {/* Feature 1: Scan Receipts */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
-              <div className="order-2 md:order-1 relative">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-20 items-center">
+              <div className="order-2 md:order-1 relative lg:col-span-1">
                 <div className="absolute -inset-4 bg-gradient-to-tr from-violet-100 to-fuchsia-50 rounded-3xl -z-10 blur-xl opacity-70"></div>
                 <div className="bg-white border border-slate-100 rounded-2xl shadow-2xl shadow-slate-200/50 p-6">
                   <div className="aspect-[4/3] bg-slate-50 rounded-xl border border-slate-200 relative overflow-hidden flex items-center justify-center">
@@ -1015,7 +1015,7 @@ export function Landing() {
                   </div>
                 </div>
               </div>
-              <div className="order-1 md:order-2">
+              <div className="order-1 md:order-2 lg:col-span-2">
                 <h3 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight mb-6">Scan receipts instantly.</h3>
                 <p className="text-lg text-slate-500 mb-8 leading-relaxed">Our OCR technology is lightning fast. Simply take a photo and let our engine extract the vendor, date, total, and taxes in milliseconds.</p>
                 <ul className="space-y-4 mb-8">
