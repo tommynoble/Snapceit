@@ -1224,6 +1224,109 @@ export function Landing() {
           </div>
         </motion.section>
 
+        {/* Feature Details Section */}
+        <motion.section
+          className="relative bg-white py-24"
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          transition={{ duration: 0.6 }}
+          viewport={{ once: true, margin: '-100px' }}
+        >
+          <div className="max-w-7xl mr-auto ml-auto pr-6 pl-6 space-y-32">
+            {/* Feature 1: Scan Receipts */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
+              <div className="order-2 md:order-1 relative">
+                <div className="absolute -inset-4 bg-gradient-to-tr from-violet-100 to-fuchsia-50 rounded-3xl -z-10 blur-xl opacity-70"></div>
+                <div className="bg-white border border-slate-100 rounded-2xl shadow-2xl shadow-slate-200/50 p-6">
+                  <div className="aspect-[4/3] bg-slate-50 rounded-xl border border-slate-200 relative overflow-hidden flex items-center justify-center">
+                    <div className="absolute w-3/4 h-3/4 bg-white shadow-lg rounded-lg border border-slate-100 flex flex-col items-center p-6">
+                      <div className="w-12 h-12 rounded-full bg-slate-100 mb-4"></div>
+                      <div className="w-2/3 h-4 bg-slate-100 rounded mb-2"></div>
+                      <div className="w-1/2 h-4 bg-slate-100 rounded mb-8"></div>
+                      <div className="w-full mt-auto h-12 bg-violet-600/10 rounded-lg border border-violet-100 flex items-center justify-center text-violet-600 font-medium text-sm">Scanning...</div>
+                    </div>
+                    <div className="absolute w-full h-1 bg-violet-500 shadow-[0_0_15px_rgba(139,92,246,0.6)] top-1/2 animate-pulse"></div>
+                  </div>
+                </div>
+              </div>
+              <div className="order-1 md:order-2">
+                <h3 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight mb-6">Scan receipts instantly.</h3>
+                <p className="text-lg text-slate-500 mb-8 leading-relaxed">Our OCR technology is lightning fast. Simply take a photo and let our engine extract the vendor, date, total, and taxes in milliseconds.</p>
+                <ul className="space-y-4 mb-8">
+                  <li className="flex items-center gap-3 text-slate-700">
+                    <span className="text-violet-600">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="m9 12l2 2l4-4"></path>
+                      </svg>
+                    </span>
+                    99.9% data extraction accuracy
+                  </li>
+                  <li className="flex items-center gap-3 text-slate-700">
+                    <span className="text-violet-600">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="m9 12l2 2l4-4"></path>
+                      </svg>
+                    </span>
+                    Support for multi-page receipts
+                  </li>
+                  <li className="flex items-center gap-3 text-slate-700">
+                    <span className="text-violet-600">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="m9 12l2 2l4-4"></path>
+                      </svg>
+                    </span>
+                    Currency conversion included
+                  </li>
+                </ul>
+                <a href="#" className="text-violet-600 font-semibold hover:text-violet-700 inline-flex items-center gap-2 group">
+                  Learn more
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transform group-hover:translate-x-1 transition-transform">
+                    <path d="M5 12h14m-7-7l7 7l-7 7"></path>
+                  </svg>
+                </a>
+              </div>
+            </div>
+
+            {/* Feature 2: Real-time Insights */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
+              <div>
+                <h3 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight mb-6">Real-time insights.</h3>
+                <p className="text-lg text-slate-500 mb-8 leading-relaxed">Visualize your spending habits. Get a clear view of where money is going with interactive charts and real-time budget tracking.</p>
+                <a href="#" className="text-violet-600 font-semibold hover:text-violet-700 inline-flex items-center gap-2 group">
+                  Explore analytics
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transform group-hover:translate-x-1 transition-transform">
+                    <path d="M5 12h14m-7-7l7 7l-7 7"></path>
+                  </svg>
+                </a>
+              </div>
+              <div className="relative">
+                <div className="absolute -inset-4 bg-gradient-to-tl from-indigo-100 to-violet-50 rounded-3xl -z-10 blur-xl opacity-70"></div>
+                <div className="bg-white border border-slate-100 rounded-2xl shadow-2xl shadow-slate-200/50 p-6">
+                  <div className="aspect-[4/3] bg-slate-50 rounded-xl border border-slate-200 relative p-6 flex flex-col justify-end">
+                    <div className="flex justify-between items-end h-full gap-4 px-4">
+                      <div className="w-full bg-violet-200 rounded-t-md h-[40%] relative group">
+                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">$2k</div>
+                      </div>
+                      <div className="w-full bg-violet-300 rounded-t-md h-[65%] relative group">
+                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">$4.5k</div>
+                      </div>
+                      <div className="w-full bg-violet-500 rounded-t-md h-[85%] shadow-lg shadow-violet-500/30 relative group">
+                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-100">$8.2k</div>
+                      </div>
+                      <div className="w-full bg-violet-300 rounded-t-md h-[55%]"></div>
+                      <div className="w-full bg-violet-200 rounded-t-md h-[45%]"></div>
+                    </div>
+                    <div className="h-px w-full bg-slate-200 mt-2"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </motion.section>
+
         {/* Testimonials */}
         <motion.section 
           id="testimonials" 
