@@ -1061,9 +1061,9 @@ export function Landing() {
               <div>
                 <h3 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight mb-6">Real-time insights.</h3>
                 <p className="text-lg text-slate-500 mb-8 leading-relaxed">Visualize your spending habits. Get a clear view of where money is going with interactive charts and real-time budget tracking.</p>
-                <a href="#" className="text-violet-600 font-semibold hover:text-violet-700 inline-flex items-center gap-2 group">
+                <a href="#" className="text-lg text-violet-600 font-semibold hover:text-violet-700 inline-flex items-center gap-2 group">
                   Explore analytics
-                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transform group-hover:translate-x-1 transition-transform">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transform group-hover:translate-x-1 transition-transform">
                     <path d="M5 12h14m-7-7l7 7l-7 7"></path>
                   </svg>
                 </a>
