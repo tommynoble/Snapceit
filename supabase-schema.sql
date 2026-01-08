@@ -131,6 +131,13 @@ CREATE TABLE IF NOT EXISTS public.user_settings (
   theme text DEFAULT 'light'::text,
   notification_email text,
   preferred_currency text DEFAULT 'USD'::text,
+  account_type text,
+  business_name text,
+  industry text,
+  employee_count text,
+  personal_use_case text,
+  monthly_receipts text,
+  onboarding_completed_at timestamp with time zone,
   CONSTRAINT user_settings_pkey PRIMARY KEY (user_id),
   CONSTRAINT user_settings_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE
 );

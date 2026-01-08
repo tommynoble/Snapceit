@@ -3,8 +3,17 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Building2, User, ChevronLeft, ChevronRight, CheckCircle2 } from 'lucide-react';
 
 interface OnboardingProps {
-  onComplete: () => void;
+  onComplete: (data: OnboardingData) => void;
   onBack: () => void;
+}
+
+export interface OnboardingData {
+  accountType: string;
+  businessName: string;
+  industry: string;
+  employeeCount: string;
+  personalUseCase: string;
+  monthlyReceipts: string;
 }
 
 export function Onboarding({ onComplete, onBack }: OnboardingProps) {
@@ -34,7 +43,7 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
     if (step < 2) {
       setStep(prev => prev + 1);
     } else {
-      onComplete();
+      onComplete(formData);
     }
   };
 
