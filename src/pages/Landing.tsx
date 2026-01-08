@@ -962,9 +962,9 @@ export function Landing() {
           id="features"
         >
           <div className="absolute inset-0 w-full h-full pointer-events-none bg-[linear-gradient(to_right,rgba(0,0,0,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(0,0,0,0.03)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
-          <div className="z-10 max-w-6xl mx-auto px-6 relative mb-16">
+          <div className="z-10 max-w-6xl mx-auto px-6 relative">
             <motion.div 
-              className="max-w-2xl"
+              className="max-w-2xl mb-16"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.1 }}
@@ -977,16 +977,14 @@ export function Landing() {
                 Everything you need to manage receipts effortlessly and stay organized.
               </p>
             </motion.div>
-          </div>
 
-          <div className="w-screen relative left-1/2 right-1/2 -ml-[calc(50vw-300px)] -mr-[calc(50vw-300px)]">
-            <div className="max-w-full mx-auto space-y-32">
+            <div className="w-[calc(100%+80px)] -ml-10 pr-6 pl-6 space-y-32">
             {/* Feature 1: Scan Receipts */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-32 items-center">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
               <div className="order-2 md:order-1 relative">
                 <div className="absolute -inset-4 bg-gradient-to-tr from-violet-100 to-fuchsia-50 rounded-3xl -z-10 blur-xl opacity-70"></div>
                 <div className="bg-white border border-slate-100 rounded-2xl shadow-2xl shadow-slate-200/50 p-6">
-                  <div className="aspect-[4/3] bg-slate-50 rounded-xl border border-slate-200 relative overflow-hidden flex items-center justify-center min-h-[400px]">
+                  <div className="aspect-[4/3] bg-slate-50 rounded-xl border border-slate-200 relative overflow-hidden flex items-center justify-center">
                     <div className="absolute w-3/4 h-3/4 bg-white shadow-lg rounded-lg border border-slate-100 flex flex-col items-center p-6 relative z-10">
                       <motion.div 
                         className="w-12 h-12 rounded-full bg-slate-100 mb-4"
@@ -1011,7 +1009,7 @@ export function Landing() {
                     </div>
                     <motion.div 
                       className="absolute w-full h-2 bg-gradient-to-b from-violet-400/80 to-transparent shadow-[0_0_20px_rgba(139,92,246,0.8)] z-20"
-                      animate={{ top: ['0%', '100%'] }}
+                      animate={{ top: ['-50px', 'calc(100% + 50px)'] }}
                       transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
                     ></motion.div>
                   </div>
@@ -1059,7 +1057,7 @@ export function Landing() {
             </div>
 
             {/* Feature 2: Real-time Insights */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-32 items-center">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
               <div>
                 <h3 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight mb-6">Real-time insights.</h3>
                 <p className="text-lg text-slate-500 mb-8 leading-relaxed">Visualize your spending habits. Get a clear view of where money is going with interactive charts and real-time budget tracking.</p>
@@ -1092,7 +1090,7 @@ export function Landing() {
                 </div>
               </div>
             </div>
-            </div>
+          </div>
           </div>
         </motion.section>
 
