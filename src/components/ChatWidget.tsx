@@ -76,8 +76,11 @@ export function ChatWidget() {
             <div className="bg-gradient-to-r from-[#D444EF] via-[#AF3AEB] to-purple-700 p-6 text-white">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
-                    <span className="text-lg font-bold">S</span>
+                  <div className="flex flex-col items-center">
+                    <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center mb-1">
+                      <span className="text-lg font-bold">S</span>
+                    </div>
+                    <span className="text-xs font-semibold">Snapceit</span>
                   </div>
                   <div>
                     <h3 className="font-semibold">Snapceit Support</h3>
