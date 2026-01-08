@@ -1252,7 +1252,119 @@ export function Landing() {
           </div>
           <div className="w-full overflow-hidden">
             <div className="flex gap-6 pl-8 animate-scroll" style={{animation: 'scroll 20s linear infinite'}}>
-              <div className="w-[450px] shrink-0 bg-white/10 backdrop-blur-lg rounded-2xl p-8 flex flex-col">
+              <div className="w-[450px] shrink-0 bg-white/10 backdrop-blur-lg rounded-3xl p-8 flex flex-col">
+                <div className="flex gap-2 mb-4 rounded-lg px-3 py-2 w-fit">
+                  <span className="text-yellow-400 text-lg">☆</span>
+                  <span className="text-yellow-400 text-lg">☆</span>
+                  <span className="text-yellow-400 text-lg">☆</span>
+                  <span className="text-yellow-400 text-lg">☆</span>
+                  <span className="text-yellow-400 text-lg">☆</span>
+                </div>
+                <h3 className="text-white font-bold text-2xl mb-5 break-words">Streamlined Our Expense Tracking</h3>
+                <p className="text-white/90 text-lg mb-8 flex-grow break-words leading-relaxed">Snapceit has completely transformed how we manage receipts. The OCR accuracy is outstanding and saves us hours every week.</p>
+                <div className="flex items-center justify-between mt-auto">
+                  <div className="flex-1">
+                    <p className="text-white font-semibold">James Mitchell</p>
+                    <p className="text-white/70 text-sm">Finance Manager</p>
+                    <p className="text-white/70 text-sm">London, UK</p>
+                  </div>
+                  <div className="relative h-16 w-16 flex items-center justify-center ml-4 bg-white/5 rounded-lg">
+                    <span className="text-white font-bold text-sm">JM</span>
+                  </div>
+                </div>
+              </div>
+              <div className="w-[450px] shrink-0 bg-white/10 backdrop-blur-lg rounded-3xl p-8 flex flex-col">
+                <div className="flex gap-2 mb-4 rounded-lg px-3 py-2 w-fit">
+                  <span className="text-yellow-400 text-lg">☆</span>
+                  <span className="text-yellow-400 text-lg">☆</span>
+                  <span className="text-yellow-400 text-lg">☆</span>
+                  <span className="text-yellow-400 text-lg">☆</span>
+                  <span className="text-yellow-400 text-lg">☆</span>
+                </div>
+                <h3 className="text-white font-bold text-2xl mb-5 break-words">Perfect for Our Accounting Team</h3>
+                <p className="text-white/90 text-lg mb-8 flex-grow break-words leading-relaxed">The accuracy and speed are incredible. Our team now processes receipts 10x faster than before.</p>
+                <div className="flex items-center justify-between mt-auto">
+                  <div className="flex-1">
+                    <p className="text-white font-semibold">Ama Osei</p>
+                    <p className="text-white/70 text-sm">Accounting Director</p>
+                    <p className="text-white/70 text-sm">Accra, Ghana</p>
+                  </div>
+                  <div className="relative h-16 w-16 flex items-center justify-center ml-4 bg-white/5 rounded-lg">
+                    <span className="text-white font-bold text-sm">AO</span>
+                  </div>
+                </div>
+              </div>
+              <div className="w-[450px] shrink-0 bg-white/10 backdrop-blur-lg rounded-3xl p-8 flex flex-col">
+                <div className="flex gap-2 mb-4 rounded-lg px-3 py-2 w-fit">
+                  <span className="text-yellow-400 text-lg">☆</span>
+                  <span className="text-yellow-400 text-lg">☆</span>
+                  <span className="text-yellow-400 text-lg">☆</span>
+                  <span className="text-yellow-400 text-lg">☆</span>
+                  <span className="text-yellow-400 text-lg">☆</span>
+                </div>
+                <h3 className="text-white font-bold text-2xl mb-5 break-words">Game Changer for Our Business</h3>
+                <p className="text-white/90 text-lg mb-8 flex-grow break-words leading-relaxed">Snapceit is the best receipt management tool we've found. The mobile app is intuitive and incredibly reliable.</p>
+                <div className="flex items-center justify-between mt-auto">
+                  <div className="flex-1">
+                    <p className="text-white font-semibold">Sofia Rodriguez</p>
+                    <p className="text-white/70 text-sm">Operations Manager</p>
+                    <p className="text-white/70 text-sm">Madrid, Spain</p>
+                  </div>
+                  <div className="relative h-16 w-16 flex items-center justify-center ml-4 bg-white/5 rounded-lg">
+                    <span className="text-white font-bold text-sm">SR</span>
+                  </div>
+                </div>
+              </div>
+              <div className="w-[450px] shrink-0 bg-white/10 backdrop-blur-lg rounded-3xl p-8 flex flex-col">
+                <div className="flex gap-2 mb-4 rounded-lg px-3 py-2 w-fit">
+                  <span className="text-yellow-400 text-lg">☆</span>
+                  <span className="text-yellow-400 text-lg">☆</span>
+                  <span className="text-yellow-400 text-lg">☆</span>
+                  <span className="text-yellow-400 text-lg">☆</span>
+                  <span className="text-yellow-400 text-lg">☆</span>
+                </div>
+                <h3 className="text-white font-bold text-2xl mb-5 break-words">Excellent Customer Service</h3>
+                <p className="text-white/90 text-lg mb-8 flex-grow break-words leading-relaxed">The support team is fantastic and responsive. They helped us integrate everything seamlessly into our workflow.</p>
+                <div className="flex items-center justify-between mt-auto">
+                  <div className="flex-1">
+                    <p className="text-white font-semibold">David Chen</p>
+                    <p className="text-white/70 text-sm">Business Owner</p>
+                    <p className="text-white/70 text-sm">Toronto, Canada</p>
+                  </div>
+                  <div className="relative h-16 w-16 flex items-center justify-center ml-4 bg-white/5 rounded-lg">
+                    <span className="text-white font-bold text-sm">DC</span>
+                  </div>
+                </div>
+              </div>
+              <div className="w-[450px] shrink-0 bg-white/10 backdrop-blur-lg rounded-3xl p-8 flex flex-col">
+                <div className="flex gap-2 mb-4 rounded-lg px-3 py-2 w-fit">
+                  <span className="text-yellow-400 text-lg">☆</span>
+                  <span className="text-yellow-400 text-lg">☆</span>
+                  <span className="text-yellow-400 text-lg">☆</span>
+                  <span className="text-yellow-400 text-lg">☆</span>
+                  <span className="text-yellow-400 text-lg">☆</span>
+                </div>
+                <h3 className="text-white font-bold text-2xl mb-5 break-words">Invaluable for Tax Time</h3>
+                <p className="text-white/90 text-lg mb-8 flex-grow break-words leading-relaxed">Having all our receipts organized and categorized makes tax season so much easier. Highly recommended!</p>
+                <div className="flex items-center justify-between mt-auto">
+                  <div className="flex-1">
+                    <p className="text-white font-semibold">Priya Sharma</p>
+                    <p className="text-white/70 text-sm">Freelance Consultant</p>
+                    <p className="text-white/70 text-sm">Sydney, Australia</p>
+                  </div>
+                  <div className="relative h-16 w-16 flex items-center justify-center ml-4 bg-white/5 rounded-lg">
+                    <span className="text-white font-bold text-sm">PS</span>
+                  </div>
+                </div>
+              </div>
+              <div className="w-[450px] shrink-0 bg-white/10 backdrop-blur-lg rounded-3xl p-8 flex flex-col">
+                <div className="flex gap-2 mb-4 rounded-lg px-3 py-2 w-fit">
+                  <span className="text-yellow-400 text-lg">☆</span>
+                  <span className="text-yellow-400 text-lg">☆</span>
+                  <span className="text-yellow-400 text-lg">☆</span>
+                  <span className="text-yellow-400 text-lg">☆</span>
+                  <span className="text-yellow-400 text-lg">☆</span>
+                </div>
                 <h3 className="text-white font-bold text-2xl mb-5 break-words">Transformed Our Receipt Management</h3>
                 <p className="text-white/90 text-lg mb-8 flex-grow break-words leading-relaxed">This app has completely transformed how we handle receipts. The OCR accuracy is impressive!</p>
                 <div className="flex items-center justify-between mt-auto">
@@ -1261,12 +1373,19 @@ export function Landing() {
                     <p className="text-white/70 text-sm">CFO</p>
                     <p className="text-white/70 text-sm">Microsoft</p>
                   </div>
-                  <div className="relative h-16 w-16 flex items-center justify-center ml-4">
-                    <img src="https://cdn.worldvectorlogo.com/logos/microsoft-5.svg" alt="Microsoft" className="h-full w-full object-contain" />
+                  <div className="relative h-16 w-16 flex items-center justify-center ml-4 bg-white/5 rounded-lg">
+                    <span className="text-white font-bold text-sm">MS</span>
                   </div>
                 </div>
               </div>
-              <div className="w-[450px] shrink-0 bg-white/10 backdrop-blur-lg rounded-2xl p-8 flex flex-col">
+              <div className="w-[450px] shrink-0 bg-white/10 backdrop-blur-lg rounded-3xl p-8 flex flex-col">
+                <div className="flex gap-2 mb-4 rounded-lg px-3 py-2 w-fit">
+                  <span className="text-yellow-400 text-lg">☆</span>
+                  <span className="text-yellow-400 text-lg">☆</span>
+                  <span className="text-yellow-400 text-lg">☆</span>
+                  <span className="text-yellow-400 text-lg">☆</span>
+                  <span className="text-yellow-400 text-lg">☆</span>
+                </div>
                 <h3 className="text-white font-bold text-2xl mb-5 break-words">Seamless QuickBooks Integration</h3>
                 <p className="text-white/90 text-lg mb-8 flex-grow break-words leading-relaxed">Integration with QuickBooks was seamless. Saved us countless hours of manual data entry.</p>
                 <div className="flex items-center justify-between mt-auto">
@@ -1275,12 +1394,19 @@ export function Landing() {
                     <p className="text-white/70 text-sm">Small Business Owner</p>
                     <p className="text-white/70 text-sm">Salesforce</p>
                   </div>
-                  <div className="relative h-16 w-16 flex items-center justify-center ml-4">
-                    <img src="https://cdn.worldvectorlogo.com/logos/salesforce-2.svg" alt="Salesforce" className="h-full w-full object-contain" />
+                  <div className="relative h-16 w-16 flex items-center justify-center ml-4 bg-white/5 rounded-lg">
+                    <span className="text-white font-bold text-sm">SF</span>
                   </div>
                 </div>
               </div>
-              <div className="w-[450px] shrink-0 bg-white/10 backdrop-blur-lg rounded-2xl p-8 flex flex-col">
+              <div className="w-[450px] shrink-0 bg-white/10 backdrop-blur-lg rounded-3xl p-8 flex flex-col">
+                <div className="flex gap-2 mb-4 rounded-lg px-3 py-2 w-fit">
+                  <span className="text-yellow-400 text-lg">☆</span>
+                  <span className="text-yellow-400 text-lg">☆</span>
+                  <span className="text-yellow-400 text-lg">☆</span>
+                  <span className="text-yellow-400 text-lg">☆</span>
+                  <span className="text-yellow-400 text-lg">☆</span>
+                </div>
                 <h3 className="text-white font-bold text-2xl mb-5 break-words">Best Receipt Scanner</h3>
                 <p className="text-white/90 text-lg mb-8 flex-grow break-words leading-relaxed">The best receipt scanner we've used. The mobile app is intuitive and fast.</p>
                 <div className="flex items-center justify-between mt-auto">
@@ -1289,12 +1415,19 @@ export function Landing() {
                     <p className="text-white/70 text-sm">Accounting Manager</p>
                     <p className="text-white/70 text-sm">Adobe</p>
                   </div>
-                  <div className="relative h-16 w-16 flex items-center justify-center ml-4">
-                    <img src="https://cdn.worldvectorlogo.com/logos/adobe-2.svg" alt="Adobe" className="h-full w-full object-contain" />
+                  <div className="relative h-16 w-16 flex items-center justify-center ml-4 bg-white/5 rounded-lg">
+                    <span className="text-white font-bold text-sm">AD</span>
                   </div>
                 </div>
               </div>
-              <div className="w-[450px] shrink-0 bg-white/10 backdrop-blur-lg rounded-2xl p-8 flex flex-col">
+              <div className="w-[450px] shrink-0 bg-white/10 backdrop-blur-lg rounded-3xl p-8 flex flex-col">
+                <div className="flex gap-2 mb-4 rounded-lg px-3 py-2 w-fit">
+                  <span className="text-yellow-400 text-lg">☆</span>
+                  <span className="text-yellow-400 text-lg">☆</span>
+                  <span className="text-yellow-400 text-lg">☆</span>
+                  <span className="text-yellow-400 text-lg">☆</span>
+                  <span className="text-yellow-400 text-lg">☆</span>
+                </div>
                 <h3 className="text-white font-bold text-2xl mb-5 break-words">Exceptional Support</h3>
                 <p className="text-white/90 text-lg mb-8 flex-grow break-words leading-relaxed">Customer support is exceptional. They helped us set up custom integrations quickly.</p>
                 <div className="flex items-center justify-between mt-auto">
@@ -1303,82 +1436,19 @@ export function Landing() {
                     <p className="text-white/70 text-sm">Operations Director</p>
                     <p className="text-white/70 text-sm">Shopify</p>
                   </div>
-                  <div className="relative h-16 w-16 flex items-center justify-center ml-4">
-                    <img src="https://cdn.worldvectorlogo.com/logos/shopify.svg" alt="Shopify" className="h-full w-full object-contain" />
+                  <div className="relative h-16 w-16 flex items-center justify-center ml-4 bg-white/5 rounded-lg">
+                    <span className="text-white font-bold text-sm">SH</span>
                   </div>
                 </div>
               </div>
-              <div className="w-[450px] shrink-0 bg-white/10 backdrop-blur-lg rounded-2xl p-8 flex flex-col">
-                <h3 className="text-white font-bold text-2xl mb-5 break-words">Great Analytics Insights</h3>
-                <p className="text-white/90 text-lg mb-8 flex-grow break-words leading-relaxed">The analytics dashboard gives us great insights into our expenses.</p>
-                <div className="flex items-center justify-between mt-auto">
-                  <div className="flex-1">
-                    <p className="text-white font-semibold">Lisa Thompson</p>
-                    <p className="text-white/70 text-sm">Finance Director</p>
-                    <p className="text-white/70 text-sm">Stripe</p>
-                  </div>
-                  <div className="relative h-16 w-16 flex items-center justify-center ml-4">
-                    <img src="https://cdn.worldvectorlogo.com/logos/stripe-3.svg" alt="Stripe" className="h-full w-full object-contain brightness-0 invert" />
-                  </div>
+              <div className="w-[450px] shrink-0 bg-white/10 backdrop-blur-lg rounded-3xl p-8 flex flex-col">
+                <div className="flex gap-1 mb-4">
+                  <span className="text-yellow-400">★</span>
+                  <span className="text-yellow-400">★</span>
+                  <span className="text-yellow-400">★</span>
+                  <span className="text-yellow-400">★</span>
+                  <span className="text-gray-500">★</span>
                 </div>
-              </div>
-              <div className="w-[450px] shrink-0 bg-white/10 backdrop-blur-lg rounded-2xl p-8 flex flex-col">
-                <h3 className="text-white font-bold text-2xl mb-5 break-words">Transformed Our Receipt Management</h3>
-                <p className="text-white/90 text-lg mb-8 flex-grow break-words leading-relaxed">This app has completely transformed how we handle receipts. The OCR accuracy is impressive!</p>
-                <div className="flex items-center justify-between mt-auto">
-                  <div className="flex-1">
-                    <p className="text-white font-semibold">Sarah Johnson</p>
-                    <p className="text-white/70 text-sm">CFO</p>
-                    <p className="text-white/70 text-sm">Microsoft</p>
-                  </div>
-                  <div className="relative h-16 w-16 flex items-center justify-center ml-4">
-                    <img src="https://cdn.worldvectorlogo.com/logos/microsoft-5.svg" alt="Microsoft" className="h-full w-full object-contain" />
-                  </div>
-                </div>
-              </div>
-              <div className="w-[450px] shrink-0 bg-white/10 backdrop-blur-lg rounded-2xl p-8 flex flex-col">
-                <h3 className="text-white font-bold text-2xl mb-5 break-words">Seamless QuickBooks Integration</h3>
-                <p className="text-white/90 text-lg mb-8 flex-grow break-words leading-relaxed">Integration with QuickBooks was seamless. Saved us countless hours of manual data entry.</p>
-                <div className="flex items-center justify-between mt-auto">
-                  <div className="flex-1">
-                    <p className="text-white font-semibold">Michael Chen</p>
-                    <p className="text-white/70 text-sm">Small Business Owner</p>
-                    <p className="text-white/70 text-sm">Salesforce</p>
-                  </div>
-                  <div className="relative h-16 w-16 flex items-center justify-center ml-4">
-                    <img src="https://cdn.worldvectorlogo.com/logos/salesforce-2.svg" alt="Salesforce" className="h-full w-full object-contain" />
-                  </div>
-                </div>
-              </div>
-              <div className="w-[450px] shrink-0 bg-white/10 backdrop-blur-lg rounded-2xl p-8 flex flex-col">
-                <h3 className="text-white font-bold text-2xl mb-5 break-words">Best Receipt Scanner</h3>
-                <p className="text-white/90 text-lg mb-8 flex-grow break-words leading-relaxed">The best receipt scanner we've used. The mobile app is intuitive and fast.</p>
-                <div className="flex items-center justify-between mt-auto">
-                  <div className="flex-1">
-                    <p className="text-white font-semibold">Emma Davis</p>
-                    <p className="text-white/70 text-sm">Accounting Manager</p>
-                    <p className="text-white/70 text-sm">Adobe</p>
-                  </div>
-                  <div className="relative h-16 w-16 flex items-center justify-center ml-4">
-                    <img src="https://cdn.worldvectorlogo.com/logos/adobe-2.svg" alt="Adobe" className="h-full w-full object-contain" />
-                  </div>
-                </div>
-              </div>
-              <div className="w-[450px] shrink-0 bg-white/10 backdrop-blur-lg rounded-2xl p-8 flex flex-col">
-                <h3 className="text-white font-bold text-2xl mb-5 break-words">Exceptional Support</h3>
-                <p className="text-white/90 text-lg mb-8 flex-grow break-words leading-relaxed">Customer support is exceptional. They helped us set up custom integrations quickly.</p>
-                <div className="flex items-center justify-between mt-auto">
-                  <div className="flex-1">
-                    <p className="text-white font-semibold">James Wilson</p>
-                    <p className="text-white/70 text-sm">Operations Director</p>
-                    <p className="text-white/70 text-sm">Shopify</p>
-                  </div>
-                  <div className="relative h-16 w-16 flex items-center justify-center ml-4">
-                    <img src="https://cdn.worldvectorlogo.com/logos/shopify.svg" alt="Shopify" className="h-full w-full object-contain" />
-                  </div>
-                </div>
-              </div>
-              <div className="w-[450px] shrink-0 bg-white/10 backdrop-blur-lg rounded-2xl p-8 flex flex-col">
                 <h3 className="text-white font-bold text-2xl mb-5 break-words">Great Analytics Insights</h3>
                 <p className="text-white/90 text-lg mb-8 flex-grow break-words leading-relaxed">The analytics dashboard gives us great insights into our expenses.</p>
                 <div className="flex items-center justify-between mt-auto">
