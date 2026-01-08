@@ -980,7 +980,13 @@ export function Landing() {
 
             <div className="w-[calc(100%+80px)] -ml-10 pr-6 pl-6 space-y-16">
             {/* Feature 1: Scan Receipts */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center w-full">
+            <motion.div 
+              className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center w-full"
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              viewport={{ once: true, margin: '-100px' }}
+            >
               <div className="order-2 md:order-1 relative">
                 <div className="absolute -inset-4 bg-gradient-to-tr from-violet-100 to-fuchsia-50 rounded-3xl -z-10 blur-xl opacity-70"></div>
                 <div className="bg-white border border-slate-100 rounded-2xl shadow-2xl shadow-slate-200/50 p-6">
@@ -1054,10 +1060,16 @@ export function Landing() {
                   </svg>
                 </a>
               </div>
-            </div>
+            </motion.div>
 
             {/* Feature 2: Real-time Insights */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
+            <motion.div 
+              className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center"
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              viewport={{ once: true, margin: '-100px' }}
+            >
               <div>
                 <h3 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight mb-6">Real-time insights.</h3>
                 <p className="text-lg text-slate-500 mb-8 leading-relaxed">Visualize your spending habits. Get a clear view of where money is going with interactive charts and real-time budget tracking.</p>
@@ -1124,7 +1136,7 @@ export function Landing() {
                   </div>
                 </div>
               </div>
-            </div>
+            </motion.div>
           </div>
           </div>
         </motion.section>
