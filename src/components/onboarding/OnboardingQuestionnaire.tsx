@@ -213,7 +213,7 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
         <p className="text-white/80">Help us customize your experience</p>
       </div>
 
-      <div className="space-y-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
         {formData.accountType === 'business' && (
           <div className="space-y-2">
             <label className="text-sm font-medium text-white/80">Number of Employees</label>
