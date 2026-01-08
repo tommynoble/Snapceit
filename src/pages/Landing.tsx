@@ -1436,10 +1436,10 @@ export function Landing() {
                 <button
                   type="button"
                   onClick={() => setBillingMode('yearly')}
-                  className={`rounded-full px-8 py-3 font-semibold transition-all duration-300 flex items-center gap-2 ${billingMode === 'yearly' ? 'bg-cyan-300/40 text-zinc-900 shadow-lg border border-cyan-400/50' : 'text-zinc-400 hover:text-zinc-600'}`}
+                  className={`rounded-full px-8 py-3 font-semibold transition-all duration-300 flex items-center gap-2 ${billingMode === 'yearly' ? 'bg-orange-400/40 text-zinc-900 shadow-lg border border-orange-500/50' : 'text-zinc-400 hover:text-zinc-600'}`}
                 >
                   Yearly
-                  <span className="inline-flex items-center rounded-full bg-cyan-300/40 px-3 py-1 text-[11px] font-bold text-cyan-600 border border-cyan-400/50">
+                  <span className="inline-flex items-center rounded-full bg-orange-400/40 px-3 py-1 text-[11px] font-bold text-orange-600 border border-orange-500/50">
                     SAVE 30%
                   </span>
                 </button>
