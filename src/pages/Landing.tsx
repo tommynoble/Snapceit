@@ -1011,7 +1011,7 @@ export function Landing() {
                     </div>
                     <motion.div 
                       className="absolute w-full h-2 bg-gradient-to-b from-violet-400/80 to-transparent shadow-[0_0_20px_rgba(139,92,246,0.8)] z-20"
-                      animate={{ top: ['-50px', 'calc(100% + 50px)'] }}
+                      animate={{ top: ['0%', '100%'] }}
                       transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
                     ></motion.div>
                   </div>
