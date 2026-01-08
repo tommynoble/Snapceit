@@ -6,6 +6,7 @@ import { LoginForm } from './components/auth/LoginForm';
 import { RegisterForm } from './components/auth/RegisterForm';
 import { VerifyEmail } from './components/auth/VerifyEmail';
 import { EmailConfirmed } from './pages/EmailConfirmed';
+import OnboardingPage from './pages/Onboarding';
 import { DashboardLayout } from './components/dashboard/DashboardLayout';
 import { ReceiptProvider } from './components/dashboard/receipts/ReceiptContext';
 import { useAuth, AuthProvider } from './auth/SupabaseAuthContext';
@@ -58,6 +59,13 @@ const RegisterFormWrapper: React.FC = () => {
   );
 };
 
+// Onboarding Page Wrapper with Navigation
+const OnboardingPageWrapper: React.FC = () => {
+  return (
+    <OnboardingPage />
+  );
+};
+
 // Onboarding Wrapper with Navigation
 const OnboardingWrapper: React.FC = () => {
   const navigate = useNavigate();
@@ -100,6 +108,11 @@ const AppContent: React.FC = () => {
               <AuthLayout>
                 <RegisterFormWrapper />
               </AuthLayout>
+            </PublicRoute>
+          } />
+          <Route path="/onboarding" element={
+            <PublicRoute>
+              <OnboardingPageWrapper />
             </PublicRoute>
           } />
           <Route path="/verify-email" element={
