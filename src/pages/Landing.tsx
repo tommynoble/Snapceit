@@ -1425,7 +1425,7 @@ export function Landing() {
             </motion.div>
 
             <div className="flex justify-end mb-14">
-              <div className="inline-flex items-center rounded-full bg-zinc-300/30 backdrop-blur-xl px-1.5 py-1.5 text-sm shadow-lg">
+              <div className="inline-flex items-center rounded-full bg-zinc-300/30 backdrop-blur-xl px-1.5 py-1.5 text-sm">
                 <button
                   type="button"
                   onClick={() => setBillingMode('monthly')}
