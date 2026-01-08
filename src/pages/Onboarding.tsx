@@ -18,29 +18,17 @@ const OnboardingPage = () => {
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-[#D444EF] via-[#AF3AEB] to-purple-900">
       <div className="max-w-7xl mx-auto w-full flex-1 flex flex-col">
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0 }}
-        >
-          <Navbar />
-        </motion.div>
+        <Navbar />
         <motion.div 
           className="flex-1 flex items-center justify-center py-20 pb-32"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.6 }}
+          transition={{ duration: 0.6 }}
         >
           <Onboarding onComplete={handleComplete} onBack={handleBack} />
         </motion.div>
       </div>
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 1.2 }}
-      >
-        <Footer />
-      </motion.div>
+      <Footer />
     </div>
   );
 };
