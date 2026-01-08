@@ -1074,49 +1074,49 @@ export function Landing() {
                   <div className="aspect-[4/3] bg-slate-50 rounded-xl border border-slate-200 relative p-6 flex flex-col justify-end">
                     <div className="flex justify-between items-end h-full gap-4 px-4">
                       <motion.div 
-                        className="w-full rounded-t-md h-[40%] relative group" 
+                        className="w-full rounded-t-md relative group" 
                         style={{ backgroundColor: '#af3aeb', opacity: 0.4 }}
-                        initial={{ x: 100, opacity: 0 }}
-                        whileInView={{ x: 0, opacity: 0.4 }}
-                        transition={{ duration: 0.6, delay: 0 }}
+                        initial={{ height: 0, opacity: 0 }}
+                        whileInView={{ height: '40%', opacity: 0.4 }}
+                        transition={{ duration: 0.8, delay: 0 }}
                         viewport={{ once: true, margin: '-100px' }}
                       >
                         <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">$2k</div>
                       </motion.div>
                       <motion.div 
-                        className="w-full rounded-t-md h-[65%] relative group" 
+                        className="w-full rounded-t-md relative group" 
                         style={{ backgroundColor: '#af3aeb', opacity: 0.6 }}
-                        initial={{ x: 100, opacity: 0 }}
-                        whileInView={{ x: 0, opacity: 0.6 }}
-                        transition={{ duration: 0.6, delay: 0.1 }}
+                        initial={{ height: 0, opacity: 0 }}
+                        whileInView={{ height: '65%', opacity: 0.6 }}
+                        transition={{ duration: 0.8, delay: 0.1 }}
                         viewport={{ once: true, margin: '-100px' }}
                       >
                         <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">$4.5k</div>
                       </motion.div>
                       <motion.div 
-                        className="w-full rounded-t-md h-[85%] relative group" 
+                        className="w-full rounded-t-md relative group" 
                         style={{ backgroundColor: '#af3aeb' }}
-                        initial={{ x: 100, opacity: 0 }}
-                        whileInView={{ x: 0, opacity: 1 }}
-                        transition={{ duration: 0.6, delay: 0.2 }}
+                        initial={{ height: 0, opacity: 0 }}
+                        whileInView={{ height: '85%', opacity: 1 }}
+                        transition={{ duration: 0.8, delay: 0.2 }}
                         viewport={{ once: true, margin: '-100px' }}
                       >
                         <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-100">$8.2k</div>
                       </motion.div>
                       <motion.div 
-                        className="w-full rounded-t-md h-[55%]" 
+                        className="w-full rounded-t-md" 
                         style={{ backgroundColor: '#af3aeb', opacity: 0.6 }}
-                        initial={{ x: 100, opacity: 0 }}
-                        whileInView={{ x: 0, opacity: 0.6 }}
-                        transition={{ duration: 0.6, delay: 0.3 }}
+                        initial={{ height: 0, opacity: 0 }}
+                        whileInView={{ height: '55%', opacity: 0.6 }}
+                        transition={{ duration: 0.8, delay: 0.3 }}
                         viewport={{ once: true, margin: '-100px' }}
                       ></motion.div>
                       <motion.div 
-                        className="w-full rounded-t-md h-[45%]" 
+                        className="w-full rounded-t-md" 
                         style={{ backgroundColor: '#af3aeb', opacity: 0.4 }}
-                        initial={{ x: 100, opacity: 0 }}
-                        whileInView={{ x: 0, opacity: 0.4 }}
-                        transition={{ duration: 0.6, delay: 0.4 }}
+                        initial={{ height: 0, opacity: 0 }}
+                        whileInView={{ height: '45%', opacity: 0.4 }}
+                        transition={{ duration: 0.8, delay: 0.4 }}
                         viewport={{ once: true, margin: '-100px' }}
                       ></motion.div>
                     </div>
