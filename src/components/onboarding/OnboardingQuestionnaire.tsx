@@ -75,7 +75,7 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
       className="space-y-8"
     >
       <div className="text-center space-y-2">
-        <h2 className="text-3xl font-bold text-white">Choose Account Type</h2>
+        <h2 className="text-4xl md:text-5xl font-bold text-white">Choose Account Type</h2>
         <p className="text-white/80">Select the type of account you want to create</p>
       </div>
       
@@ -147,7 +147,7 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
       className="space-y-8"
     >
       <div className="text-center space-y-2">
-        <h2 className="text-3xl font-bold text-white">
+        <h2 className="text-4xl md:text-5xl font-bold text-white">
           {formData.accountType === 'business' ? 'Business Details' : 'Personal Details'}
         </h2>
         <p className="text-white/80">Tell us more about yourself</p>
@@ -209,7 +209,7 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
       className="space-y-8"
     >
       <div className="text-center space-y-2">
-        <h2 className="text-3xl font-bold text-white">Usage Details</h2>
+        <h2 className="text-4xl md:text-5xl font-bold text-white">Usage Details</h2>
         <p className="text-white/80">Help us customize your experience</p>
       </div>
 
