@@ -154,7 +154,7 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
       </div>
 
       {formData.accountType === 'business' ? (
-        <div className="space-y-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div className="space-y-2">
             <label className="text-sm font-medium text-white/80">Business Name</label>
             <input
@@ -184,7 +184,7 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
           </div>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="grid grid-cols-1 gap-6">
           <div className="space-y-2">
             <label className="text-sm font-medium text-white/80">Usage Purpose</label>
             <input
