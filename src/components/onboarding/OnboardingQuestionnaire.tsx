@@ -182,7 +182,8 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
               name="industry"
               value={formData.industry}
               onChange={handleChange}
-              className="w-full rounded-lg bg-white/10 px-6 py-4 pr-12 text-white placeholder-white/60 backdrop-blur-sm border border-white/20 focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
+              className="w-full rounded-lg bg-white/10 px-6 py-4 text-white placeholder-white/60 backdrop-blur-sm border border-white/20 focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500/20 appearance-none bg-no-repeat"
+              style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`, backgroundPosition: 'right 12px center' }}
             >
               <option value="" disabled>Select your industry</option>
               <option value="retail">Retail</option>
@@ -241,7 +242,8 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
               name="employeeCount"
               value={formData.employeeCount}
               onChange={handleChange}
-              className="w-full rounded-lg bg-white/10 px-6 py-4 pr-12 text-white placeholder-white/60 backdrop-blur-sm border border-white/20 focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
+              className="w-full rounded-lg bg-white/10 px-6 py-4 text-white placeholder-white/60 backdrop-blur-sm border border-white/20 focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500/20 appearance-none bg-no-repeat"
+              style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`, backgroundPosition: 'right 12px center' }}
             >
               <option value="">Select employee count</option>
               <option value="1-10">1-10</option>
@@ -265,7 +267,8 @@ export function Onboarding({ onComplete, onBack }: OnboardingProps) {
             name="monthlyReceipts"
             value={formData.monthlyReceipts}
             onChange={handleChange}
-            className="w-full rounded-lg bg-white/10 px-6 py-4 pr-10 text-white placeholder-white/60 backdrop-blur-sm border border-white/20 focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
+            className="w-full rounded-lg bg-white/10 px-6 py-4 text-white placeholder-white/60 backdrop-blur-sm border border-white/20 focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-purple-500/20 appearance-none bg-no-repeat"
+            style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`, backgroundPosition: 'right 12px center' }}
           >
             <option value="">Select monthly volume</option>
             <option value="1-10">1-10 receipts</option>
