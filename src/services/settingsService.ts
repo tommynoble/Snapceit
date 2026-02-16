@@ -11,31 +11,37 @@ export interface UserSettings {
   emailNotifications: boolean;
   pushNotifications: boolean;
   notificationSms: boolean;
-  
+
   // Display Preferences
   currency: string;
   language: string;
   timezone: string;
   darkMode: boolean;
-  
+
   // Security Settings
   twoFactorEnabled: boolean;
-  
+
   // App Settings
   autoScan: boolean;
-  
+
   // Receipt Preferences
   defaultReceiptCurrency: string;
   defaultTaxRate: number;
-  
+
   // Export Settings
   defaultExportFormat: 'csv' | 'pdf' | 'excel';
   includeReceiptImages: boolean;
-  
+
   // Storage Settings
   compressUploads: boolean;
   autoDeleteAfterDays: number | null;
-  
+
+  // Tax & Business Settings
+  businessName?: string;
+  businessAddress?: string;
+  taxId?: string; // EIN or SSN (optional)
+  defaultTaxYear?: number;
+
   // Metadata
   createdAt?: string;
   updatedAt: string;
@@ -92,6 +98,10 @@ export const DEFAULT_SETTINGS: Omit<UserSettings, 'userId' | 'updatedAt'> = {
   includeReceiptImages: true,
   compressUploads: true,
   autoDeleteAfterDays: null,
+  businessName: '',
+  businessAddress: '',
+  taxId: '',
+  defaultTaxYear: new Date().getFullYear(),
 };
 
 export const settingsService = {
@@ -103,7 +113,7 @@ export const settingsService = {
           'Content-Type': 'application/json',
         },
       });
-      
+
       if (!response.ok) throw new Error('Failed to fetch settings');
       const { data } = await response.json();
       return data;
@@ -122,7 +132,7 @@ export const settingsService = {
         },
         body: JSON.stringify(settings),
       });
-      
+
       if (!response.ok) throw new Error('Failed to update settings');
       const { data } = await response.json();
       return data;

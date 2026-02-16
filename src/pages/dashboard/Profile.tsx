@@ -1,31 +1,31 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { DashboardHeader } from '../../components/dashboard/DashboardHeader';
 import {
-  User,
   Mail,
   Calendar,
   Receipt,
   DollarSign,
-  Bell,
   Shield,
   LogOut,
   Upload,
   X,
+  Pencil,
 } from 'lucide-react';
 import { useAuth } from '../../auth/SupabaseAuthContext';
 import { useReceipts } from '../../components/dashboard/receipts/ReceiptContext';
 import toast from 'react-hot-toast';
 import { supabase } from '../../lib/supabase';
 
+import { EditProfileModal } from '../../components/dashboard/user/EditProfileModal';
+
 export const Profile: React.FC = () => {
-  const navigate = useNavigate();
   const { currentUser, logout } = useAuth();
   const { receipts } = useReceipts();
-  const [profilePicture, setProfilePicture] = useState<string | null>(() => 
+  const [profilePicture, setProfilePicture] = useState<string | null>(() =>
     currentUser?.user_metadata?.avatar_url || null
   );
   const [isUploading, setIsUploading] = useState(false);
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
 
   const firstName = currentUser?.user_metadata?.first_name || 'User';
   const lastName = currentUser?.user_metadata?.last_name || '';
@@ -63,7 +63,7 @@ export const Profile: React.FC = () => {
     try {
       // Upload to Supabase Storage
       const fileName = `${currentUser.id}-${Date.now()}.jpg`;
-      const { data, error: uploadError } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(fileName, file, { upsert: true });
 
@@ -112,13 +112,7 @@ export const Profile: React.FC = () => {
     }
   };
 
-  const formatBytes = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
+
 
   const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString('en-US', {
@@ -130,12 +124,12 @@ export const Profile: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <DashboardHeader 
-        title="Profile" 
+      <DashboardHeader
+        title="Profile"
         description="Manage your account and view your receipt statistics"
         addDesktopTopPadding={true}
       />
-      
+
       {/* User Header Card */}
       <div className="bg-white/5 backdrop-blur-lg rounded-xl p-6 md:p-8 shadow-md hover:shadow-lg transition-shadow duration-200">
         <div className="flex flex-col md:flex-row md:items-center gap-6">
@@ -152,7 +146,7 @@ export const Profile: React.FC = () => {
                 <span className="text-white font-bold text-2xl">{initials}</span>
               </div>
             )}
-            
+
             {/* Upload Button Overlay */}
             <label className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
               <input
@@ -177,7 +171,16 @@ export const Profile: React.FC = () => {
           </div>
 
           <div className="flex-1">
-            <h1 className="text-3xl font-bold text-white">{firstName} {lastName}</h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-3xl font-bold text-white">{firstName} {lastName}</h1>
+              <button
+                onClick={() => setIsEditProfileOpen(true)}
+                className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-colors"
+                title="Edit Name"
+              >
+                <Pencil className="w-4 h-4" />
+              </button>
+            </div>
             <div className="flex items-center gap-2 mt-2">
               <Mail className="w-4 h-4 text-white/60" />
               <p className="text-white/60">{email}</p>
@@ -244,7 +247,7 @@ export const Profile: React.FC = () => {
           <Shield className="w-6 h-6 text-[#00E5FF]" />
           <h2 className="text-2xl font-bold text-white">Account Information</h2>
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm text-white/60 mb-2">Email Address</label>
@@ -268,6 +271,16 @@ export const Profile: React.FC = () => {
           </div>
         </div>
       </div>
+
+      <EditProfileModal
+        isOpen={isEditProfileOpen}
+        onClose={() => setIsEditProfileOpen(false)}
+        onProfileUpdate={() => {
+          // Force refresh or update local state if needed
+          // Since we use currentUser from AuthContext, it might auto-update or need a refresh trigger
+          window.location.reload();
+        }}
+      />
     </div>
   );
 };

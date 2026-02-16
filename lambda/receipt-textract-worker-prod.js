@@ -41,8 +41,9 @@ const SOURCE_BUCKET = process.env.SOURCE_BUCKET;
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const MAX_ATTEMPTS = parseInt(process.env.MAX_ATTEMPTS || '5');
 const BATCH_SIZE = parseInt(process.env.BATCH_SIZE || '10');
-const PROCESSOR_VERSION = 'textract-worker-prod-v1';
-const AMOUNT_PATTERN = /[\$€£]?\s*(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2})?|\d+[.,]\d{2})\b/;
+const PROCESSOR_VERSION = 'textract-worker-prod-v3';
+// Updated to handle ANY currency prefix (letters, symbols) + number
+const AMOUNT_PATTERN = /(?:^|[\s$€£¥A-Za-z.]+)(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2})?|\d+[.,]\d{2})\b/;
 const AMOUNT_GLOBAL = new RegExp(AMOUNT_PATTERN.source, 'g');
 const SUM_TOLERANCE_ABS = 0.05; // absolute cents tolerance when reconciling totals
 const SUM_TOLERANCE_REL = 0.01; // 1% relative tolerance when reconciling totals
@@ -133,7 +134,7 @@ async function fetchAndLockBatch(pgClient) {
     `;
 
     const result = await pgClient.query(query, [MAX_ATTEMPTS, BATCH_SIZE]);
-    
+
     // Increment attempts for locked rows
     if (result.rows.length > 0) {
       const ids = result.rows.map(r => r.id);
@@ -156,32 +157,32 @@ async function fetchAndLockBatch(pgClient) {
 async function downloadImage(bucket, key, supabaseClient) {
   try {
     log.info('Downloading image', { bucket, key });
-    
+
     // Check if key is a Supabase Storage URL
     if (key.includes('supabase.co/storage')) {
       log.info('Detected Supabase Storage URL, downloading via Supabase SDK');
-      
+
       // Extract bucket and path from Supabase Storage URL
       // URL format: https://project.supabase.co/storage/v1/object/public/receipts/...
       const urlMatch = key.match(/\/object\/public\/([^/]+)\/(.*)/);
       if (!urlMatch) {
         throw new Error(`Invalid Supabase Storage URL format: ${key}`);
       }
-      
+
       const storageBucket = urlMatch[1];
       const storagePath = urlMatch[2];
-      
+
       log.info('Downloading from Supabase Storage', { storageBucket, storagePath });
-      
+
       const { data, error } = await supabaseClient
         .storage
         .from(storageBucket)
         .download(storagePath);
-      
+
       if (error) {
         throw new Error(`Supabase Storage download failed: ${error.message}`);
       }
-      
+
       // Convert Blob to Buffer for Textract
       return Buffer.from(await data.arrayBuffer());
     } else {
@@ -225,39 +226,39 @@ function extractVendor(textractResponse) {
     // Look for vendor name in first 5 lines
     for (const line of lines.slice(0, 5)) {
       if (line.length < 2) continue; // Need at least 2 chars
-      
+
       const letters = (line.match(/[A-Z]/gi) || []).length;
       const digits = (line.match(/\d/g) || []).length;
       const letterRatio = letters / line.length;
-      
+
       // Skip if mostly numbers/special chars
       if (letterRatio < 0.5) continue;
-      
+
       // Skip common non-vendor lines
       if (/^(RECEIPT|INVOICE|BILL|STATEMENT|QUOTE|ORDER|REGULAR|SALE|TRANSACTION|PURCHASE|THANK YOU)$/i.test(line)) {
         continue;
       }
-      
+
       // This is the vendor!
       let vendor = line;
       let rawText = line;
-      
+
       // Calculate confidence based on line characteristics
       let confidence = 0.7; // Base confidence
-      
+
       // Higher confidence if line is short (typical vendor names are short)
       if (line.length < 30) confidence += 0.15;
-      
+
       // Higher confidence if it has mixed case (typical for brand names)
       if (/[a-z]/.test(line) && /[A-Z]/.test(line)) confidence += 0.1;
-      
+
       // Lower confidence if it has many special characters
       const specialChars = (line.match(/[^A-Za-z0-9\s&]/g) || []).length;
       if (specialChars > 3) confidence -= 0.15;
-      
+
       // Cap confidence at 1.0
       confidence = Math.min(confidence, 1.0);
-      
+
       // Clean up vendor name - be careful not to remove important parts
       vendor = vendor
         .replace(/SUPERSTORE/gi, '')
@@ -267,19 +268,19 @@ function extractVendor(textractResponse) {
         .replace(/\s+/g, ' ')
         .trim()
         .toUpperCase();
-      
+
       // Capitalize properly
       vendor = vendor.split(' ')
         .map(word => word.charAt(0) + word.slice(1).toLowerCase())
         .join(' ');
-      
+
       return {
         vendor: vendor || 'Unknown Vendor',
         confidence: confidence,
         rawText: rawText
       };
     }
-    
+
     // Fallback if no vendor found in first 5 lines
     return {
       vendor: 'Unknown Vendor',
@@ -317,7 +318,11 @@ function extractTotal(textractResponse) {
         continue;
       }
 
-      if ((line.includes('TOTAL') && !line.includes('SUBTOTAL')) || line.includes('TOTAL GERAL')) {
+      if ((line.includes('TOTAL') && !line.includes('SUBTOTAL')) ||
+        line.includes('TOTAL GERAL') ||
+        line.includes('AMOUNT PAYABLE') ||
+        line.includes('BALANCE DUE') ||
+        line.includes('GRAND TOTAL')) {
         // Try to find amount on same line
         const match = lines[i].match(AMOUNT_PATTERN);
         if (match) {
@@ -338,7 +343,7 @@ function extractTotal(textractResponse) {
     // Fallback: find total by looking at amounts near the end of receipt
     if (!total) {
       const amountsWithIndex = [];
-      
+
       for (let i = 0; i < lines.length; i++) {
         const amounts = extractAmounts(lines[i]);
         for (const amt of amounts) {
@@ -347,20 +352,20 @@ function extractTotal(textractResponse) {
           }
         }
       }
-      
+
       if (amountsWithIndex.length > 0) {
         // Prefer amounts from the last 20% of the receipt (where totals usually are)
         const lastLineIndex = lines.length - 1;
         const recentThreshold = Math.max(0, lastLineIndex - Math.ceil(lines.length * 0.2));
-        
+
         const recentAmounts = amountsWithIndex.filter(a => a.lineIndex >= recentThreshold);
-        
+
         if (recentAmounts.length > 0) {
           // Among recent amounts, prefer one that's reasonable (not too small, not absurdly large)
           const candidates = recentAmounts
             .map(a => a.amount)
             .sort((a, b) => b - a); // Sort descending
-          
+
           // If we have a subtotal hint, prefer amounts close to it or slightly larger
           if (subtotalHint !== null) {
             const reasonableAmounts = candidates.filter(a => a >= subtotalHint * 0.8 && a <= subtotalHint * 1.5);
@@ -406,6 +411,8 @@ function extractDate(textractResponse) {
       { pattern: /(\d{4})[\/\-\.](\d{1,2})[\/\-\.](\d{1,2})(?:\s+\d{1,2}:\d{2})?/, format: 'YYYYMMDD' }, // YYYY/MM/DD
       { pattern: /(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})(?:\s+\d{1,2}:\d{2})?/, format: 'MMDDYYYY' }, // MM/DD/YYYY (disambiguated below)
       { pattern: /(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2})(?:\s+\d{1,2}:\d{2})?/, format: 'MMDDYY' }, // MM/DD/YY (disambiguated below)
+      // New pattern for "6 Jan 2026" or "06 January 2026"
+      { pattern: /(\d{1,2})\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*[\s,.-]+(\d{4})/i, format: 'DDMonthYYYY' },
     ];
 
     for (const line of lines) {
@@ -413,7 +420,7 @@ function extractDate(textractResponse) {
         const match = line.match(pattern);
         if (match) {
           let year, month, day;
-          
+
           if (format === 'DDMMYYYYsep') {
             day = parseInt(match[1], 10);
             month = parseInt(match[2], 10);
@@ -434,20 +441,26 @@ function extractDate(textractResponse) {
             month = parseInt(match[1], 10);
             day = parseInt(match[2], 10);
             year = 2000 + parseInt(match[3], 10);
+          } else if (format === 'DDMonthYYYY') {
+            day = parseInt(match[1], 10);
+            const monthStr = match[2].toLowerCase();
+            const months = { jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12 };
+            month = months[monthStr.substring(0, 3)];
+            year = parseInt(match[3], 10);
           }
-          
+
           // Validate date ranges
           if (month < 1 || month > 12 || day < 1 || day > 31) {
             log.warn('Invalid date extracted', { year, month, day });
             continue; // Skip invalid dates
           }
-          
+
           // Reject dates older than 2 years (likely old receipts or OCR errors)
           if (year < twoYearsAgo) {
             log.warn('Date too old, skipping', { year, month, day, twoYearsAgo });
             continue;
           }
-          
+
           const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
           validDates.push({ dateStr, year, month, day });
         }
@@ -483,12 +496,12 @@ function extractTax(textractResponse) {
     let subtotal = null;
     const taxBreakdown = [];
     let taxRate = null;
-    const taxKeywords = ['TAX', 'VAT', 'GST', 'IVA', 'SALES TAX', 'SERVICE CHARGE', 'LEVY', 'SURCHARGE', 'INCLUDED'];
+    const taxKeywords = ['TAX', 'VAT', 'GST', 'IVA', 'SALES TAX', 'SERVICE CHARGE', 'LEVY', 'SURCHARGE', 'INCLUDED', 'NHIL', 'GETFUND', 'COVID'];
 
     // Look for tax-related lines
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].toUpperCase();
-      
+
       // Look for subtotal
       if ((line.includes('SUBTOTAL') || line.includes('SUB-TOTAL') || line.includes('SUBTOT')) && !subtotal) {
         const match = lines[i].match(AMOUNT_PATTERN);
@@ -496,7 +509,7 @@ function extractTax(textractResponse) {
           subtotal = parseAmount(match[0]);
         }
       }
-      
+
       // Look for tax lines (TAX, VAT, GST, SALES TAX, etc.)
       if (taxKeywords.some(k => line.includes(k))) {
         const candidateIndexes = [i, i + 1, i - 1].filter(idx => idx >= 0 && idx < lines.length);
@@ -591,7 +604,7 @@ function extractLineItems(textractResponse) {
 
       // Extract description (everything before the amount)
       const description = line.replace(AMOUNT_PATTERN, '').trim();
-      
+
       // Skip if description is too short or looks like metadata
       if (description.length < 2 || /^[0-9\-\s]+$/.test(description)) {
         continue;
@@ -721,7 +734,7 @@ async function processReceipt(pgClient, supabase, queueRow) {
       status: 'ocr_done',
       updated_at: new Date().toISOString()
     };
-    
+
     const { error: updateError } = await supabase
       .from('receipts_v2')
       .update(updatePayload)
@@ -836,7 +849,7 @@ async function processReceipt(pgClient, supabase, queueRow) {
 exports.handler = async (event) => {
   log.info('Worker invoked', { event });
 
-  let pgClient = new Client({ 
+  let pgClient = new Client({
     connectionString: process.env.DATABASE_URL,
     ssl: { rejectUnauthorized: false } // Allow self-signed certs from Supabase pooler
   });

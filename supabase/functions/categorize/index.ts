@@ -108,8 +108,8 @@ function normalizeText(s?: string) {
     .trim();
 }
 
-function applyRules(rules: RulesPack, vendor_text: string, items: Array<{description?: string; name?: string; text?: string}> | null | undefined) {
-  const hits: Array<{category_id:number; confidence:number; method:string; details:any}> = [];
+function applyRules(rules: RulesPack, vendor_text: string, items: Array<{ description?: string; name?: string; text?: string }> | null | undefined) {
+  const hits: Array<{ category_id: number; confidence: number; method: string; details: any }> = [];
 
   const vnorm = normalizeText(vendor_text);
   for (const rule of rules.vendors) {
@@ -118,11 +118,11 @@ function applyRules(rules: RulesPack, vendor_text: string, items: Array<{descrip
       if (re.test(vnorm)) {
         const catId = rules.categoryMap[rule.category];
         if (catId) {
-          hits.push({ 
-            category_id: catId, 
-            confidence: rule.confidence ?? 0.7, 
-            method: "rule", 
-            details: {source:"vendor", pattern:rule.pattern} 
+          hits.push({
+            category_id: catId,
+            confidence: rule.confidence ?? 0.7,
+            method: "rule",
+            details: { source: "vendor", pattern: rule.pattern }
           });
         }
       }
@@ -147,11 +147,11 @@ function applyRules(rules: RulesPack, vendor_text: string, items: Array<{descrip
       if (re.test(bag) || re.test(vnorm)) {
         const catId = rules.categoryMap[rule.category];
         if (catId) {
-          hits.push({ 
-            category_id: catId, 
-            confidence: rule.confidence ?? 0.65, 
-            method: "rule", 
-            details: {source:"keyword", pattern:rule.pattern} 
+          hits.push({
+            category_id: catId,
+            confidence: rule.confidence ?? 0.65,
+            method: "rule",
+            details: { source: "keyword", pattern: rule.pattern }
           });
         }
       }
@@ -160,16 +160,16 @@ function applyRules(rules: RulesPack, vendor_text: string, items: Array<{descrip
     }
   }
 
-  return hits.sort((a,b) => b.confidence - a.confidence)[0] ?? null;
+  return hits.sort((a, b) => b.confidence - a.confidence)[0] ?? null;
 }
 
 async function upsertPrediction(
-  subject_type: "receipt"|"line_item", 
-  subject_id: string, 
-  category_id: number, 
-  confidence: number, 
-  method: "rule"|"ml"|"llm"|"ensemble", 
-  version: string, 
+  subject_type: "receipt" | "line_item",
+  subject_id: string,
+  category_id: number,
+  confidence: number,
+  method: "rule" | "ml" | "llm" | "ensemble",
+  version: string,
   details?: any
 ) {
   const { error } = await supabase.from("predictions").insert({
@@ -181,12 +181,12 @@ async function upsertPrediction(
 async function finalizeReceipt(receipt_id: string, category_id: number, confidence: number, category_name?: string) {
   const { error } = await supabase
     .from("receipts_v2")
-    .update({ 
-      category_id, 
-      category_confidence: confidence, 
+    .update({
+      category_id,
+      category_confidence: confidence,
       category: category_name,
-      status: "categorized", 
-      updated_at: new Date().toISOString() 
+      status: "categorized",
+      updated_at: new Date().toISOString()
     })
     .eq("id", receipt_id);
   if (error) throw error;
@@ -208,11 +208,38 @@ serve(async (req) => {
       await upsertPrediction("receipt", receipt_id, best.category_id, best.confidence, "rule", `rules@${rules.version}`, best.details);
     }
 
-    // ALWAYS try Claude (for testing - will revert later)
-    // TODO: Revert to threshold-based logic after testing
-    console.info("Attempting Claude fallback", {
+    // Check confidence threshold
+    const confidenceThreshold = min_confidence || DEFAULT_MIN_CONF;
+
+    if (best && best.confidence >= confidenceThreshold) {
+      console.info("High confidence rule match found, skipping Claude", {
+        receipt_id,
+        category_id: best.category_id,
+        confidence: best.confidence,
+        threshold: confidenceThreshold
+      });
+
+      const categoryName = getCategoryName(best.category_id, rules);
+      await finalizeReceipt(receipt_id, best.category_id, best.confidence, categoryName);
+
+      return new Response(
+        JSON.stringify({
+          ok: true,
+          receipt_id,
+          category_id: best.category_id,
+          category: categoryName,
+          confidence: best.confidence,
+          method: best.method
+        }),
+        { status: 200 }
+      );
+    }
+
+    // Low confidence or no rule match, attempting Claude fallback
+    console.info("Low confidence or no rule match, attempting Claude fallback", {
       receipt_id,
-      rulesConfidence: best?.confidence || null
+      rulesConfidence: best?.confidence || null,
+      threshold: confidenceThreshold
     });
 
     // Log what we are sending to Claude to verify inputs match direct calls
@@ -272,7 +299,7 @@ serve(async (req) => {
           hasCategoryId: !!claudeData.category_id,
           category: claudeData.category
         });
-        
+
         if (claudeData.ok && claudeData.category_id) {
           console.info("Claude categorization successful", {
             receipt_id,
@@ -298,7 +325,7 @@ serve(async (req) => {
               error: String(predError)
             });
           }
-          
+
           try {
             await finalizeReceipt(receipt_id, claudeData.category_id, claudeData.confidence ?? 0.65, claudeData.category);
             console.info("Receipt finalized", { receipt_id });
@@ -308,7 +335,7 @@ serve(async (req) => {
               error: String(finalError)
             });
           }
-          
+
           claudeDebug = {
             ...claudeDebug,
             parsed: {
@@ -375,7 +402,7 @@ serve(async (req) => {
     }
 
     // If nothing matched at all, mark as categorized but with no category (uncategorized)
-    const { error } = await supabase.from("receipts_v2").update({ 
+    const { error } = await supabase.from("receipts_v2").update({
       status: "categorized",
       category_id: null,
       category: null,

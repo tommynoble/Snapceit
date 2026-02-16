@@ -27,6 +27,7 @@ import { Expenses } from '../../pages/dashboard/Expenses';
 import { Profile } from '../../pages/dashboard/Profile';
 import { Receipts } from '../../pages/dashboard/Receipts';
 import { Reports } from '../../pages/dashboard/Reports';
+import { TaxReports } from '../../pages/dashboard/TaxReports';
 
 export function DashboardLayout() {
   const [isUserProfileOpen, setIsUserProfileOpen] = useState(false);
@@ -45,8 +46,7 @@ export function DashboardLayout() {
     }
   };
 
-  const handlePriceMatchClick = () => navigate('/dashboard/price-match');
-  const handleTaxPageClick = () => navigate('/dashboard/tax-calculator');
+
 
   const handleProfileClick = () => {
     navigate('/dashboard/profile');
@@ -54,19 +54,19 @@ export function DashboardLayout() {
 
   const greeting = useMemo(() => {
     const hour = new Date().getHours();
-    
+
     let timeGreeting = '';
     if (hour < 12) timeGreeting = '🌅 Good morning';
     else if (hour < 18) timeGreeting = '☀️ Good afternoon';
     else timeGreeting = '🌙 Good evening';
-    
+
     return `${timeGreeting}, there!`;
   }, []);
 
   const subheading = useMemo(() => {
     const day = new Date().getDay();
     const hour = new Date().getHours();
-    
+
     const subheadings = [
       'Track every receipt, master your spending',
       'Your financial dashboard awaits',
@@ -77,7 +77,7 @@ export function DashboardLayout() {
       'Your spending story in one place',
       'Take control of your finances today',
     ];
-    
+
     return subheadings[Math.floor(Math.random() * subheadings.length)];
   }, []);
 
@@ -165,8 +165,6 @@ export function DashboardLayout() {
       {/* Desktop Sidebar */}
       <div className="hidden lg:block">
         <Sidebar
-          onPriceMatchClick={handlePriceMatchClick}
-          onTaxPageClick={handleTaxPageClick}
           onSettingsClick={() => navigate('/dashboard/settings')}
           onLogout={handleLogout}
         />
@@ -174,7 +172,7 @@ export function DashboardLayout() {
 
       {/* Mobile Menu Button */}
       <div className="lg:hidden fixed top-4 right-4 z-50 mt-0.5">
-        <button 
+        <button
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           className="rounded-full p-3 text-white/80 hover:bg-white/10"
         >
@@ -193,14 +191,6 @@ export function DashboardLayout() {
             className="lg:hidden fixed inset-y-0 right-0 w-64 bg-black/40 backdrop-blur-xl shadow-lg z-40"
           >
             <Sidebar
-              onPriceMatchClick={() => {
-                navigate('/dashboard/price-match');
-                setIsMobileMenuOpen(false);
-              }}
-              onTaxPageClick={() => {
-                navigate('/dashboard/tax-calculator');
-                setIsMobileMenuOpen(false);
-              }}
               onSettingsClick={() => {
                 navigate('/dashboard/settings');
                 setIsMobileMenuOpen(false);
@@ -354,6 +344,19 @@ export function DashboardLayout() {
                       </motion.div>
                     }
                   />
+                  <Route
+                    path="tax-reports"
+                    element={
+                      <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        transition={{ duration: 0.6 }}
+                      >
+                        <TaxReports />
+                      </motion.div>
+                    }
+                  />
                   {/* Catch-all 404 route - redirect to homepage */}
                   <Route
                     path="*"
@@ -367,12 +370,12 @@ export function DashboardLayout() {
       </main>
 
       {/* Modals */}
-      <UserProfileModal 
-        isOpen={isUserProfileOpen} 
-        onClose={() => setIsUserProfileOpen(false)} 
+      <UserProfileModal
+        isOpen={isUserProfileOpen}
+        onClose={() => setIsUserProfileOpen(false)}
         onLogout={handleLogout}
       />
-      <PriceMatchModal isOpen={false} onClose={() => {}} />
+      <PriceMatchModal isOpen={false} onClose={() => { }} />
 
       <footer className="lg:pl-64 mt-6 pb-4 text-center text-sm text-white/50">
         <p>You are using <a href="http://localhost:5184/" className="underline hover:text-white/80 transition-colors">Snapceit</a> v1.0</p>

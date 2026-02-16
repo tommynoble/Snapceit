@@ -22,12 +22,13 @@ import StyleGuide from './components/StyleGuide';
 import { CurrencyProvider } from './contexts/CurrencyContext';
 import { ResetPassword } from './pages/ResetPassword';
 import { ForgotPassword } from './components/auth/ForgotPassword';
+import { ScrollToTop } from './components/common/ScrollToTop';
 
 // Protected Route Component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { currentUser } = useAuth();
   const location = useLocation();
-  
+
   if (!currentUser) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
@@ -39,7 +40,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { currentUser } = useAuth();
   const location = useLocation();
-  
+
   // Only redirect if we're not coming from a loading state
   if (currentUser && !location.state?.loading) {
     return <Navigate to="/dashboard" replace />;
@@ -52,7 +53,7 @@ const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 const RegisterFormWrapper: React.FC = () => {
   const navigate = useNavigate();
   return (
-    <RegisterForm 
+    <RegisterForm
       onBack={() => navigate('/login')}
       heading="Complete your registration"
     />
@@ -94,7 +95,7 @@ const AppContent: React.FC = () => {
           <Route path="/features" element={<Features />} />
           <Route path="/features2" element={<Features2 />} />
           <Route path="/style-guide" element={<StyleGuide />} />
-          
+
           {/* Auth Routes */}
           <Route path="/login" element={
             <PublicRoute>
@@ -135,7 +136,7 @@ const AppContent: React.FC = () => {
               <ResetPassword />
             </AuthLayout>
           } />
-          
+
           {/* Protected Routes */}
           <Route path="/dashboard/*" element={
             <ProtectedRoute>
@@ -144,7 +145,7 @@ const AppContent: React.FC = () => {
               </ReceiptProvider>
             </ProtectedRoute>
           } />
-          
+
           {/* Fallback route */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
@@ -160,6 +161,7 @@ const App: React.FC = () => {
         <AuthProvider>
           <div className="min-h-screen bg-gradient-to-br from-fuchsia-500 via-purple-600 to-purple-800">
             <CurrencyProvider>
+              <ScrollToTop />
               <AppContent />
             </CurrencyProvider>
           </div>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useToast } from '../../hooks/useToast';
 import { DashboardHeader } from '../../components/dashboard/DashboardHeader';
-import { 
+import {
   KeyIcon,
   CreditCardIcon,
   DocumentIcon,
@@ -37,7 +37,7 @@ export function SettingsNew() {
 
   // Billing State
   const [plan, setPlan] = useState('free');
-  
+
   // Sync UI with stored settings
   useEffect(() => {
     if (settings?.currency) setCurrency(settings.currency);
@@ -47,7 +47,7 @@ export function SettingsNew() {
   // Change Password Handler
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!passwordData.new || !passwordData.confirm) {
       showToast('Please fill in all password fields', 'error');
       return;
@@ -84,7 +84,7 @@ export function SettingsNew() {
   // Change Email Handler
   const handleChangeEmail = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!emailData.new) {
       showToast('Please enter a new email', 'error');
       return;
@@ -117,7 +117,7 @@ export function SettingsNew() {
     try {
       // Delete user account
       const { error } = await supabase.auth.admin.deleteUser(currentUser?.id || '');
-      
+
       if (error) throw error;
 
       showToast('Account deleted successfully', 'success');
@@ -145,7 +145,7 @@ export function SettingsNew() {
 
       const zip = new JSZip();
       const receiptsFolder = zip.folder('receipts');
-      
+
       // Add receipt info JSON
       const receiptInfo = receipts.map(r => ({
         id: r.id,
@@ -156,7 +156,7 @@ export function SettingsNew() {
         status: r.status,
         image_url: r.image_url,
       }));
-      
+
       receiptsFolder?.file('receipts_info.json', JSON.stringify(receiptInfo, null, 2));
 
       // Add receipt images
@@ -177,7 +177,7 @@ export function SettingsNew() {
 
       // Generate ZIP file
       const zipBlob = await zip.generateAsync({ type: 'blob' });
-      
+
       // Download ZIP
       const link = document.createElement('a');
       link.href = URL.createObjectURL(zipBlob);
@@ -205,7 +205,7 @@ export function SettingsNew() {
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
+
         {/* Account Settings */}
         <div>
           <div className="bg-white/5 backdrop-blur-lg rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-200">
@@ -299,6 +299,76 @@ export function SettingsNew() {
           </div>
         </div>
 
+        {/* Tax Settings */}
+        <div>
+          <div className="bg-white/5 backdrop-blur-lg rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-200">
+            <div className="border-b border-white/10 p-6">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-purple-500/20 rounded-lg">
+                  <DocumentIcon className="h-5 w-5 text-purple-400" />
+                </div>
+                <h2 className="text-lg font-semibold text-white">Tax Settings</h2>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-4">
+              {/* Business Name */}
+              <div>
+                <label className="block text-sm font-medium text-white/80 mb-2">
+                  Business Name
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Acme Corp"
+                  value={settings.businessName || ''}
+                  onChange={async (e) => {
+                    await updateSettings({ businessName: e.target.value });
+                  }}
+                  className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
+                <p className="text-xs text-white/50 mt-1">Appears on Schedule C reports</p>
+              </div>
+
+              {/* Tax ID */}
+              <div>
+                <label className="block text-sm font-medium text-white/80 mb-2">
+                  Tax ID (EIN/SSN)
+                </label>
+                <input
+                  type="text"
+                  placeholder="XX-XXXXXXX"
+                  value={settings.taxId || ''}
+                  onChange={async (e) => {
+                    await updateSettings({ taxId: e.target.value });
+                  }}
+                  className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
+                <p className="text-xs text-white/50 mt-1">Stored locally for report generation only</p>
+              </div>
+
+              {/* Default Tax Year */}
+              <div>
+                <label className="block text-sm font-medium text-white/80 mb-2">
+                  Default Tax Year
+                </label>
+                <select
+                  value={settings.defaultTaxYear || new Date().getFullYear()}
+                  onChange={async (e) => {
+                    await updateSettings({ defaultTaxYear: parseInt(e.target.value) });
+                    showToast('Default tax year updated', 'success');
+                  }}
+                  className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                >
+                  {[...Array(5)].map((_, i) => {
+                    const year = new Date().getFullYear() - i;
+                    return <option key={year} value={year}>{year}</option>;
+                  })}
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Receipt Preferences */}
         <div>
           <div className="bg-white/5 backdrop-blur-lg rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-200">
@@ -366,14 +436,12 @@ export function SettingsNew() {
                 </div>
                 <button
                   onClick={() => setAutoScan(!autoScan)}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    autoScan ? 'bg-purple-600' : 'bg-white/10'
-                  }`}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${autoScan ? 'bg-purple-600' : 'bg-white/10'
+                    }`}
                 >
                   <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      autoScan ? 'translate-x-6' : 'translate-x-1'
-                    }`}
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${autoScan ? 'translate-x-6' : 'translate-x-1'
+                      }`}
                   />
                 </button>
               </div>
@@ -418,7 +486,7 @@ export function SettingsNew() {
 
               {/* Upgrade Button */}
               {plan === 'free' && (
-                <button 
+                <button
                   onClick={handleUpgradePlan}
                   className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-all"
                 >

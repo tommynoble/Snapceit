@@ -20,6 +20,10 @@ const DEFAULT_SETTINGS: UserSettings = {
   includeReceiptImages: true,
   compressUploads: true,
   autoDeleteAfterDays: null,
+  businessName: '',
+  businessAddress: '',
+  taxId: '',
+  defaultTaxYear: new Date().getFullYear(),
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
 };

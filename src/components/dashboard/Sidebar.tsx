@@ -1,24 +1,16 @@
-import { Home, FileText, User, Settings, Search, Calculator, ChevronDown, Percent, LogOut, Plus, Receipt, BarChart3 } from 'lucide-react';
+import { Home, FileText, User, Settings, Search, Calculator, ChevronDown, LogOut, Plus, Receipt, BarChart3 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useMemo, useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../auth/SupabaseAuthContext';
 import { getUserAvatarUrl, getUserInitials } from '../../utils/userHelpers';
 
 interface SidebarProps {
-  onSpendingHabitsClick: () => void;
-  onPriceMatchClick: () => void;
-  onTaxPageClick: () => void;
   onSettingsClick: () => void;
-  onDeductionsClick: () => void;
   onLogout: () => void;
 }
 
 export function Sidebar({
-  onSpendingHabitsClick,
-  onPriceMatchClick,
-  onTaxPageClick,
   onSettingsClick,
-  onDeductionsClick,
   onLogout
 }: SidebarProps) {
   const location = useLocation();
@@ -42,17 +34,12 @@ export function Sidebar({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Memoize navItems to prevent re-renders
-  const navItems = useMemo(() => [
-    { icon: Home, label: 'Dashboard', onClick: () => navigate('/dashboard'), path: '/dashboard' },
-    { icon: FileText, label: 'Expenses', onClick: () => navigate('/dashboard/expenses'), path: '/dashboard/expenses' },
-    { icon: Settings, label: 'Settings', onClick: onSettingsClick, path: '/dashboard/settings' },
-  ], [navigate, onSettingsClick]);
+
 
   return (
     <div className="fixed left-0 top-0 h-full w-64 bg-black/10 backdrop-blur-xl border-r border-white/10 flex flex-col shadow-[0_0_8px_rgba(255,255,255,0.03)]">
       {/* Logo */}
-      <button 
+      <button
         onClick={() => navigate('/dashboard')}
         className="px-6 py-8 hover:opacity-80 transition-opacity"
       >
@@ -71,21 +58,20 @@ export function Sidebar({
           />
         </div>
         <ul className="space-y-2">
-          {navItems.map((item, index) => (
-            <li key={item.label} className={index === 0 ? 'mt-1' : ''}>
-              <button
-                onClick={item.onClick}
-                className={`w-full flex items-center gap-3 px-4 py-3 text-white hover:bg-white/20 rounded-lg transition-colors group
-                  ${currentPath === item.path ? 'bg-white/20' : ''}`}
-              >
-                <item.icon 
-                  size={18} 
-                  className="text-transparent bg-gradient-to-r from-[#00E5FF] to-[#2979FF] bg-clip-text stroke-[#00E5FF] group-hover:stroke-[#597FFB] transition-all" 
-                />
-                <span>{item.label}</span>
-              </button>
-            </li>
-          ))}
+          {/* Dashboard */}
+          <li>
+            <button
+              onClick={() => navigate('/dashboard')}
+              className={`w-full flex items-center gap-3 px-4 py-3 text-white hover:bg-white/20 rounded-lg transition-colors group
+                ${currentPath === '/dashboard' ? 'bg-white/20' : ''}`}
+            >
+              <Home
+                size={18}
+                className="text-transparent bg-gradient-to-r from-[#00E5FF] to-[#2979FF] bg-clip-text stroke-[#00E5FF] group-hover:stroke-[#597FFB] transition-all"
+              />
+              <span>Dashboard</span>
+            </button>
+          </li>
 
           {/* Receipts */}
           <li>
@@ -94,11 +80,26 @@ export function Sidebar({
               className={`w-full flex items-center gap-3 px-4 py-3 text-white hover:bg-white/20 rounded-lg transition-colors group
                 ${currentPath === '/dashboard/receipts' ? 'bg-white/20' : ''}`}
             >
-              <Receipt 
-                size={18} 
-                className="text-transparent bg-gradient-to-r from-[#00E5FF] to-[#2979FF] bg-clip-text stroke-[#00E5FF] group-hover:stroke-[#597FFB] transition-all" 
+              <Receipt
+                size={18}
+                className="text-transparent bg-gradient-to-r from-[#00E5FF] to-[#2979FF] bg-clip-text stroke-[#00E5FF] group-hover:stroke-[#597FFB] transition-all"
               />
               <span>Receipts</span>
+            </button>
+          </li>
+
+          {/* Expenses */}
+          <li>
+            <button
+              onClick={() => navigate('/dashboard/expenses')}
+              className={`w-full flex items-center gap-3 px-4 py-3 text-white hover:bg-white/20 rounded-lg transition-colors group
+                ${currentPath === '/dashboard/expenses' ? 'bg-white/20' : ''}`}
+            >
+              <FileText
+                size={18}
+                className="text-transparent bg-gradient-to-r from-[#00E5FF] to-[#2979FF] bg-clip-text stroke-[#00E5FF] group-hover:stroke-[#597FFB] transition-all"
+              />
+              <span>Expenses</span>
             </button>
           </li>
 
@@ -109,29 +110,28 @@ export function Sidebar({
               className={`w-full flex items-center gap-3 px-4 py-3 text-white hover:bg-white/20 rounded-lg transition-colors group
                 ${currentPath === '/dashboard/reports' ? 'bg-white/20' : ''}`}
             >
-              <BarChart3 
-                size={18} 
-                className="text-transparent bg-gradient-to-r from-[#00E5FF] to-[#2979FF] bg-clip-text stroke-[#00E5FF] group-hover:stroke-[#597FFB] transition-all" 
+              <BarChart3
+                size={18}
+                className="text-transparent bg-gradient-to-r from-[#00E5FF] to-[#2979FF] bg-clip-text stroke-[#00E5FF] group-hover:stroke-[#597FFB] transition-all"
               />
               <span>Reports</span>
             </button>
           </li>
 
-          {/* Prepare Taxes with Dropdown */}
+          {/* Prepare Taxes */}
           <li>
             <div>
               <button
                 onClick={() => {
                   setIsTaxesOpen(!isTaxesOpen);
-                  navigate('/dashboard/tax-calculator');
                 }}
                 className={`w-full flex items-center justify-between px-4 py-3 text-white hover:bg-white/20 rounded-lg transition-colors group
                   ${currentPath.includes('/dashboard/tax') ? 'bg-white/20' : ''}`}
               >
                 <div className="flex items-center gap-3">
-                  <Calculator 
-                    size={18} 
-                    className="text-transparent bg-gradient-to-r from-[#00E5FF] to-[#2979FF] bg-clip-text stroke-[#00E5FF] group-hover:stroke-[#597FFB] transition-all" 
+                  <Calculator
+                    size={18}
+                    className="text-transparent bg-gradient-to-r from-[#00E5FF] to-[#2979FF] bg-clip-text stroke-[#00E5FF] group-hover:stroke-[#597FFB] transition-all"
                   />
                   <span>Prepare Taxes</span>
                 </div>
@@ -141,22 +141,21 @@ export function Sidebar({
                   <ChevronDown size={18} className="text-white/60 transition-transform" />
                 )}
               </button>
-              
-              {/* Dropdown Content */}
+
               {isTaxesOpen && (
-                <div className="ml-6 mt-1">
+                <div className="ml-6 mt-1 space-y-1">
                   <button
-                    onClick={onDeductionsClick}
+                    onClick={() => navigate('/dashboard/tax-reports')}
                     className={`w-full flex items-center gap-3 px-4 py-2.5 text-white/90 rounded-lg transition-colors group text-[15px]
-                      ${currentPath === '/dashboard/deductions' 
-                        ? 'bg-white/20' 
+                      ${currentPath === '/dashboard/tax-reports'
+                        ? 'bg-white/20'
                         : 'bg-white/5 hover:bg-white/15'}`}
                   >
-                    <Percent 
-                      size={18} 
-                      className="text-transparent bg-gradient-to-r from-[#00E5FF] to-[#2979FF] bg-clip-text stroke-[#00E5FF] group-hover:stroke-[#597FFB] transition-all" 
+                    <FileText
+                      size={18}
+                      className="text-transparent bg-gradient-to-r from-[#00E5FF] to-[#2979FF] bg-clip-text stroke-[#00E5FF] group-hover:stroke-[#597FFB] transition-all"
                     />
-                    <span>Deductions</span>
+                    <span>Schedule C</span>
                   </button>
                 </div>
               )}
@@ -170,11 +169,26 @@ export function Sidebar({
               className={`w-full flex items-center gap-3 px-4 py-3 text-white hover:bg-white/20 rounded-lg transition-colors group
                 ${currentPath === '/dashboard/profile' ? 'bg-white/20' : ''}`}
             >
-              <User 
-                size={20} 
-                className="text-transparent bg-gradient-to-r from-[#00E5FF] to-[#2979FF] bg-clip-text stroke-[#00E5FF] group-hover:stroke-[#597FFB] transition-all" 
+              <User
+                size={20}
+                className="text-transparent bg-gradient-to-r from-[#00E5FF] to-[#2979FF] bg-clip-text stroke-[#00E5FF] group-hover:stroke-[#597FFB] transition-all"
               />
               <span>Profile</span>
+            </button>
+          </li>
+
+          {/* Settings */}
+          <li>
+            <button
+              onClick={onSettingsClick}
+              className={`w-full flex items-center gap-3 px-4 py-3 text-white hover:bg-white/20 rounded-lg transition-colors group
+                ${currentPath === '/dashboard/settings' ? 'bg-white/20' : ''}`}
+            >
+              <Settings
+                size={18}
+                className="text-transparent bg-gradient-to-r from-[#00E5FF] to-[#2979FF] bg-clip-text stroke-[#00E5FF] group-hover:stroke-[#597FFB] transition-all"
+              />
+              <span>Settings</span>
             </button>
           </li>
         </ul>
@@ -213,7 +227,7 @@ export function Sidebar({
               <p className="text-sm font-medium text-white truncate">{currentUser?.user_metadata?.full_name || 'User'}</p>
               <p className="hidden sm:block text-xs text-white/60 truncate">{currentUser?.email}</p>
             </div>
-            
+
             <Plus size={18} className="flex-shrink-0 text-white/60" />
           </button>
 
