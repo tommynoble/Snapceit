@@ -5,6 +5,7 @@ import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../../auth/SupabaseAuthContext';
 import { useNavigate } from 'react-router-dom';
 import LoadingSpinner from '../common/LoadingSpinner';
+import { supabase } from '../../lib/supabase';
 
 interface RegisterFormProps {
   onBack: () => void;
@@ -14,9 +15,9 @@ interface RegisterFormProps {
 const getErrorMessage = (error: any) => {
   const message = error.message?.toLowerCase() || '';
   const status = error.status || error.statusCode || '';
-  
+
   console.log('Auth Error Details:', { message, status, error }); // Debug log
-  
+
   if (error.name === 'UsernameExistsException') {
     // Check if the user is unverified
     if (message.includes('not confirmed')) {
@@ -24,25 +25,25 @@ const getErrorMessage = (error: any) => {
     }
     return 'This email is already registered and verified. Please try logging in instead.';
   }
-  
+
   // Handle Supabase specific error messages
   if (message.includes('already registered') || message.includes('user already exists') || message.includes('duplicate')) {
     return 'This email has already been registered. Please try logging in instead.';
   }
-  
+
   // Handle 422 status (Unprocessable Entity - usually duplicate email)
   if (status === 422 || message.includes('user_already_exists')) {
     return 'This email has already been registered. Please try logging in instead.';
   }
-  
+
   if (message.includes('invalid email')) {
     return 'Please enter a valid email address.';
   }
-  
+
   if (message.includes('password')) {
     return 'Password must be at least 6 characters long.';
   }
-  
+
   return error.message || 'An error occurred during registration. Please try again.';
 };
 
@@ -116,13 +117,13 @@ export function RegisterForm({ onBack, heading = "Complete your registration" }:
 
       const response = await signup(formData.email, formData.password);
       console.log('Registration response:', response);
-      
+
       // Show OTP code input screen
       setSignupEmail(formData.email);
       setShowCodeInput(true);
       setError(''); // Clear any errors
       setSuccessMessage('We\'ve sent a 6-digit verification code to your email. Enter it below to verify your account.');
-      
+
       // Start 60-second cooldown
       setCooldownSeconds(60);
       const interval = setInterval(() => {
@@ -134,7 +135,7 @@ export function RegisterForm({ onBack, heading = "Complete your registration" }:
           return prev - 1;
         });
       }, 1000);
-      
+
       // Clear the form
       setFormData({
         email: '',
@@ -144,7 +145,7 @@ export function RegisterForm({ onBack, heading = "Complete your registration" }:
       setLoading(false);
     } catch (err: any) {
       console.error('Registration error:', err);
-      
+
       // If it's a rate limit error (429), the OTP was still sent, so show the input screen
       if (err.status === 429 || err.message?.includes('after')) {
         setSignupEmail(formData.email);
@@ -163,7 +164,7 @@ export function RegisterForm({ onBack, heading = "Complete your registration" }:
       } else {
         setError(getErrorMessage(err));
       }
-      
+
       setLoading(false);
     }
   };
@@ -189,8 +190,36 @@ export function RegisterForm({ onBack, heading = "Complete your registration" }:
       }
 
       // Verify the OTP code
-      await confirmSignUp(signupEmail, verificationCode);
-      
+      const { data: authData, error: authError } = await confirmSignUp(signupEmail, verificationCode);
+      if (authError) throw authError;
+
+      // Sync temporary onboarding data if it exists
+      const tempOnboardingData = localStorage.getItem('temp_onboarding_data');
+      if (tempOnboardingData && authData?.user) {
+        try {
+          const onboardingData = JSON.parse(tempOnboardingData);
+          await supabase
+            .from('user_settings')
+            .upsert({
+              user_id: authData.user.id,
+              account_type: onboardingData.accountType,
+              business_name: onboardingData.businessName,
+              industry: onboardingData.industry,
+              employee_count: onboardingData.employeeCount,
+              personal_use_case: onboardingData.personalUseCase,
+              monthly_receipts: onboardingData.monthlyReceipts,
+              onboarding_completed_at: new Date().toISOString(),
+            }, {
+              onConflict: 'user_id'
+            });
+
+          // Clear temp data
+          localStorage.removeItem('temp_onboarding_data');
+        } catch (syncErr) {
+          console.error('Failed to sync onboarding data:', syncErr);
+        }
+      }
+
       setSuccessMessage('Email verified successfully! Redirecting to dashboard...');
       setTimeout(() => {
         navigate('/dashboard');
@@ -262,11 +291,10 @@ export function RegisterForm({ onBack, heading = "Complete your registration" }:
                   <motion.button
                     type="submit"
                     disabled={loading}
-                    className={`w-full py-3 px-4 rounded-lg text-white font-semibold transition-all duration-200 ${
-                      loading
-                        ? 'bg-purple-400 cursor-not-allowed'
-                        : 'bg-purple-600 hover:bg-purple-700'
-                    }`}
+                    className={`w-full py-3 px-4 rounded-lg text-white font-semibold transition-all duration-200 ${loading
+                      ? 'bg-purple-400 cursor-not-allowed'
+                      : 'bg-purple-600 hover:bg-purple-700'
+                      }`}
                     whileHover={{ scale: loading ? 1 : 1.02 }}
                     whileTap={{ scale: loading ? 1 : 0.98 }}
                   >
@@ -290,136 +318,135 @@ export function RegisterForm({ onBack, heading = "Complete your registration" }:
             ) : (
               <form onSubmit={handleSubmit} className="space-y-6">
                 {!successMessage ? (
-                <>
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: 0.1 }}
-                  >
-                    <label className="block text-xs font-medium text-white/80 mb-2">
-                      EMAIL ADDRESS
-                    </label>
-                    <input
-                      type="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      className="w-full px-6 py-4 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/40 focus:border-transparent backdrop-blur-sm text-sm"
-                      placeholder="Enter your email"
-                      required
-                      disabled={loading}
-                    />
-                  </motion.div>
-
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: 0.2 }}
-                  >
-                    <label className="block text-xs font-medium text-white/80 mb-2">
-                      PASSWORD
-                    </label>
-                    <div className="relative">
+                  <>
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.5, delay: 0.1 }}
+                    >
+                      <label className="block text-xs font-medium text-white/80 mb-2">
+                        EMAIL ADDRESS
+                      </label>
                       <input
-                        type={showPassword ? 'text' : 'password'}
-                        name="password"
-                        value={formData.password}
+                        type="email"
+                        name="email"
+                        value={formData.email}
                         onChange={handleInputChange}
                         className="w-full px-6 py-4 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/40 focus:border-transparent backdrop-blur-sm text-sm"
-                        placeholder="Create a password"
+                        placeholder="Enter your email"
                         required
                         disabled={loading}
                       />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-6 top-1/2 -translate-y-1/2 text-white/60 hover:text-white"
-                      >
-                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                      </button>
-                    </div>
-                  </motion.div>
+                    </motion.div>
 
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: 0.3 }}
-                  >
-                    <label className="block text-xs font-medium text-white/80 mb-2">
-                      CONFIRM PASSWORD
-                    </label>
-                    <div className="relative">
-                      <input
-                        type={showConfirmPassword ? 'text' : 'password'}
-                        name="confirmPassword"
-                        value={formData.confirmPassword}
-                        onChange={handleInputChange}
-                        className="w-full px-6 py-4 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/40 focus:border-transparent backdrop-blur-sm text-sm"
-                        placeholder="Confirm your password"
-                        required
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.5, delay: 0.2 }}
+                    >
+                      <label className="block text-xs font-medium text-white/80 mb-2">
+                        PASSWORD
+                      </label>
+                      <div className="relative">
+                        <input
+                          type={showPassword ? 'text' : 'password'}
+                          name="password"
+                          value={formData.password}
+                          onChange={handleInputChange}
+                          className="w-full px-6 py-4 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/40 focus:border-transparent backdrop-blur-sm text-sm"
+                          placeholder="Create a password"
+                          required
+                          disabled={loading}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-6 top-1/2 -translate-y-1/2 text-white/60 hover:text-white"
+                        >
+                          {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </button>
+                      </div>
+                    </motion.div>
+
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.5, delay: 0.3 }}
+                    >
+                      <label className="block text-xs font-medium text-white/80 mb-2">
+                        CONFIRM PASSWORD
+                      </label>
+                      <div className="relative">
+                        <input
+                          type={showConfirmPassword ? 'text' : 'password'}
+                          name="confirmPassword"
+                          value={formData.confirmPassword}
+                          onChange={handleInputChange}
+                          className="w-full px-6 py-4 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/40 focus:border-transparent backdrop-blur-sm text-sm"
+                          placeholder="Confirm your password"
+                          required
+                          disabled={loading}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          className="absolute right-6 top-1/2 -translate-y-1/2 text-white/60 hover:text-white"
+                        >
+                          {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </button>
+                      </div>
+                    </motion.div>
+
+                    <div className="space-y-3 pt-4">
+                      <motion.button
+                        type="submit"
                         disabled={loading}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        className="absolute right-6 top-1/2 -translate-y-1/2 text-white/60 hover:text-white"
-                      >
-                        {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                      </button>
-                    </div>
-                  </motion.div>
-
-                  <div className="space-y-3 pt-4">
-                    <motion.button
-                      type="submit"
-                      disabled={loading}
-                      className={`w-full py-4 px-6 rounded-lg text-white font-semibold transition-all duration-200 ${
-                        loading
+                        className={`w-full py-4 px-6 rounded-lg text-white font-semibold transition-all duration-200 ${loading
                           ? 'bg-purple-400 cursor-not-allowed'
                           : 'bg-purple-600 hover:bg-purple-700'
-                      }`}
-                      whileHover={{ scale: loading ? 1 : 1.02 }}
-                      whileTap={{ scale: loading ? 1 : 0.98 }}
-                    >
-                      {loading ? 'Creating account...' : 'Continue'}
-                    </motion.button>
-                    
-                    <div className="flex flex-col space-y-2 text-center">
-                      <button
-                        type="button"
-                        onClick={onBack}
-                        className="text-xs sm:text-sm text-white/80 hover:text-white transition-colors group"
+                          }`}
+                        whileHover={{ scale: loading ? 1 : 1.02 }}
+                        whileTap={{ scale: loading ? 1 : 0.98 }}
                       >
-                        Already have an account? <span className="text-[#23cff4] group-hover:text-[#23cff4] border-b border-[#23cff4]">Sign in</span>
-                      </button>
+                        {loading ? 'Creating account...' : 'Continue'}
+                      </motion.button>
+
+                      <div className="flex flex-col space-y-2 text-center">
+                        <button
+                          type="button"
+                          onClick={onBack}
+                          className="text-xs sm:text-sm text-white/80 hover:text-white transition-colors group"
+                        >
+                          Already have an account? <span className="text-[#23cff4] group-hover:text-[#23cff4] border-b border-[#23cff4]">Sign in</span>
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                </>
-              ) : (
-                <div className="space-y-4 text-center py-8">
-                  <div className="flex justify-center mb-6">
-                    <div className="w-16 h-16 bg-gradient-to-br from-[#23cff4] to-[#597FFB] rounded-full flex items-center justify-center">
-                      <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                      </svg>
+                  </>
+                ) : (
+                  <div className="space-y-4 text-center py-8">
+                    <div className="flex justify-center mb-6">
+                      <div className="w-16 h-16 bg-gradient-to-br from-[#23cff4] to-[#597FFB] rounded-full flex items-center justify-center">
+                        <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
                     </div>
+                    <h3 className="text-xl font-semibold text-white mb-2">Check Your Email</h3>
+                    <p className="text-white/80 mb-6">
+                      We've sent a verification link to <span className="font-semibold text-white">{formData.email}</span>
+                    </p>
+                    <p className="text-sm text-white/60 mb-6">
+                      Click the link in the email to verify your account and get started with Snapceit.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={onBack}
+                      className="text-sm text-[#23cff4] hover:text-[#23cff4] transition-colors"
+                    >
+                      Back to Sign In
+                    </button>
                   </div>
-                  <h3 className="text-xl font-semibold text-white mb-2">Check Your Email</h3>
-                  <p className="text-white/80 mb-6">
-                    We've sent a verification link to <span className="font-semibold text-white">{formData.email}</span>
-                  </p>
-                  <p className="text-sm text-white/60 mb-6">
-                    Click the link in the email to verify your account and get started with Snapceit.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={onBack}
-                    className="text-sm text-[#23cff4] hover:text-[#23cff4] transition-colors"
-                  >
-                    Back to Sign In
-                  </button>
-                </div>
-              )}
+                )}
               </form>
             )}
           </div>

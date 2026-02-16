@@ -29,6 +29,14 @@ import { Receipts } from '../../pages/dashboard/Receipts';
 import { Reports } from '../../pages/dashboard/Reports';
 import { TaxReports } from '../../pages/dashboard/TaxReports';
 
+// Internal component for hard redirect
+const NotFoundRedirect = () => {
+  useEffect(() => {
+    window.location.href = '/';
+  }, []);
+  return null;
+};
+
 export function DashboardLayout() {
   const [isUserProfileOpen, setIsUserProfileOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -38,15 +46,13 @@ export function DashboardLayout() {
   const handleLogout = async () => {
     try {
       await logout();
-      // Get the origin dynamically (works for localhost, snapceit.com, etc.)
-      const origin = window.location.origin;
-      window.location.href = origin;
     } catch (error) {
       console.error('Error logging out:', error);
+    } finally {
+      // Always redirect to landing page, even if logout API fails
+      window.location.href = '/';
     }
   };
-
-
 
   const handleProfileClick = () => {
     navigate('/dashboard/profile');
@@ -64,9 +70,6 @@ export function DashboardLayout() {
   }, []);
 
   const subheading = useMemo(() => {
-    const day = new Date().getDay();
-    const hour = new Date().getHours();
-
     const subheadings = [
       'Track every receipt, master your spending',
       'Your financial dashboard awaits',
@@ -227,140 +230,21 @@ export function DashboardLayout() {
                       </>
                     }
                   />
-                  <Route
-                    path="template-preview"
-                    element={
-                      <motion.div
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        transition={{ duration: 0.6 }}
-                      >
-                        <TemplatePreview />
-                      </motion.div>
-                    }
-                  />
-                  <Route
-                    path="price-match"
-                    element={
-                      <motion.div
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        transition={{ duration: 0.6 }}
-                      >
-                        <PriceMatchPage />
-                      </motion.div>
-                    }
-                  />
-                  <Route
-                    path="tax-calculator"
-                    element={
-                      <motion.div
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        transition={{ duration: 0.6 }}
-                      >
-                        <TaxCalculator />
-                      </motion.div>
-                    }
-                  />
-                  <Route
-                    path="settings"
-                    element={
-                      <motion.div
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        transition={{ duration: 0.6 }}
-                      >
-                        <SettingsNew />
-                      </motion.div>
-                    }
-                  />
-                  <Route
-                    path="pricing"
-                    element={
-                      <motion.div
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        transition={{ duration: 0.6 }}
-                      >
-                        <Pricing />
-                      </motion.div>
-                    }
-                  />
-                  <Route
-                    path="expenses"
-                    element={
-                      <motion.div
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        transition={{ duration: 0.6 }}
-                      >
-                        <Expenses />
-                      </motion.div>
-                    }
-                  />
-                  <Route
-                    path="profile"
-                    element={
-                      <motion.div
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        transition={{ duration: 0.6 }}
-                      >
-                        <Profile />
-                      </motion.div>
-                    }
-                  />
-                  <Route
-                    path="receipts"
-                    element={
-                      <motion.div
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        transition={{ duration: 0.6 }}
-                      >
-                        <Receipts />
-                      </motion.div>
-                    }
-                  />
-                  <Route
-                    path="reports"
-                    element={
-                      <motion.div
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        transition={{ duration: 0.6 }}
-                      >
-                        <Reports />
-                      </motion.div>
-                    }
-                  />
-                  <Route
-                    path="tax-reports"
-                    element={
-                      <motion.div
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        transition={{ duration: 0.6 }}
-                      >
-                        <TaxReports />
-                      </motion.div>
-                    }
-                  />
-                  {/* Catch-all 404 route - redirect to homepage */}
+                  <Route path="template-preview" element={<motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}><TemplatePreview /></motion.div>} />
+                  <Route path="price-match" element={<motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}><PriceMatchPage /></motion.div>} />
+                  <Route path="tax-calculator" element={<motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}><TaxCalculator /></motion.div>} />
+                  <Route path="settings" element={<motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}><SettingsNew /></motion.div>} />
+                  <Route path="pricing" element={<motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}><Pricing /></motion.div>} />
+                  <Route path="expenses" element={<motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}><Expenses /></motion.div>} />
+                  <Route path="profile" element={<motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}><Profile /></motion.div>} />
+                  <Route path="receipts" element={<motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}><Receipts /></motion.div>} />
+                  <Route path="reports" element={<motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}><Reports /></motion.div>} />
+                  <Route path="tax-reports" element={<motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}><TaxReports /></motion.div>} />
+
+                  {/* Catch-all 404 route - force reload to clear state */}
                   <Route
                     path="*"
-                    element={<Navigate to="/" replace />}
+                    element={<NotFoundRedirect />}
                   />
                 </Routes>
               </div>

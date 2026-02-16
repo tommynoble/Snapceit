@@ -146,12 +146,20 @@ const AppContent: React.FC = () => {
             </ProtectedRoute>
           } />
 
-          {/* Fallback route */}
-          <Route path="*" element={<Navigate to="/" replace />} />
+          {/* Fallback route - force reload to clear any 404 state */}
+          <Route path="*" element={<NotFoundRedirect />} />
         </Routes>
       </AnimatePresence>
     </>
   );
+};
+
+// Component to handle 404s with a hard redirect
+const NotFoundRedirect: React.FC = () => {
+  React.useEffect(() => {
+    window.location.href = '/';
+  }, []);
+  return null;
 };
 
 const App: React.FC = () => {
