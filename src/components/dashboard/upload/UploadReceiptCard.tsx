@@ -1,6 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Camera, Upload, Loader, AlertCircle, Check, X } from 'lucide-react';
+import { Upload, Loader, AlertCircle, Check, X } from 'lucide-react';
 import { useReceipts } from '../receipts/ReceiptContext';
 import { useAuth } from '../../../auth/SupabaseAuthContext';
 import { processReceipt } from '../../../utils/receipt-processor';
@@ -18,10 +17,10 @@ interface ExtractedData {
   }>;
   tax?: {
     total: number;
-    breakdown: {
-      salesTax: number;
-      stateTax: number;
-      localTax: number;
+    breakdown?: {
+      salesTax?: number;
+      stateTax?: number;
+      localTax?: number;
       otherTaxes?: Array<{
         name: string;
         amount: number;
@@ -51,16 +50,11 @@ export function UploadReceiptCard() {
   const [selectedCategory, setSelectedCategory] = useState('Uncategorized');
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  const categories = [
-    'Advertising',
-    'Car and Truck Expenses',
-    'Office Expenses',
-    'Travel',
-    'Meals',
-    'Utilities',
-    'Taxes and Licenses',
-    'Supplies'
-  ];
+
+
+  const [manualMerchant, setManualMerchant] = useState('');
+  const [manualTotal, setManualTotal] = useState('');
+  const [manualDate, setManualDate] = useState(new Date().toISOString().split('T')[0]);
 
   // Debug log for auth state
   useEffect(() => {
@@ -73,15 +67,18 @@ export function UploadReceiptCard() {
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
     }
-    
+
     // Reset all states
     setIsLoading(false);
     setUploadProgress(0);
     setError(null);
     setIsVerifying(false);
     setSelectedCategory('Uncategorized');
+    setManualMerchant('');
+    setManualTotal('');
+    setManualDate(new Date().toISOString().split('T')[0]);
     setExtractedData(null);
-    
+
     // Clean up preview URL
     if (previewUrl) {
       URL.revokeObjectURL(previewUrl);
@@ -107,7 +104,7 @@ export function UploadReceiptCard() {
 
     setIsLoading(true);
     setError(null);
-    
+
     try {
       // Create preview URL
       const preview = URL.createObjectURL(file);
@@ -115,7 +112,7 @@ export function UploadReceiptCard() {
 
       // Process receipt with Textract
       const processedData = await processReceipt(file, currentUser.id, setUploadProgress);
-      
+
       // Detect category using enhanced detection
       const detectedCategory = detectCategory(
         processedData.rawTextractData || '', // Full text
@@ -133,15 +130,18 @@ export function UploadReceiptCard() {
         dataUrl: processedData.dataUrl || ''
       });
 
-      // Set the detected category
+      // Set the detected category and reset manual fields
       setSelectedCategory(detectedCategory);
+      setManualMerchant('');
+      setManualTotal('');
+      setManualDate(new Date().toISOString().split('T')[0]);
       setIsVerifying(true);
-      
+
     } catch (error) {
       console.error('Error processing receipt:', error);
       setError(error instanceof Error ? error.message : 'Failed to process receipt');
       toast.error('Failed to process receipt');
-      
+
       if (previewUrl) {
         URL.revokeObjectURL(previewUrl);
         setPreviewUrl(null);
@@ -158,9 +158,9 @@ export function UploadReceiptCard() {
       // Create receipt data object
       // Status flow: pending → ocr_done (Lambda processes) → categorized (Batch job)
       const receiptData = {
-        merchant: extractedData.merchantName || 'Unknown Merchant',
-        total: extractedData.total || 0,
-        date: extractedData.date || new Date().toISOString(),
+        merchant: manualMerchant || extractedData.merchantName || 'Unknown Merchant',
+        total: manualTotal ? parseFloat(manualTotal) : (extractedData.total || 0),
+        date: manualDate ? new Date(manualDate).toISOString() : (extractedData.date || new Date().toISOString()),
         items: extractedData.items?.map(item => ({
           name: item.description || '',
           price: item.price || 0
@@ -182,16 +182,16 @@ export function UploadReceiptCard() {
 
       // Add receipt through context
       await addReceipt(receiptData);
-      
+
       // Show success message
       toast.success('Receipt uploaded successfully!');
-      
+
       // Reset form
       cancelUpload();
-      
+
       // Refresh receipts list
       refreshReceipts();
-      
+
     } catch (error) {
       console.error('Error saving receipt:', error);
       toast.error('Failed to save receipt. Please try again.');
@@ -217,7 +217,7 @@ export function UploadReceiptCard() {
   return (
     <div className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-all duration-200 transform hover:scale-[1.01]">
       <h2 className="text-2xl font-semibold mb-4 pb-4 border-b border-gray-100">Upload Receipt</h2>
-      
+
       {!isVerifying ? (
         <div
           {...getRootProps()}
@@ -236,16 +236,16 @@ export function UploadReceiptCard() {
           </div>
         </div>
       ) : (
-        <div className="flex gap-8 items-start justify-between">
+        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 items-start">
           {/* Left Side - Image */}
-          <div className="flex flex-col items-center">
+          <div className="w-full lg:w-1/3 flex flex-col items-center">
             {/* Receipt Preview - Fixed Size */}
             {previewUrl && (
-              <div className="relative">
-                <img 
-                  src={previewUrl} 
-                  alt="Receipt preview" 
-                  className="w-64 h-96 object-contain rounded-lg shadow-lg bg-gray-50"
+              <div className="relative w-full">
+                <img
+                  src={previewUrl}
+                  alt="Receipt preview"
+                  className="w-full h-auto max-h-[400px] object-contain rounded-lg shadow-lg bg-gray-50 border border-gray-200"
                   style={{ imageRendering: 'crisp-edges' }}
                 />
               </div>
@@ -271,7 +271,7 @@ export function UploadReceiptCard() {
                 </p>
               </div>
             </div>
-            
+
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
               <p className="text-xs text-blue-700">
                 <span className="font-semibold">💡 Tip:</span> Clear, well-lit receipt images produce better results
@@ -287,7 +287,7 @@ export function UploadReceiptCard() {
                 <Check className="w-4 h-4" />
                 <span>Upload</span>
               </button>
-              
+
               <button
                 onClick={cancelUpload}
                 className="flex-1 px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg flex items-center justify-center space-x-2 font-medium border border-red-200 text-sm"

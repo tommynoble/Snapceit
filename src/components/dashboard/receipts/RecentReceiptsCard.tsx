@@ -27,10 +27,16 @@ import {
 } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 
+import { Link } from 'react-router-dom';
 import { EditReceiptModal } from './EditReceiptModal';
 
-export function RecentReceiptsCard() {
-  const { receipts, deleteReceipt, updateReceipt, refreshReceipts } = useReceipts();
+interface RecentReceiptsCardProps {
+  limit?: number;
+  showViewAll?: boolean;
+}
+
+export function RecentReceiptsCard({ limit, showViewAll = true }: RecentReceiptsCardProps) {
+  const { receipts, loading, deleteReceipt, updateReceipt, refreshReceipts } = useReceipts();
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -305,6 +311,33 @@ export function RecentReceiptsCard() {
     }
   };
 
+  const displayedReceipts = limit ? receipts.slice(0, limit) : receipts;
+
+  if (loading && receipts.length === 0) {
+    return (
+      <div className="rounded-2xl bg-white p-5 sm:p-6 shadow-lg w-full">
+        <div className="flex items-center justify-between mb-6">
+          <div className="h-6 w-32 bg-gray-200 rounded animate-pulse"></div>
+          <div className="h-8 w-24 bg-gray-200 rounded-full animate-pulse"></div>
+        </div>
+        <div className="space-y-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="flex items-center justify-between p-4 border border-gray-100 rounded-lg">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 bg-gray-200 rounded-full animate-pulse"></div>
+                <div className="space-y-2">
+                  <div className="w-24 h-4 bg-gray-200 rounded animate-pulse"></div>
+                  <div className="w-32 h-3 bg-gray-200 rounded animate-pulse"></div>
+                </div>
+              </div>
+              <div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse"></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <motion.div
       ref={cardRef}
@@ -313,8 +346,15 @@ export function RecentReceiptsCard() {
       className="rounded-2xl bg-white p-5 sm:p-6 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.01]"
     >
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3 pb-3 border-b border-gray-100">
-        <div className="flex flex-wrap items-center gap-2">
-          <h3 className="text-lg font-semibold text-gray-900">Recent Receipts</h3>
+        <h3 className="text-lg font-semibold text-gray-900">Recent Receipts</h3>
+
+        <div className="flex items-center gap-2">
+          {isMultiSelectMode && selectedReceipts.size > 0 && (
+            <span className="text-xs font-semibold text-purple-700 bg-purple-50 px-2 py-1 rounded-full mr-1">
+              {selectedReceipts.size} selected
+            </span>
+          )}
+
           <button
             onClick={toggleSelectMode}
             className={`text-sm font-medium px-3 py-1 rounded-full border transition-colors ${isMultiSelectMode
@@ -322,16 +362,10 @@ export function RecentReceiptsCard() {
               : 'bg-gray-100 text-gray-700 border-gray-200 hover:border-purple-200 hover:text-purple-700'
               }`}
           >
-            {isMultiSelectMode ? 'Exit Select Mode' : 'Select Mode'}
+            {isMultiSelectMode ? 'Cancel' : 'Select'}
           </button>
-          {isMultiSelectMode && selectedReceipts.size > 0 && (
-            <span className="text-xs font-semibold text-purple-700 bg-purple-50 px-2 py-1 rounded-full">
-              {selectedReceipts.size} selected
-            </span>
-          )}
-        </div>
-        {selectedReceipts.size > 0 && (
-          <div className="flex justify-end">
+
+          {selectedReceipts.size > 0 ? (
             <button
               onClick={() => {
                 setDeleteModalOpen(true);
@@ -342,12 +376,21 @@ export function RecentReceiptsCard() {
               <Trash2 size={16} />
               Delete ({selectedReceipts.size})
             </button>
-          </div>
-        )}
+          ) : (
+            showViewAll && limit && receipts.length > limit && (
+              <Link
+                to="/dashboard/receipts"
+                className="text-sm font-medium text-purple-600 hover:text-purple-800 hover:bg-purple-50 px-3 py-1 rounded-lg transition-colors"
+              >
+                View All
+              </Link>
+            )
+          )}
+        </div>
       </div>
 
-      <div className="h-[400px] overflow-y-auto pr-1 sm:pr-2 space-y-3 sm:space-y-4 scrollbar-thin scrollbar-thumb-purple-200 scrollbar-track-transparent">
-        {receipts.map((receipt, index) => {
+      <div className={`${limit ? '' : 'h-[400px] overflow-y-auto'} pr-1 sm:pr-2 space-y-3 sm:space-y-4 scrollbar-thin scrollbar-thumb-purple-200 scrollbar-track-transparent`}>
+        {displayedReceipts.map((receipt, index) => {
           const receiptId = getReceiptId(receipt);
           return (
             <motion.div
@@ -394,7 +437,7 @@ export function RecentReceiptsCard() {
                       {receipt.merchant && receipt.merchant !== 'Unknown Merchant'
                         ? receipt.merchant
                         : (receipt.status as string) === 'pending' || (receipt.status as string) === 'ocr_done'
-                          ? <div className="flex items-center gap-1"><ReceiptIcon className="h-4 w-4" /> Processing...</div>
+                          ? 'Analyzing Receipt...'
                           : 'Unknown Merchant'}
                     </div>
 
@@ -518,60 +561,72 @@ export function RecentReceiptsCard() {
           );
         })}
         {receipts.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-full text-gray-500">
-            <ReceiptIcon className="h-12 w-12 text-gray-300 mb-2" />
-            <p>No receipts yet</p>
+          <div className="flex flex-col items-center justify-center py-12 text-gray-500">
+            <div className="bg-gray-50 p-4 rounded-full mb-3">
+              <ReceiptIcon className="h-8 w-8 text-gray-400" />
+            </div>
+            <h3 className="font-semibold text-gray-900 mb-1">No receipts yet</h3>
+            <p className="text-sm text-center max-w-[250px] mb-4">
+              Upload your first receipt to start tracking expenses and deductions.
+            </p>
+            {limit && (
+              <p className="text-xs font-medium text-purple-600 bg-purple-50 px-3 py-1 rounded-full animate-pulse">
+                Use the upload section above 👆
+              </p>
+            )}
           </div>
         )}
       </div>
 
-      {viewModalOpen && selectedReceipt && (
-        selectedReceipt.status === 'pending' ? (
-          <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
-            <div className="bg-white rounded-xl p-8 max-w-sm w-full shadow-2xl relative">
-              <button
-                onClick={() => {
-                  setViewModalOpen(false);
-                  setSelectedReceipt(null);
-                }}
-                className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
-              >
-                <X size={20} />
-              </button>
-              <div className="flex flex-col items-center justify-center text-center">
-                <div className="relative h-16 w-16 mb-4">
-                  <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-blue-500 border-r-blue-500 animate-spin"></div>
-                  <div className="absolute inset-2 rounded-full border-4 border-transparent border-b-purple-500 border-l-purple-500 animate-spin" style={{ animationDirection: 'reverse', animationDuration: '2s' }}></div>
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="h-3 w-3 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full animate-pulse"></div>
+      {
+        viewModalOpen && selectedReceipt && (
+          selectedReceipt.status === 'pending' ? (
+            <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+              <div className="bg-white rounded-xl p-8 max-w-sm w-full shadow-2xl relative">
+                <button
+                  onClick={() => {
+                    setViewModalOpen(false);
+                    setSelectedReceipt(null);
+                  }}
+                  className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+                >
+                  <X size={20} />
+                </button>
+                <div className="flex flex-col items-center justify-center text-center">
+                  <div className="relative h-16 w-16 mb-4">
+                    <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-blue-500 border-r-blue-500 animate-spin"></div>
+                    <div className="absolute inset-2 rounded-full border-4 border-transparent border-b-purple-500 border-l-purple-500 animate-spin" style={{ animationDirection: 'reverse', animationDuration: '2s' }}></div>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="h-3 w-3 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full animate-pulse"></div>
+                    </div>
                   </div>
-                </div>
-                <h3 className="text-lg font-bold text-gray-900 mb-2">Processing Receipt</h3>
-                <p className="text-gray-500 text-sm mb-4">
-                  We are currently extracting data from your receipt. This usually takes a few seconds.
-                </p>
-                <div className="flex items-center gap-2 text-xs text-blue-600 font-medium bg-blue-50 px-3 py-1.5 rounded-full">
-                  <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
-                  </span>
-                  AI Extraction in progress...
+                  <h3 className="text-lg font-bold text-gray-900 mb-2">Processing Receipt</h3>
+                  <p className="text-gray-500 text-sm mb-4">
+                    We are currently extracting data from your receipt. This usually takes a few seconds.
+                  </p>
+                  <div className="flex items-center gap-2 text-xs text-blue-600 font-medium bg-blue-50 px-3 py-1.5 rounded-full">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                    </span>
+                    AI Extraction in progress...
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        ) : (
-          <EditReceiptModal
-            isOpen={true}
-            onClose={() => {
-              setViewModalOpen(false);
-              setSelectedReceipt(null);
-            }}
-            receipt={selectedReceipt}
-            onSave={handleSave}
-          />
+          ) : (
+            <EditReceiptModal
+              isOpen={true}
+              onClose={() => {
+                setViewModalOpen(false);
+                setSelectedReceipt(null);
+              }}
+              receipt={selectedReceipt}
+              onSave={handleSave}
+            />
+          )
         )
-      )}
+      }
 
       <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
         <DialogContent className="sm:max-w-lg">
@@ -609,6 +664,6 @@ export function RecentReceiptsCard() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </motion.div>
+    </motion.div >
   );
 }

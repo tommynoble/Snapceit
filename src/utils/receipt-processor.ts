@@ -8,7 +8,7 @@ interface ProcessedReceipt {
   merchantName?: string;
   total?: number;
   date?: string;
-  category?: string;  
+  category?: string;
   items?: Array<{
     description: string;
     price: number;
@@ -27,6 +27,7 @@ interface ProcessedReceipt {
   };
   userId: string;
   createdAt: Date;
+  rawTextractData?: any;
 }
 
 export const processReceipt = async (
@@ -38,7 +39,7 @@ export const processReceipt = async (
     // Step 1: Upload image to Supabase Storage
     const timestamp = Date.now();
     const imageKey = `${userId}/${timestamp}/image.${file.name.split('.').pop()}`;
-    
+
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from(BUCKET_NAME)
       .upload(imageKey, file);

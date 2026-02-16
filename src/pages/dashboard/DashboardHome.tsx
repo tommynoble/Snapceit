@@ -11,23 +11,23 @@ interface DashboardHomeProps {
 
 export const DashboardHome: React.FC<DashboardHomeProps> = ({ onProfileClick }) => {
   const { currentUser } = useAuth();
-  
+
   const greeting = useMemo(() => {
     const hour = new Date().getHours();
     const userName = currentUser?.user_metadata?.full_name?.split(' ')[0] || 'there';
-    
+
     let timeGreeting = '';
     if (hour < 12) timeGreeting = '🌅 Good morning';
     else if (hour < 18) timeGreeting = '☀️ Good afternoon';
     else timeGreeting = '🌙 Good evening';
-    
+
     const messages = [
       `${timeGreeting}, ${userName}! Ready to track your expenses?`,
       `${timeGreeting}, ${userName}! Let's organize your receipts.`,
       `${timeGreeting}, ${userName}! Time to review your spending?`,
       `${timeGreeting}, ${userName}! Keep your finances in check.`,
     ];
-    
+
     return messages[Math.floor(Math.random() * messages.length)];
   }, [currentUser]);
 
@@ -39,13 +39,13 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({ onProfileClick }) 
           <p className="text-white/60">Track, categorize, and optimize your spending</p>
         </div>
       </div>
-      
+
       <div className="p-6 space-y-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <UploadReceiptCard />
           <SpendingOverviewCard />
         </div>
-        <RecentReceiptsCard />
+        <RecentReceiptsCard limit={5} />
       </div>
     </div>
   );
