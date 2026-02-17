@@ -10,12 +10,14 @@ ALTER TABLE public.vendors ENABLE ROW LEVEL SECURITY;
 
 -- Create policies for Vendors
 -- Allow all authenticated users to read vendors (needed for linking receipts)
+DROP POLICY IF EXISTS "Enable read access for authenticated users" ON public.vendors;
 CREATE POLICY "Enable read access for authenticated users" 
 ON public.vendors FOR SELECT 
 TO authenticated 
 USING (true);
 
 -- Allow service_role (backend/edge functions) full access to manage vendors
+DROP POLICY IF EXISTS "Enable all access for service_role" ON public.vendors;
 CREATE POLICY "Enable all access for service_role" 
 ON public.vendors FOR ALL 
 TO service_role 
@@ -33,6 +35,7 @@ BEGIN
         ALTER TABLE public.receipt_queue ENABLE ROW LEVEL SECURITY;
         
         -- Policy: Service Role has full access
+        DROP POLICY IF EXISTS "Enable full access for service_role" ON public.receipt_queue;
         CREATE POLICY "Enable full access for service_role" 
         ON public.receipt_queue FOR ALL 
         TO service_role 
@@ -44,6 +47,7 @@ BEGIN
         ALTER TABLE public.receipt_queue_dlq ENABLE ROW LEVEL SECURITY;
 
         -- Policy: Service Role has full access
+        DROP POLICY IF EXISTS "Enable full access for service_role" ON public.receipt_queue_dlq;
         CREATE POLICY "Enable full access for service_role" 
         ON public.receipt_queue_dlq FOR ALL 
         TO service_role 
