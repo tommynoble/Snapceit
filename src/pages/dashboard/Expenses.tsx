@@ -1,22 +1,24 @@
 import { useState, useMemo } from 'react';
 import { DashboardHeader } from '../../components/dashboard/DashboardHeader';
-import { 
+import {
   FunnelIcon,
   ChartBarIcon,
   CalendarIcon,
   CurrencyDollarIcon
 } from '@heroicons/react/24/outline';
 import { useReceipts } from '../../components/dashboard/receipts/ReceiptContext';
+import { useCurrency } from '../../hooks/useCurrency';
 
 export function Expenses() {
   const { receipts } = useReceipts();
+  const { formatCurrency } = useCurrency();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [dateRange, setDateRange] = useState('month'); // 'week', 'month', 'year', 'all'
 
   // Filter receipts by date range
   const filteredReceipts = useMemo(() => {
     if (!receipts) return [];
-    
+
     const now = new Date();
     let startDate = new Date();
 
@@ -82,7 +84,7 @@ export function Expenses() {
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
+
         {/* Total Spending Card */}
         <div>
           <div className="bg-white/5 backdrop-blur-lg rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-200">
@@ -98,18 +100,18 @@ export function Expenses() {
             <div className="p-6 space-y-4">
               <div className="bg-white/5 rounded-lg p-4">
                 <p className="text-xs text-white/60 mb-2">Total Amount</p>
-                <p className="text-4xl font-bold text-green-400">${stats.total.toFixed(2)}</p>
+                <p className="text-4xl font-bold text-green-400">{formatCurrency(stats.total)}</p>
                 <p className="text-xs text-white/60 mt-2">{stats.count} transactions</p>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-white/5 rounded-lg p-3">
                   <p className="text-xs text-white/60 mb-1">Average</p>
-                  <p className="text-lg font-semibold text-white">${stats.average.toFixed(2)}</p>
+                  <p className="text-lg font-semibold text-white">{formatCurrency(stats.average)}</p>
                 </div>
                 <div className="bg-white/5 rounded-lg p-3">
                   <p className="text-xs text-white/60 mb-1">Highest</p>
-                  <p className="text-lg font-semibold text-white">${stats.highest.toFixed(2)}</p>
+                  <p className="text-lg font-semibold text-white">{formatCurrency(stats.highest)}</p>
                 </div>
               </div>
             </div>
@@ -198,7 +200,7 @@ export function Expenses() {
                     <div key={category}>
                       <div className="flex justify-between items-center mb-1">
                         <p className="text-sm text-white/80">{category || 'Uncategorized'}</p>
-                        <p className="text-sm font-semibold text-white">${amount.toFixed(2)}</p>
+                        <p className="text-sm font-semibold text-white">{formatCurrency(amount)}</p>
                       </div>
                       <div className="w-full bg-white/10 rounded-full h-2">
                         <div
@@ -238,7 +240,7 @@ export function Expenses() {
                       </div>
                       <p className="text-white/80 text-sm">{merchant}</p>
                     </div>
-                    <p className="font-semibold text-white">${amount.toFixed(2)}</p>
+                    <p className="font-semibold text-white">{formatCurrency(amount)}</p>
                   </div>
                 ))
               ) : (
@@ -278,7 +280,7 @@ export function Expenses() {
                             {receipt.created_at ? new Date(receipt.created_at).toLocaleDateString() : 'N/A'} • {receipt.category_id || 'Uncategorized'}
                           </p>
                         </div>
-                        <p className="text-white font-semibold">${receipt.total?.toFixed(2) || '0.00'}</p>
+                        <p className="text-white font-semibold">{formatCurrency(receipt.total || 0)}</p>
                       </div>
                     ))
                 ) : (

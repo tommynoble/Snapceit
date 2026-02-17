@@ -215,22 +215,24 @@ export function UploadReceiptCard() {
   });
 
   return (
-    <div className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-all duration-200 transform hover:scale-[1.01]">
-      <h2 className="text-2xl font-semibold mb-4 pb-4 border-b border-gray-100">Upload Receipt</h2>
+    <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all duration-200 transform hover:scale-[1.01]">
+      <h2 className="text-2xl font-semibold mb-4 pb-4 border-b border-white/10 text-white">Upload Receipt</h2>
 
       {!isVerifying ? (
         <div
           {...getRootProps()}
-          className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors
-            ${isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-blue-500'}`}
+          className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors group
+            ${isDragActive ? 'border-cyan-400 bg-cyan-400/10' : 'border-white/20 hover:border-cyan-400/50 hover:bg-white/5'}`}
         >
           <input {...getInputProps()} />
           <div className="flex flex-col items-center space-y-4">
-            <Upload className="w-12 h-12 text-gray-400" />
-            <p className="text-gray-600">
+            <div className={`p-4 rounded-full transition-colors ${isDragActive ? 'bg-cyan-400/20' : 'bg-white/5 group-hover:bg-white/10'}`}>
+              <Upload className={`w-8 h-8 ${isDragActive ? 'text-cyan-400' : 'text-white/70'}`} />
+            </div>
+            <p className="text-white/90 font-medium text-lg">
               {isDragActive ? 'Drop receipts here' : 'Drag & drop receipts, or click to select'}
             </p>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-white/50">
               Supported formats: JPG, PNG, PDF (max 10MB) • Upload multiple files at once
             </p>
           </div>
@@ -245,7 +247,7 @@ export function UploadReceiptCard() {
                 <img
                   src={previewUrl}
                   alt="Receipt preview"
-                  className="w-full h-auto max-h-[400px] object-contain rounded-lg shadow-lg bg-gray-50 border border-gray-200"
+                  className="w-full h-auto max-h-[400px] object-contain rounded-lg shadow-lg bg-white/5 border border-white/10"
                   style={{ imageRendering: 'crisp-edges' }}
                 />
               </div>
@@ -255,25 +257,25 @@ export function UploadReceiptCard() {
           {/* Right Side - Info & Buttons */}
           <div className="flex-1 space-y-4">
             <div className="space-y-3">
-              <h3 className="text-lg font-semibold text-gray-900">Receipt Preview</h3>
-              <div className="space-y-2 text-sm text-gray-600">
+              <h3 className="text-lg font-semibold text-white">Receipt Preview</h3>
+              <div className="space-y-2 text-sm text-white/70">
                 <p className="flex items-start gap-2">
-                  <span className="text-blue-600 font-bold">✓</span>
+                  <span className="text-cyan-400 font-bold">✓</span>
                   <span>Image successfully captured and ready for processing</span>
                 </p>
                 <p className="flex items-start gap-2">
-                  <span className="text-blue-600 font-bold">✓</span>
+                  <span className="text-cyan-400 font-bold">✓</span>
                   <span>Our system will automatically extract vendor, amount, and date</span>
                 </p>
                 <p className="flex items-start gap-2">
-                  <span className="text-blue-600 font-bold">✓</span>
+                  <span className="text-cyan-400 font-bold">✓</span>
                   <span>Receipt will be categorized and stored securely</span>
                 </p>
               </div>
             </div>
 
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-              <p className="text-xs text-blue-700">
+            <div className="bg-cyan-500/10 border border-cyan-500/20 rounded-lg p-3">
+              <p className="text-xs text-cyan-300">
                 <span className="font-semibold">💡 Tip:</span> Clear, well-lit receipt images produce better results
               </p>
             </div>
@@ -282,7 +284,7 @@ export function UploadReceiptCard() {
             <div className="flex gap-2 pt-2">
               <button
                 onClick={confirmAndUpload}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg flex items-center justify-center space-x-2 font-medium text-sm"
+                className="flex-1 px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-white rounded-lg flex items-center justify-center space-x-2 font-medium text-sm transition-all shadow-lg shadow-cyan-500/20"
               >
                 <Check className="w-4 h-4" />
                 <span>Upload</span>
@@ -290,7 +292,7 @@ export function UploadReceiptCard() {
 
               <button
                 onClick={cancelUpload}
-                className="flex-1 px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg flex items-center justify-center space-x-2 font-medium border border-red-200 text-sm"
+                className="flex-1 px-4 py-2 text-red-400 hover:bg-red-500/10 rounded-lg flex items-center justify-center space-x-2 font-medium border border-red-500/20 hover:border-red-500/50 text-sm transition-all"
               >
                 <X className="w-4 h-4" />
                 <span>Cancel</span>
@@ -302,13 +304,13 @@ export function UploadReceiptCard() {
 
       {isLoading && !isVerifying && (
         <div className="mt-4">
-          <div className="flex items-center space-x-2">
-            <Loader className="w-5 h-5 animate-spin" />
+          <div className="flex items-center space-x-2 text-white/80">
+            <Loader className="w-5 h-5 animate-spin text-cyan-400" />
             <span>Processing receipt...</span>
           </div>
-          <div className="mt-2 h-2 bg-gray-200 rounded-full">
+          <div className="mt-2 h-2 bg-white/10 rounded-full overflow-hidden">
             <div
-              className="h-full bg-blue-500 rounded-full transition-all duration-300"
+              className="h-full bg-gradient-to-r from-cyan-400 to-blue-500 rounded-full transition-all duration-300"
               style={{ width: `${uploadProgress}%` }}
             />
           </div>
@@ -316,7 +318,7 @@ export function UploadReceiptCard() {
       )}
 
       {error && (
-        <div className="mt-4 p-4 bg-red-50 text-red-600 rounded-lg flex items-center space-x-2">
+        <div className="mt-4 p-4 bg-red-500/10 border border-red-500/20 text-red-400 rounded-lg flex items-center space-x-2">
           <AlertCircle className="w-5 h-5" />
           <span>{error}</span>
         </div>

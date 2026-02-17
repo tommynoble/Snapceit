@@ -90,7 +90,7 @@ export function useSettings() {
           .from('user_settings')
           .select('*')
           .eq('user_id', currentUser.id)
-          .single();
+          .maybeSingle();
 
         if (data) {
           // Map snake_case from DB to camelCase for the app

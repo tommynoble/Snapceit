@@ -2,9 +2,11 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useReceipts } from '../receipts/ReceiptContext';
+import { useCurrency } from '../../../hooks/useCurrency';
 
 export function SpendingOverviewCard() {
   const { receipts, loading } = useReceipts();
+  const { formatCurrency } = useCurrency();
 
   // Process data for the chart
   const merchantData = receipts.reduce((acc, receipt) => {
@@ -67,16 +69,16 @@ export function SpendingOverviewCard() {
       className="rounded-2xl bg-white/10 backdrop-blur-lg p-6 shadow-lg hover:shadow-xl transition-shadow duration-200 h-[400px]"
     >
       <h3 className="text-lg font-semibold text-white mb-3 pb-3 border-b border-white/10">Top Merchants by Spending</h3>
-      
+
       <div className="h-[300px] w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart 
-            data={data} 
+          <BarChart
+            data={data}
             margin={{ top: 20, right: 30, left: 20, bottom: 30 }}
           >
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-            <XAxis 
-              dataKey="merchant" 
+            <XAxis
+              dataKey="merchant"
               stroke="rgba(255,255,255,0.6)"
               fontSize={12}
               angle={-45}
@@ -84,10 +86,10 @@ export function SpendingOverviewCard() {
               height={60}
               tickMargin={5}
             />
-            <YAxis 
+            <YAxis
               stroke="rgba(255,255,255,0.6)"
               fontSize={12}
-              tickFormatter={(value) => `$${value.toFixed(0)}`}
+              tickFormatter={(value) => formatCurrency(value).replace(/(\.00|,\d{2})$/, '')}
             />
             <Tooltip
               contentStyle={{
@@ -98,11 +100,11 @@ export function SpendingOverviewCard() {
                 boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
                 color: 'white',
               }}
-              formatter={(value: number) => [`$${value.toFixed(2)}`, 'Total Spent']}
+              formatter={(value: number) => [formatCurrency(value), 'Total Spent']}
               cursor={{ fill: 'rgba(255,255,255,0.05)' }}
             />
-            <Bar 
-              dataKey="total" 
+            <Bar
+              dataKey="total"
               fill="rgba(255, 255, 255, 0.4)"  // White with lower opacity
               radius={[4, 4, 0, 0]}
             />

@@ -20,14 +20,16 @@ export const DashboardHeader = ({
   const navigate = useNavigate();
 
   return (
-    <div className={`flex flex-col mb-6 mt-6 md:mt-0 pl-0.75 md:pl-0 ${addDesktopTopPadding ? 'md:pt-12' : ''}`}>
-      <div className="flex items-center justify-between">
+    <div className={`flex flex-col mb-4 md:mb-6 mt-6 md:mt-0 pl-1 md:pl-0 ${addDesktopTopPadding ? 'md:pt-12' : ''}`}>
+      <div className="flex items-center justify-between min-h-[40px]">
         <div>
-          <h1 className="text-2xl font-extrabold text-white">{title}</h1>
+          <h1 className="text-2xl md:text-2xl font-bold text-white tracking-tight">{title}</h1>
         </div>
-        {actionButton && <div>{actionButton}</div>}
+        {actionButton && <div className="scale-90 md:scale-100 origin-right">{actionButton}</div>}
       </div>
-      {description && <p className="text-white/70 border-b border-white/20 pb-2 mb-4">{description}</p>}
+      {description && <p className="hidden md:block text-white/60 text-sm md:text-base border-b border-white/10 pb-2 mb-4 leading-tight">{description}</p>}
+      {/* Mobile-only separator if description is hidden but we want separation, or just rely on content spacing */}
+      <div className="md:hidden w-full h-px bg-white/10 mt-2 mb-2"></div>
     </div>
   );
 };

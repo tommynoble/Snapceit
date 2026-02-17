@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import { motion } from 'framer-motion';
 import { X, Building2, DollarSign, Tag, Upload, Pencil, CheckCircle2 } from 'lucide-react';
 import { useReceipts } from './ReceiptContext';
@@ -127,7 +128,7 @@ export function EditReceiptModal({ isOpen, onClose, receipt, onSave, readOnly = 
 
   const confidence = receipt.category_confidence ? Math.round(receipt.category_confidence * 100) : 75;
 
-  return (
+  return ReactDOM.createPortal(
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
@@ -410,6 +411,7 @@ export function EditReceiptModal({ isOpen, onClose, receipt, onSave, readOnly = 
           </div>
         </div>
       </motion.div>
-    </div>
+    </div>,
+    document.body
   );
 }

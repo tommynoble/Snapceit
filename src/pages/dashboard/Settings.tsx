@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Switch } from '@headlessui/react';
 import { useToast } from '../../hooks/useToast';
 import { DashboardHeader } from '../../components/dashboard/DashboardHeader';
-import { 
-  BellIcon, 
-  GlobeAltIcon, 
-  DocumentIcon, 
+import {
+  BellIcon,
+  GlobeAltIcon,
+  DocumentIcon,
   ClockIcon,
   CloudArrowUpIcon,
   KeyIcon,
@@ -53,7 +53,7 @@ export function Settings() {
         console.log('Loading settings for user:', currentUser.uid);
         const userSettings = await settingsService.getUserSettings(currentUser.uid);
         console.log('Fetched settings:', userSettings);
-        
+
         if (userSettings) {
           setSettings(userSettings);
         } else {
@@ -128,7 +128,7 @@ export function Settings() {
                 </div>
               </div>
             </div>
-            
+
             <div className="p-4 space-y-4 overflow-y-auto h-[calc(400px-4rem)]">
               {/* Notification Toggles */}
               <div className="space-y-4">
@@ -140,15 +140,13 @@ export function Settings() {
                   <Switch
                     checked={settings.emailNotifications || false}
                     onChange={(checked) => handleSettingChange('emailNotifications', checked)}
-                    className={`${
-                      settings.emailNotifications ? 'bg-purple-600' : 'bg-white/10'
-                    } relative inline-flex h-6 w-12 items-center rounded-full transition-colors focus:outline-none`}
+                    className={`${settings.emailNotifications ? 'bg-purple-600' : 'bg-white/10'
+                      } relative inline-flex h-6 w-12 items-center rounded-full transition-colors focus:outline-none`}
                   >
                     <span className="sr-only">Enable email notifications</span>
                     <span
-                      className={`${
-                        settings.emailNotifications ? 'translate-x-6' : 'translate-x-1'
-                      } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
+                      className={`${settings.emailNotifications ? 'translate-x-6' : 'translate-x-1'
+                        } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
                     />
                   </Switch>
                 </div>
@@ -161,15 +159,13 @@ export function Settings() {
                   <Switch
                     checked={settings.pushNotifications || false}
                     onChange={(checked) => handleSettingChange('pushNotifications', checked)}
-                    className={`${
-                      settings.pushNotifications ? 'bg-purple-600' : 'bg-white/10'
-                    } relative inline-flex h-6 w-12 items-center rounded-full transition-colors focus:outline-none`}
+                    className={`${settings.pushNotifications ? 'bg-purple-600' : 'bg-white/10'
+                      } relative inline-flex h-6 w-12 items-center rounded-full transition-colors focus:outline-none`}
                   >
                     <span className="sr-only">Enable push notifications</span>
                     <span
-                      className={`${
-                        settings.pushNotifications ? 'translate-x-6' : 'translate-x-1'
-                      } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
+                      className={`${settings.pushNotifications ? 'translate-x-6' : 'translate-x-1'
+                        } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
                     />
                   </Switch>
                 </div>
@@ -182,15 +178,13 @@ export function Settings() {
                   <Switch
                     checked={settings.notificationSms || false}
                     onChange={(checked) => handleSettingChange('notificationSms', checked)}
-                    className={`${
-                      settings.notificationSms ? 'bg-purple-600' : 'bg-white/10'
-                    } relative inline-flex h-6 w-12 items-center rounded-full transition-colors focus:outline-none`}
+                    className={`${settings.notificationSms ? 'bg-purple-600' : 'bg-white/10'
+                      } relative inline-flex h-6 w-12 items-center rounded-full transition-colors focus:outline-none`}
                   >
                     <span className="sr-only">Enable SMS notifications</span>
                     <span
-                      className={`${
-                        settings.notificationSms ? 'translate-x-6' : 'translate-x-1'
-                      } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
+                      className={`${settings.notificationSms ? 'translate-x-6' : 'translate-x-1'
+                        } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
                     />
                   </Switch>
                 </div>
@@ -211,7 +205,7 @@ export function Settings() {
                 </div>
               </div>
             </div>
-            
+
             <div className="p-4 space-y-4 overflow-y-auto h-[calc(400px-4rem)]">
               <div className="space-y-4">
                 <div className="bg-white/5 rounded-lg border border-white/5 p-3 hover:border-purple-500/30 transition-colors duration-300">
@@ -264,15 +258,13 @@ export function Settings() {
                   <Switch
                     checked={settings.darkMode || false}
                     onChange={(checked) => handleSettingChange('darkMode', checked)}
-                    className={`${
-                      settings.darkMode ? 'bg-purple-600' : 'bg-white/10'
-                    } relative inline-flex h-6 w-12 items-center rounded-full transition-colors focus:outline-none`}
+                    className={`${settings.darkMode ? 'bg-purple-600' : 'bg-white/10'
+                      } relative inline-flex h-6 w-12 items-center rounded-full transition-colors focus:outline-none`}
                   >
                     <span className="sr-only">Enable dark mode</span>
                     <span
-                      className={`${
-                        settings.darkMode ? 'translate-x-6' : 'translate-x-1'
-                      } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
+                      className={`${settings.darkMode ? 'translate-x-6' : 'translate-x-1'
+                        } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
                     />
                   </Switch>
                 </div>
@@ -296,7 +288,7 @@ export function Settings() {
                 </div>
               </div>
             </div>
-            
+
             <div className="p-4 space-y-4 overflow-y-auto h-[calc(400px-4rem)]">
               <div className="space-y-4">
                 <div className="bg-white/5 rounded-lg border border-white/5 p-3 hover:border-purple-500/30 transition-colors duration-300">
@@ -313,6 +305,8 @@ export function Settings() {
                     <option value="EUR">EUR (€)</option>
                     <option value="GBP">GBP (£)</option>
                     <option value="JPY">JPY (¥)</option>
+                    <option value="GHS">GHS (₵)</option>
+                    <option value="NGN">NGN (₦)</option>
                   </select>
                 </div>
 
@@ -340,15 +334,13 @@ export function Settings() {
                   <Switch
                     checked={settings.autoScan || false}
                     onChange={(checked) => handleSettingChange('autoScan', checked)}
-                    className={`${
-                      settings.autoScan ? 'bg-purple-600' : 'bg-white/10'
-                    } relative inline-flex h-6 w-12 items-center rounded-full transition-colors focus:outline-none`}
+                    className={`${settings.autoScan ? 'bg-purple-600' : 'bg-white/10'
+                      } relative inline-flex h-6 w-12 items-center rounded-full transition-colors focus:outline-none`}
                   >
                     <span className="sr-only">Enable auto-scan</span>
                     <span
-                      className={`${
-                        settings.autoScan ? 'translate-x-6' : 'translate-x-1'
-                      } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
+                      className={`${settings.autoScan ? 'translate-x-6' : 'translate-x-1'
+                        } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
                     />
                   </Switch>
                 </div>
@@ -369,7 +361,7 @@ export function Settings() {
                 </div>
               </div>
             </div>
-            
+
             <div className="p-4 space-y-4 overflow-y-auto h-[calc(400px-4rem)]">
               <div className="space-y-4">
                 <div className="bg-white/5 rounded-lg border border-white/5 p-3 hover:border-purple-500/30 transition-colors duration-300">
@@ -396,15 +388,13 @@ export function Settings() {
                   <Switch
                     checked={settings.includeReceiptImages || false}
                     onChange={(checked) => handleSettingChange('includeReceiptImages', checked)}
-                    className={`${
-                      settings.includeReceiptImages ? 'bg-purple-600' : 'bg-white/10'
-                    } relative inline-flex h-6 w-12 items-center rounded-full transition-colors focus:outline-none`}
+                    className={`${settings.includeReceiptImages ? 'bg-purple-600' : 'bg-white/10'
+                      } relative inline-flex h-6 w-12 items-center rounded-full transition-colors focus:outline-none`}
                   >
                     <span className="sr-only">Include receipt images in exports</span>
                     <span
-                      className={`${
-                        settings.includeReceiptImages ? 'translate-x-6' : 'translate-x-1'
-                      } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
+                      className={`${settings.includeReceiptImages ? 'translate-x-6' : 'translate-x-1'
+                        } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
                     />
                   </Switch>
                 </div>
@@ -417,15 +407,13 @@ export function Settings() {
                   <Switch
                     checked={settings.compressUploads || false}
                     onChange={(checked) => handleSettingChange('compressUploads', checked)}
-                    className={`${
-                      settings.compressUploads ? 'bg-purple-600' : 'bg-white/10'
-                    } relative inline-flex h-6 w-12 items-center rounded-full transition-colors focus:outline-none`}
+                    className={`${settings.compressUploads ? 'bg-purple-600' : 'bg-white/10'
+                      } relative inline-flex h-6 w-12 items-center rounded-full transition-colors focus:outline-none`}
                   >
                     <span className="sr-only">Enable upload compression</span>
                     <span
-                      className={`${
-                        settings.compressUploads ? 'translate-x-6' : 'translate-x-1'
-                      } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
+                      className={`${settings.compressUploads ? 'translate-x-6' : 'translate-x-1'
+                        } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
                     />
                   </Switch>
                 </div>

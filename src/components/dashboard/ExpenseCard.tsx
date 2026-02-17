@@ -1,16 +1,12 @@
-import React from 'react';
+import { useCurrency } from '../../hooks/useCurrency';
 
 interface ExpenseCardProps {
   amount: number;
 }
 
 export function ExpenseCard({ amount }: ExpenseCardProps) {
-  const formattedAmount = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(amount);
+  const { formatCurrency } = useCurrency();
+  const formattedAmount = formatCurrency(amount);
 
   return (
     <div className="rounded-2xl bg-white p-6 shadow-lg">

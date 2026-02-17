@@ -7,11 +7,13 @@ import { getUserAvatarUrl, getUserInitials } from '../../utils/userHelpers';
 interface SidebarProps {
   onSettingsClick: () => void;
   onLogout: () => void;
+  className?: string;
 }
 
 export function Sidebar({
   onSettingsClick,
-  onLogout
+  onLogout,
+  className = "fixed left-0 top-0 h-full bg-black/10 backdrop-blur-xl border-r border-white/10 shadow-[0_0_8px_rgba(255,255,255,0.03)]"
 }: SidebarProps) {
   const location = useLocation();
   const navigate = useNavigate();
@@ -37,7 +39,7 @@ export function Sidebar({
 
 
   return (
-    <div className="fixed left-0 top-0 h-full w-64 bg-black/10 backdrop-blur-xl border-r border-white/10 flex flex-col shadow-[0_0_8px_rgba(255,255,255,0.03)]">
+    <div className={`w-64 flex flex-col ${className}`}>
       {/* Logo */}
       <button
         onClick={() => navigate('/dashboard')}

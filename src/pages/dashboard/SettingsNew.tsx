@@ -403,6 +403,8 @@ export function SettingsNew() {
                   <option value="JPY">JPY (¥)</option>
                   <option value="CAD">CAD ($)</option>
                   <option value="AUD">AUD ($)</option>
+                  <option value="GHS">GHS (₵)</option>
+                  <option value="NGN">NGN (₦)</option>
                 </select>
               </div>
 

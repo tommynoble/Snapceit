@@ -67,7 +67,7 @@ export function TaxReports() {
                 description="Generate Schedule C and view tax deductions"
                 addDesktopTopPadding={true}
                 actionButton={
-                    <div className="flex items-center gap-3">
+                    <div className="hidden md:flex items-center gap-3">
                         <select
                             value={selectedYear}
                             onChange={(e) => setSelectedYear(Number(e.target.value))}
@@ -89,6 +89,33 @@ export function TaxReports() {
                     </div>
                 }
             />
+
+            {/* Mobile Actions Controls */}
+            <div className="md:hidden flex gap-3 -mt-2 mb-6">
+                <div className="relative">
+                    <select
+                        value={selectedYear}
+                        onChange={(e) => setSelectedYear(Number(e.target.value))}
+                        className="h-full bg-white/10 border border-white/20 text-white rounded-xl px-4 pr-8 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 appearance-none font-medium"
+                    >
+                        {[...Array(5)].map((_, i) => {
+                            const year = new Date().getFullYear() - i;
+                            return <option key={year} value={year} className="text-gray-900">{year}</option>;
+                        })}
+                    </select>
+                    <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none text-white/60">
+                        <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" fillRule="evenodd"></path></svg>
+                    </div>
+                </div>
+
+                <button
+                    onClick={handleDownloadPDF}
+                    className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-4 py-3 rounded-xl font-medium transition-all shadow-lg hover:shadow-purple-500/25 active:scale-95"
+                >
+                    <Download size={18} />
+                    Download Schedule C
+                </button>
+            </div>
 
             {/* Input Section */}
             <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-xl p-6">

@@ -68,7 +68,9 @@ export const CURRENCIES = [
   { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar' },
   { code: 'AUD', symbol: 'A$', name: 'Australian Dollar' },
   { code: 'CNY', symbol: '¥', name: 'Chinese Yuan' },
-  { code: 'INR', symbol: '₹', name: 'Indian Rupee' }
+  { code: 'INR', symbol: '₹', name: 'Indian Rupee' },
+  { code: 'GHS', symbol: '₵', name: 'Ghana Cedi' },
+  { code: 'NGN', symbol: '₦', name: 'Nigerian Naira' }
 ] as const;
 
 export const LANGUAGES = [

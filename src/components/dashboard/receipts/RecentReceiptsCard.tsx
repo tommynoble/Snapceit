@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import ReactDOM from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Receipt as ReceiptIcon,
@@ -16,6 +17,7 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { useReceipts } from './ReceiptContext';
+import { useCurrency } from '../../../hooks/useCurrency';
 import { toast } from 'react-hot-toast';
 import {
   Dialog,
@@ -37,6 +39,7 @@ interface RecentReceiptsCardProps {
 
 export function RecentReceiptsCard({ limit, showViewAll = true }: RecentReceiptsCardProps) {
   const { receipts, loading, deleteReceipt, updateReceipt, refreshReceipts } = useReceipts();
+  const { formatCurrency } = useCurrency();
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -343,14 +346,14 @@ export function RecentReceiptsCard({ limit, showViewAll = true }: RecentReceipts
       ref={cardRef}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="rounded-2xl bg-white p-5 sm:p-6 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.01]"
+      className="rounded-2xl bg-white/10 backdrop-blur-lg border border-white/20 p-5 sm:p-6 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.01]"
     >
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3 pb-3 border-b border-gray-100">
-        <h3 className="text-lg font-semibold text-gray-900">Recent Receipts</h3>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3 pb-3 border-b border-white/10">
+        <h3 className="text-lg font-semibold text-white">Recent Receipts</h3>
 
         <div className="flex items-center gap-2">
           {isMultiSelectMode && selectedReceipts.size > 0 && (
-            <span className="text-xs font-semibold text-purple-700 bg-purple-50 px-2 py-1 rounded-full mr-1">
+            <span className="text-xs font-semibold text-cyan-400 bg-cyan-400/10 px-2 py-1 rounded-full mr-1">
               {selectedReceipts.size} selected
             </span>
           )}
@@ -358,8 +361,8 @@ export function RecentReceiptsCard({ limit, showViewAll = true }: RecentReceipts
           <button
             onClick={toggleSelectMode}
             className={`text-sm font-medium px-3 py-1 rounded-full border transition-colors ${isMultiSelectMode
-              ? 'bg-purple-600 text-white border-purple-600'
-              : 'bg-gray-100 text-gray-700 border-gray-200 hover:border-purple-200 hover:text-purple-700'
+              ? 'bg-cyan-500 text-white border-cyan-500'
+              : 'bg-white/5 text-white/70 border-white/10 hover:border-cyan-400/50 hover:text-cyan-400'
               }`}
           >
             {isMultiSelectMode ? 'Cancel' : 'Select'}
@@ -371,7 +374,7 @@ export function RecentReceiptsCard({ limit, showViewAll = true }: RecentReceipts
                 setDeleteModalOpen(true);
                 setActiveMenu(null);
               }}
-              className="flex items-center gap-2 px-3 py-1 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg"
+              className="flex items-center gap-2 px-3 py-1 text-sm font-medium text-red-400 hover:bg-red-500/10 rounded-lg"
             >
               <Trash2 size={16} />
               Delete ({selectedReceipts.size})
@@ -380,7 +383,7 @@ export function RecentReceiptsCard({ limit, showViewAll = true }: RecentReceipts
             showViewAll && limit && receipts.length > limit && (
               <Link
                 to="/dashboard/receipts"
-                className="text-sm font-medium text-purple-600 hover:text-purple-800 hover:bg-purple-50 px-3 py-1 rounded-lg transition-colors"
+                className="text-sm font-medium text-cyan-400 hover:text-cyan-300 hover:bg-cyan-400/10 px-3 py-1 rounded-lg transition-colors"
               >
                 View All
               </Link>
@@ -413,9 +416,9 @@ export function RecentReceiptsCard({ limit, showViewAll = true }: RecentReceipts
                   setSelectedReceipt(receipt);
                 }
               }}
-              className={`group relative flex items-center justify-between rounded-lg border p-3 sm:p-4 hover:bg-gray-50 cursor-pointer shadow-sm
-              ${receiptId && selectedReceipts.has(receiptId) ? 'border-purple-500 bg-purple-50' : 'border-gray-200'}
-              ${isMultiSelectMode ? 'hover:border-purple-500' : ''}`}
+              className={`group relative flex items-center justify-between rounded-xl border p-3 sm:p-4 cursor-pointer shadow-sm transition-all duration-200 hover:shadow-md
+              ${receiptId && selectedReceipts.has(receiptId) ? 'border-cyan-500 bg-cyan-50' : 'border-transparent bg-white hover:bg-gray-50'}
+              ${isMultiSelectMode ? 'hover:border-cyan-500' : ''}`}
             >
               {isMultiSelectMode && (
                 <div className="mr-3 flex-shrink-0">
@@ -423,17 +426,18 @@ export function RecentReceiptsCard({ limit, showViewAll = true }: RecentReceipts
                     checked={receiptId ? selectedReceipts.has(receiptId) : false}
                     onCheckedChange={() => handleReceiptClick(receipt)}
                     onClick={(e) => e.stopPropagation()}
+                    className="border-gray-300 data-[state=checked]:bg-cyan-500 data-[state=checked]:border-cyan-500"
                   />
                 </div>
               )}
               <div className="flex items-center gap-3 sm:gap-4">
                 {getCategoryIcon(receipt.category)}
                 <div>
-                  <div className="font-medium text-gray-900 text-base sm:text-lg">
-                    ${(receipt.total || 0).toFixed(2)}
+                  <div className="font-bold text-gray-900 text-base sm:text-lg">
+                    {formatCurrency(receipt.total || 0)}
                   </div>
                   <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-                    <div className="text-sm text-gray-500 max-w-[180px] sm:max-w-none truncate">
+                    <div className="text-sm text-gray-600 font-medium max-w-[180px] sm:max-w-none truncate">
                       {receipt.merchant && receipt.merchant !== 'Unknown Merchant'
                         ? receipt.merchant
                         : (receipt.status as string) === 'pending' || (receipt.status as string) === 'ocr_done'
@@ -458,12 +462,12 @@ export function RecentReceiptsCard({ limit, showViewAll = true }: RecentReceipts
                                   receipt.category === 'Utilities' ? 'bg-yellow-100 text-yellow-800' :
                                     receipt.category === 'Taxes and Licenses' ? 'bg-red-100 text-red-800' :
                                       'bg-gray-100 text-gray-800'
-                        } opacity-80`}>
+                        } opacity-100`}>
                         {receipt.category}
                       </span>
                     )}
                     {(receipt.status as string) === 'categorized' && !receipt.category && (
-                      <span className="inline-flex items-center rounded-full bg-purple-100 px-2 py-1 text-xs font-medium text-purple-800 opacity-80">
+                      <span className="inline-flex items-center rounded-full bg-purple-100 px-2 py-1 text-xs font-medium text-purple-800 opacity-100">
                         Uncategorized
                       </span>
                     )}
@@ -488,7 +492,7 @@ export function RecentReceiptsCard({ limit, showViewAll = true }: RecentReceipts
                   <div className="mt-1 text-xs text-gray-400">
                     {/* Show receipt date if extracted, otherwise show upload date */}
                     {(receipt.date) ? (
-                      <div className="font-medium text-gray-600">
+                      <div className="font-medium text-gray-500">
                         📅 {new Date(receipt.date).toLocaleDateString('en-US', {
                           month: 'short',
                           day: 'numeric',
@@ -517,9 +521,9 @@ export function RecentReceiptsCard({ limit, showViewAll = true }: RecentReceipts
                     const rid = getReceiptId(receipt);
                     setActiveMenu(activeMenu === rid ? null : (rid || null));
                   }}
-                  className="rounded-full p-1.5 hover:bg-gray-100 transition-colors"
+                  className="rounded-full p-1.5 hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
                 >
-                  <MoreVertical className="h-5 w-5 text-gray-400" />
+                  <MoreVertical className="h-5 w-5" />
                 </button>
 
                 <AnimatePresence>
@@ -561,16 +565,16 @@ export function RecentReceiptsCard({ limit, showViewAll = true }: RecentReceipts
           );
         })}
         {receipts.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-12 text-gray-500">
-            <div className="bg-gray-50 p-4 rounded-full mb-3">
-              <ReceiptIcon className="h-8 w-8 text-gray-400" />
+          <div className="flex flex-col items-center justify-center py-12 text-white/50">
+            <div className="bg-white/5 p-4 rounded-full mb-3">
+              <ReceiptIcon className="h-8 w-8 text-white/30" />
             </div>
-            <h3 className="font-semibold text-gray-900 mb-1">No receipts yet</h3>
-            <p className="text-sm text-center max-w-[250px] mb-4">
+            <h3 className="font-semibold text-white mb-1">No receipts yet</h3>
+            <p className="text-sm text-center max-w-[250px] mb-4 text-white/50">
               Upload your first receipt to start tracking expenses and deductions.
             </p>
             {limit && (
-              <p className="text-xs font-medium text-purple-600 bg-purple-50 px-3 py-1 rounded-full animate-pulse">
+              <p className="text-xs font-medium text-cyan-400 bg-cyan-400/10 px-3 py-1 rounded-full animate-pulse">
                 Use the upload section above 👆
               </p>
             )}
@@ -580,8 +584,8 @@ export function RecentReceiptsCard({ limit, showViewAll = true }: RecentReceipts
 
       {
         viewModalOpen && selectedReceipt && (
-          selectedReceipt.status === 'pending' ? (
-            <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+          selectedReceipt.status === 'pending' ? ReactDOM.createPortal(
+            <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm">
               <div className="bg-white rounded-xl p-8 max-w-sm w-full shadow-2xl relative">
                 <button
                   onClick={() => {
@@ -613,7 +617,8 @@ export function RecentReceiptsCard({ limit, showViewAll = true }: RecentReceipts
                   </div>
                 </div>
               </div>
-            </div>
+            </div>,
+            document.body
           ) : (
             <EditReceiptModal
               isOpen={true}

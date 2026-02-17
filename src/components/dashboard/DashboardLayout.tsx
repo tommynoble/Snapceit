@@ -28,6 +28,7 @@ import { Profile } from '../../pages/dashboard/Profile';
 import { Receipts } from '../../pages/dashboard/Receipts';
 import { Reports } from '../../pages/dashboard/Reports';
 import { TaxReports } from '../../pages/dashboard/TaxReports';
+import { MobileBottomNav } from './MobileBottomNav';
 
 // Internal component for hard redirect
 const NotFoundRedirect = () => {
@@ -164,7 +165,7 @@ export function DashboardLayout() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#D444EF]/5 via-[#AF3AEB]/5 to-purple-900/5">
+    <div className="min-h-screen bg-gradient-to-br from-[#D444EF]/5 via-[#AF3AEB]/5 to-purple-900/5 pb-20 lg:pb-0">
       {/* Desktop Sidebar */}
       <div className="hidden lg:block">
         <Sidebar
@@ -173,54 +174,70 @@ export function DashboardLayout() {
         />
       </div>
 
-      {/* Mobile Menu Button */}
-      <div className="lg:hidden fixed top-4 right-4 z-50 mt-0.5">
-        <button
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="rounded-full p-3 text-white/80 hover:bg-white/10"
-        >
-          <Menu size={28} />
-        </button>
-      </div>
+      {/* Mobile Menu Button - Hidden when using bottom nav, or kept as secondary option? User asked for bottom nav to avoid clicking. 
+          Let's keep it but maybe it's less needed. The bottom nav has a "Menu" item that triggers the full sidebar. 
+      */}
 
-      {/* Mobile Sidebar */}
+      {/* Mobile Sidebar (Full Menu) */}
       <AnimatePresence mode="wait">
         {isMobileMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0, x: '100%' }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: '100%' }}
-            transition={{ duration: 0.3, ease: "easeInOut" }}
-            className="lg:hidden fixed inset-y-0 right-0 w-64 bg-black/40 backdrop-blur-xl shadow-lg z-40"
-          >
-            <Sidebar
-              onSettingsClick={() => {
-                navigate('/dashboard/settings');
-                setIsMobileMenuOpen(false);
-              }}
-              onLogout={handleLogout}
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm"
             />
-          </motion.div>
+
+            {/* Sidebar */}
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              drag="x"
+              dragConstraints={{ left: 0 }}
+              dragElastic={{ left: 0, right: 0.5 }}
+              onDragEnd={(e, { offset, velocity }) => {
+                if (offset.x > 50 || velocity.x > 500) {
+                  setIsMobileMenuOpen(false);
+                }
+              }}
+              className="lg:hidden fixed inset-y-0 right-0 w-64 bg-gradient-to-br from-[#D444EF] via-[#AF3AEB] to-[#9d4edd] shadow-2xl z-50"
+            >
+              <Sidebar
+                onSettingsClick={() => {
+                  navigate('/dashboard/settings');
+                  setIsMobileMenuOpen(false);
+                }}
+                onLogout={handleLogout}
+                className="h-full w-full bg-transparent overflow-y-auto"
+              />
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
 
       <main className="lg:pl-64 flex flex-col flex-1 min-h-screen">
-        <div className="px-0 sm:px-0 md:px-0">
+        <div className="px-5 sm:px-0 md:px-0">
           <div className="max-w-full mx-0 px-0 sm:px-4 md:px-6">
             <div className="flex-1 overflow-auto">
-              <div className="container mx-0 p-2 sm:px-4 md:px-6">
+              <div className="container mx-auto p-0 sm:px-4 md:px-6">
                 <Routes>
+                  {/* ... routes ... */}
                   <Route
                     path="/"
                     element={
                       <>
                         <div className="mt-8">
-                          <div className="pl-0.75 md:pl-0 mb-6 md:mt-12">
+                          <div className="pl-0 md:pl-0 mb-6 md:mt-12">
                             <motion.h2
                               initial={{ opacity: 0, y: -10 }}
                               animate={{ opacity: 1, y: 0 }}
                               transition={{ duration: 0.6 }}
-                              className="text-xl sm:text-3xl font-extrabold text-white pb-2 border-b border-white/20"
+                              className="text-2xl sm:text-3xl font-extrabold text-white pb-2 border-b border-white/20"
                             >
                               {greeting}
                             </motion.h2>
@@ -230,6 +247,7 @@ export function DashboardLayout() {
                       </>
                     }
                   />
+                  {/* ... other routes ... */}
                   <Route path="template-preview" element={<motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}><TemplatePreview /></motion.div>} />
                   <Route path="price-match" element={<motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}><PriceMatchPage /></motion.div>} />
                   <Route path="tax-calculator" element={<motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}><TaxCalculator /></motion.div>} />
@@ -265,6 +283,12 @@ export function DashboardLayout() {
         <p>You are using <a href="http://localhost:5184/" className="underline hover:text-white/80 transition-colors">Snapceit</a> v1.0</p>
         <p className="mt-1">&copy; {new Date().getFullYear()} Snapceit. All rights reserved.</p>
       </footer>
+
+      {/* Mobile Bottom Navigation */}
+      <MobileBottomNav
+        onMenuClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+        isOpen={isMobileMenuOpen}
+      />
     </div>
   );
 }
