@@ -52,7 +52,27 @@ BEGIN
     END IF;
 END $$;
 
--- 4. Address Security Definer Views
+-- 4. Fix Function Search Path Mutable (Security Warning)
+-- Security Best Practice: Set a fixed search_path for functions to prevent hijacking
+ALTER FUNCTION public.enqueue_receipt() SET search_path = public;
+ALTER FUNCTION public.mark_receipt_processed(UUID, TEXT, TEXT) SET search_path = public;
+ALTER FUNCTION public.move_to_dlq(INT, TEXT) SET search_path = public;
+ALTER FUNCTION public.fetch_and_lock_queue_batch(INT, INT) SET search_path = public;
+ALTER FUNCTION public.update_updated_at_column() SET search_path = public;
+
+-- NOTE: public.trigger_receipt_webhook is also flagged but was not found in the codebase. 
+-- If it exists in your database, run: ALTER FUNCTION public.trigger_receipt_webhook() SET search_path = public;
+
+-- 5. Address "Auth RLS Initialization Plan" (Performance Warning)
+-- This warning usually means RLS policies are using columns that are not indexed.
+-- `documents` table was missing an index on `user_id`.
+CREATE INDEX IF NOT EXISTS idx_documents_user_id ON public.documents(user_id);
+-- `files` table uses `user_id` in RLS but might be missing an index (adding ust in case)
+CREATE INDEX IF NOT EXISTS idx_files_user_id ON public.files(user_id);
+-- `budgets`, `corrections`, `features` already have indexes in the schema, but harmless to ensure:
+CREATE INDEX IF NOT EXISTS idx_budgets_user_id ON public.budgets(user_id);
+
+-- 6. Address Security Definer Views
 -- The warnings for 'vw_receipt_queue_failures' and 'vw_receipt_queue_status' indicate 
 -- they run with the privileges of the creator (bypassing RLS).
 -- 
