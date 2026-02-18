@@ -1,141 +1,55 @@
-import { FacebookIcon, GithubIcon, InstagramIcon, TwitterIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import logo from '../../images/logo.svg';
 
-const Footer = () => {
-  const currentYear = new Date().getFullYear();
-
-  const footerLinks = {
-    product: [
-      { name: 'Features', href: '#features' },
-      { name: 'Pricing', href: '/pricing' },
-      { name: 'Security', href: '/security' },
-      { name: 'Enterprise', href: '/enterprise' },
-    ],
-    company: [
-      { name: 'About', href: '/about' },
-      { name: 'Blog', href: '/blog' },
-      { name: 'Careers', href: '/careers' },
-      { name: 'Contact', href: '/contact' },
-    ],
-    resources: [
-      { name: 'Documentation', href: '/docs' },
-      { name: 'Help Center', href: '/help' },
-      { name: 'Privacy Policy', href: '/privacy' },
-      { name: 'Terms of Service', href: '/terms' },
-      { name: 'Style Guide', href: '/style-guide' },
-    ],
-    social: [
-      { name: 'Twitter', icon: TwitterIcon, href: 'https://twitter.com/snapceit', fill: true },
-      { name: 'Facebook', icon: FacebookIcon, href: 'https://facebook.com/snapceit', fill: true },
-      { name: 'Instagram', icon: InstagramIcon, href: 'https://instagram.com/snapceit', fill: true },
-      { name: 'GitHub', icon: GithubIcon, href: 'https://github.com/snapceit', fill: true },
-    ],
-  };
-
+export function Footer() {
   return (
-    <footer className="bg-gradient-to-br from-[#D444EF] via-[#AF3AEB] to-purple-900 text-white/80">
-      <div className="max-w-7xl mx-auto px-6 sm:px-6 lg:px-8 py-12 lg:py-16">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 lg:gap-12">
-          {/* Logo and Social */}
-          <div className="col-span-2 md:col-span-1 pl-0 sm:pl-0">
-            <Link to="/" className="inline-block mb-8">
-              <img src={logo} alt="Snapceit" className="h-16 w-auto" />
+    <footer className="border-t border-white/10 bg-gradient-to-br from-[#D444EF] via-[#AF3AEB] to-purple-900 pt-16 pb-8 relative z-10 w-full">
+      <div className="max-w-6xl mx-auto px-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
+          <div className="col-span-2 md:col-span-1">
+            <Link to="/" className="flex items-center gap-2 mb-4">
+              <img src={logo} alt="Snapceit" className="h-14 w-auto" />
             </Link>
-            <div className="flex space-x-4 mb-4">
-              {footerLinks.social.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <a
-                    key={item.name}
-                    href={item.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="bg-purple-700 hover:bg-purple-600 transition-colors duration-200 p-2 rounded-md"
-                    aria-label={`Follow us on ${item.name}`}
-                  >
-                    <Icon className="w-5 h-5" fill="white" />
-                  </a>
-                );
-              })}
+            <p className="text-sm text-white/50 mb-6">Automating financial operations for modern businesses.</p>
+            <div className="flex gap-4">
+              <a href="#" className="text-white/40 hover:text-white transition-colors">X</a>
+              <a href="#" className="text-white/40 hover:text-white transition-colors">GitHub</a>
             </div>
-            <p className="text-sm">
-              Contact us at:{' '}
-              <a
-                href="mailto:support@snapceit.com"
-                className="text-purple-300 hover:text-purple-200 transition-colors duration-200"
-              >
-                support@snapceit.com
-              </a>
-            </p>
           </div>
-
-          {/* Product Links */}
-          <div className="pl-2 sm:pl-0">
-            <h3 className="text-lg sm:text-xl font-semibold mb-4">Product</h3>
-            <ul className="space-y-2.5">
-              {footerLinks.product.map((link) => (
-                <li key={link.name}>
-                  <Link
-                    to={link.href}
-                    className="hover:text-white transition-colors duration-200"
-                  >
-                    {link.name}
-                  </Link>
-                </li>
-              ))}
+          <div>
+            <h4 className="text-white font-semibold mb-4">Product</h4>
+            <ul className="space-y-2 text-sm text-white/60">
+              <li><a href="#" className="hover:text-white transition-colors">Features</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Integrations</a></li>
+              <li><Link to="/pricing" className="hover:text-white transition-colors">Pricing</Link></li>
+              <li><a href="#" className="hover:text-white transition-colors">Security</a></li>
             </ul>
           </div>
-
-          {/* Company Links */}
-          <div className="pl-2 sm:pl-0">
-            <h3 className="text-lg sm:text-xl font-semibold mb-4">Company</h3>
-            <ul className="space-y-2.5">
-              {footerLinks.company.map((link) => (
-                <li key={link.name}>
-                  <Link
-                    to={link.href}
-                    className="hover:text-white transition-colors duration-200"
-                  >
-                    {link.name}
-                  </Link>
-                </li>
-              ))}
+          <div>
+            <h4 className="text-white font-semibold mb-4">Company</h4>
+            <ul className="space-y-2 text-sm text-white/60">
+              <li><a href="#" className="hover:text-white transition-colors">About Us</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Careers</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Blog</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Contact</a></li>
             </ul>
           </div>
-
-          {/* Resources Links */}
-          <div className="pl-2 sm:pl-0">
-            <h3 className="text-lg sm:text-xl font-semibold mb-4">Resources</h3>
-            <ul className="space-y-2.5">
-              {footerLinks.resources.map((link) => (
-                <li key={link.name}>
-                  <Link
-                    to={link.href}
-                    className="hover:text-white transition-colors duration-200"
-                  >
-                    {link.name}
-                  </Link>
-                </li>
-              ))}
+          <div>
+            <h4 className="text-white font-semibold mb-4">Legal</h4>
+            <ul className="space-y-2 text-sm text-white/60">
+              <li><a href="#" className="hover:text-white transition-colors">Privacy Policy</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Terms of Service</a></li>
             </ul>
           </div>
         </div>
-
-        {/* Bottom Bar */}
-        <div className="mt-12 pt-8 border-t border-white/10">
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <div className="flex items-center space-x-2 mb-4 md:mb-0">
-              <span className="text-sm sm:text-base text-white/60">©{currentYear} Snapceit</span>
-            </div>
-            <p className="text-sm sm:text-base text-white/60">
-              Simplifying receipt management for everyone
-            </p>
+        <div className="border-t border-white/10 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+          <p className="text-sm text-white/40">© {new Date().getFullYear()} Snapceit Inc. All rights reserved.</p>
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-emerald-500" />
+            <span className="text-sm text-white/60">Systems Operational</span>
           </div>
         </div>
       </div>
     </footer>
   );
-};
-
-export default Footer;
+}

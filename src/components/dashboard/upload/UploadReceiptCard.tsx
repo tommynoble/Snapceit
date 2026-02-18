@@ -3,7 +3,7 @@ import { Upload, Loader, AlertCircle, Check, X } from 'lucide-react';
 import { useReceipts } from '../receipts/ReceiptContext';
 import { useAuth } from '../../../auth/SupabaseAuthContext';
 import { processReceipt } from '../../../utils/receipt-processor';
-import { toast } from 'react-hot-toast';
+import toast from 'react-hot-toast';
 import { useDropzone } from 'react-dropzone';
 import { detectCategory } from '../../../utils/categoryDetection';
 

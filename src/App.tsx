@@ -1,7 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
-import { OnboardingSlide } from './components/onboarding/OnboardingSlide';
 import { LoginForm } from './components/auth/LoginForm';
 import { RegisterForm } from './components/auth/RegisterForm';
 import { VerifyEmail } from './components/auth/VerifyEmail';
@@ -10,9 +9,7 @@ import OnboardingPage from './pages/Onboarding';
 import { DashboardLayout } from './components/dashboard/DashboardLayout';
 import { ReceiptProvider } from './components/dashboard/receipts/ReceiptContext';
 import { useAuth, AuthProvider } from './auth/SupabaseAuthContext';
-import { Onboarding } from './components/onboarding/OnboardingQuestionnaire';
 import { AnimatePresence } from 'framer-motion';
-import { PageTransition } from './components/transitions/PageTransition';
 import { Toaster } from 'react-hot-toast';
 import { Landing } from './pages/Landing';
 import AuthLayout from './components/auth/AuthLayout';
@@ -23,6 +20,10 @@ import { CurrencyProvider } from './contexts/CurrencyContext';
 import { ResetPassword } from './pages/ResetPassword';
 import { ForgotPassword } from './components/auth/ForgotPassword';
 import { ScrollToTop } from './components/common/ScrollToTop';
+import { PrivacyPolicy } from './pages/PrivacyPolicy';
+import { TermsOfService } from './pages/TermsOfService';
+import { Pricing } from './pages/Pricing';
+import { StripeProvider } from './providers/StripeProvider';
 
 // Protected Route Component
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -67,14 +68,6 @@ const OnboardingPageWrapper: React.FC = () => {
   );
 };
 
-// Onboarding Wrapper with Navigation
-const OnboardingWrapper: React.FC = () => {
-  const navigate = useNavigate();
-  return (
-    <Onboarding onComplete={() => navigate('/dashboard')} />
-  );
-};
-
 const AppContent: React.FC = () => {
   const location = useLocation();
 
@@ -95,6 +88,9 @@ const AppContent: React.FC = () => {
           <Route path="/features" element={<Features />} />
           <Route path="/features2" element={<Features2 />} />
           <Route path="/style-guide" element={<StyleGuide />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<TermsOfService />} />
+          <Route path="/pricing" element={<Pricing />} />
 
           {/* Auth Routes */}
           <Route path="/login" element={
@@ -169,8 +165,10 @@ const App: React.FC = () => {
         <AuthProvider>
           <div className="min-h-screen bg-gradient-to-br from-fuchsia-500 via-purple-600 to-purple-800">
             <CurrencyProvider>
-              <ScrollToTop />
-              <AppContent />
+              <StripeProvider>
+                <ScrollToTop />
+                <AppContent />
+              </StripeProvider>
             </CurrencyProvider>
           </div>
         </AuthProvider>

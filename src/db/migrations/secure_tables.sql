@@ -112,3 +112,38 @@ BEGIN
         RAISE NOTICE 'Could not set security_invoker on vw_receipt_queue_status. Skipping.';
     END;
 END $$;
+
+-- 7. Fix Missing RLS Policies for Reference Tables
+-- These tables have RLS enabled but no policies, blocking all access.
+
+-- Categories (Reference Data - Read Only for Users)
+ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Enable read access for all users" ON public.categories;
+CREATE POLICY "Enable read access for all users" ON public.categories FOR SELECT TO authenticated USING (true);
+DROP POLICY IF EXISTS "Enable all access for service_role" ON public.categories;
+CREATE POLICY "Enable all access for service_role" ON public.categories FOR ALL TO service_role USING (true) WITH CHECK (true);
+
+-- Currencies (Reference Data - Read Only for Users)
+ALTER TABLE public.currencies ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Enable read access for all users" ON public.currencies;
+CREATE POLICY "Enable read access for all users" ON public.currencies FOR SELECT TO authenticated USING (true);
+DROP POLICY IF EXISTS "Enable all access for service_role" ON public.currencies;
+CREATE POLICY "Enable all access for service_role" ON public.currencies FOR ALL TO service_role USING (true) WITH CHECK (true);
+
+-- Exchange Rates (Reference Data - Read Only for Users)
+ALTER TABLE public.exchange_rates ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Enable read access for all users" ON public.exchange_rates;
+CREATE POLICY "Enable read access for all users" ON public.exchange_rates FOR SELECT TO authenticated USING (true);
+DROP POLICY IF EXISTS "Enable all access for service_role" ON public.exchange_rates;
+CREATE POLICY "Enable all access for service_role" ON public.exchange_rates FOR ALL TO service_role USING (true) WITH CHECK (true);
+
+-- Users (Profile Data - Owner Access Only)
+-- Note: Assuming id is linked to auth.uid()
+ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users can view own profile" ON public.users;
+CREATE POLICY "Users can view own profile" ON public.users FOR SELECT TO authenticated USING (id::text = auth.uid()::text);
+DROP POLICY IF EXISTS "Users can update own profile" ON public.users;
+CREATE POLICY "Users can update own profile" ON public.users FOR UPDATE TO authenticated USING (id::text = auth.uid()::text);
+DROP POLICY IF EXISTS "Enable all access for service_role" ON public.users;
+CREATE POLICY "Enable all access for service_role" ON public.users FOR ALL TO service_role USING (true) WITH CHECK (true);
+

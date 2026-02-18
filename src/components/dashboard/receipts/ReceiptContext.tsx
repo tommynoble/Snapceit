@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { toast } from 'react-hot-toast';
+import toast from 'react-hot-toast';
 import { useAuth } from '../../../auth/SupabaseAuthContext';
 import { supabase } from '../../../lib/supabase';
 

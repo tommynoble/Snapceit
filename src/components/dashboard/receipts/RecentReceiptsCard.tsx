@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { useReceipts } from './ReceiptContext';
 import { useCurrency } from '../../../hooks/useCurrency';
-import { toast } from 'react-hot-toast';
+import toast from 'react-hot-toast';
 import {
   Dialog,
   DialogContent,
